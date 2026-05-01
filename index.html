@@ -1929,87 +1929,6 @@
   .devlog-tag-chip .tag-icon { font-size: 10px; }
 
   /* ============================================
-     STREAK CALENDAR (GitHub-style activity grid)
-     ============================================ */
-  .streak-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .streak-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent-quest);
-  }
-  .streak-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 12px;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .streak-title {
-    font-family: var(--font-pixel);
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    color: var(--text-secondary);
-    margin: 0;
-  }
-  .streak-stat {
-    font-family: var(--font-crt);
-    font-size: 14px;
-    color: var(--text-muted);
-  }
-  .streak-stat strong {
-    color: var(--accent-quest);
-    font-weight: bold;
-    text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
-  }
-  /* The grid itself */
-  .streak-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-template-rows: repeat(7, 1fr);
-    gap: 3px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
-  }
-  .streak-cell {
-    width: 11px;
-    height: 11px;
-    border-radius: 2px;
-    background: var(--bg-deep);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    transition: transform 0.1s;
-    position: relative;
-  }
-  .streak-cell[data-level="1"] { background: rgba(255, 176, 0, 0.25); border-color: rgba(255, 176, 0, 0.3); }
-  .streak-cell[data-level="2"] { background: rgba(255, 176, 0, 0.5); border-color: rgba(255, 176, 0, 0.5); }
-  .streak-cell[data-level="3"] { background: rgba(255, 176, 0, 0.75); border-color: rgba(255, 176, 0, 0.7); }
-  .streak-cell[data-level="4"] {
-    background: var(--accent-quest);
-    border-color: var(--accent-quest);
-    box-shadow: 0 0 4px rgba(255, 176, 0, 0.5);
-  }
-  .streak-cell:hover { transform: scale(1.4); z-index: 2; }
-  .streak-cell.is-today { outline: 1px solid var(--accent-chat); outline-offset: 1px; }
-  .streak-empty {
-    text-align: center;
-    color: var(--text-muted);
-    font-family: var(--font-crt);
-    font-size: 14px;
-    padding: 12px;
-  }
-
-  /* ============================================
      TODO LIST (kanban style, 3 columns)
      ============================================ */
   .todo-card {
@@ -2868,7 +2787,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.10.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.10.1</span></div>
         </div>
 
         <div class="info-card">
@@ -2923,9 +2842,6 @@
         <div class="ws-pane active" data-ws-pane="mine">
           <div id="mineProject"></div>
 
-          <!-- Streak calendar -->
-          <div class="streak-card" id="mineStreakCard"></div>
-
           <!-- TODO list -->
           <div class="todo-card" id="mineTodoCard">
             <div class="todo-header">
@@ -2952,9 +2868,6 @@
         <div class="ws-pane" data-ws-pane="theirs">
           <div class="ws-member-picker" id="theirsPicker"></div>
           <div id="theirsProject"></div>
-
-          <!-- Their streak (read-only) -->
-          <div class="streak-card" id="theirsStreakCard"></div>
 
           <!-- Their TODO (read-only) -->
           <div class="todo-card readonly" id="theirsTodoCard">
@@ -3330,9 +3243,6 @@
     theirsProject: $('#theirsProject'),
     theirsDevlogs: $('#theirsDevlogs'),
     theirsDevlogFilter: $('#theirsDevlogFilter'),
-    // Streak
-    mineStreakCard: $('#mineStreakCard'),
-    theirsStreakCard: $('#theirsStreakCard'),
     // TODO
     mineTodoCard: $('#mineTodoCard'),
     mineTodoCols: $('#mineTodoCols'),
@@ -5174,8 +5084,7 @@
 
       // Devlog list
       this.renderDevlogList(els.mineDevlogs, myLogs, true);
-      // Refresh streak and todo since they depend on devlogs/state
-      this.renderMineStreak();
+      // Refresh todo since it depends on state
       this.renderMineTodo();
     },
 
@@ -5244,8 +5153,7 @@
       }
 
       this.renderDevlogList(els.theirsDevlogs, targetLogs, false);
-      // Render their streak and TODO (read-only)
-      this.renderTheirsStreak();
+      // Render their TODO (read-only)
       this.renderTheirsTodo();
     },
 
@@ -5674,121 +5582,6 @@
         this.todos[me] = { items: current };
         this.renderMineTodo();
       }
-    },
-
-    // ---- Streak rendering (GitHub-style activity grid) ----
-    renderMineStreak() {
-      if (!session || !els.mineStreakCard) return;
-      this._renderStreakCard(els.mineStreakCard, session.playerName, true);
-    },
-
-    renderTheirsStreak() {
-      if (!session || !els.theirsStreakCard) return;
-      if (!this.selectedTheirsMember) {
-        els.theirsStreakCard.innerHTML = '';
-        return;
-      }
-      this._renderStreakCard(els.theirsStreakCard, this.selectedTheirsMember, false);
-    },
-
-    _renderStreakCard(container, ownerName, isOwn) {
-      // Build a calendar of last 17 weeks (~119 days). Each day shows
-      // a "level" 0-4 based on number of devlogs that day.
-      const now = new Date();
-      // End: today (Sunday-aligned to right side)
-      // Start: 17 weeks before this week's Sunday
-      const WEEKS = 17;
-      const daysToShow = WEEKS * 7;
-
-      // Build a Map<dateKey, count> for this owner's devlogs
-      const counts = new Map();
-      for (const d of this.devlogs) {
-        if (d.author !== ownerName || !d.ts) continue;
-        const dt = new Date(d.ts);
-        const key = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
-        counts.set(key, (counts.get(key) || 0) + 1);
-      }
-
-      // Determine grid start date (top-left cell)
-      // We want today on the right edge, and rows = day-of-week (Mon-Sun)
-      // Start: today minus (daysToShow - 1) days
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      start.setDate(start.getDate() - (daysToShow - 1));
-
-      // Compute streak (consecutive days ending today)
-      let currentStreak = 0;
-      const todayKey = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-      let cursor = new Date(now);
-      cursor.setHours(0, 0, 0, 0);
-      // If today has 0, streak might still continue from yesterday if user hasn't logged today yet —
-      // we count yesterday as the most recent, so check cursor going back
-      if (!counts.has(todayKey)) cursor.setDate(cursor.getDate() - 1);
-      for (let i = 0; i < daysToShow; i++) {
-        const k = cursor.getFullYear() + '-' + (cursor.getMonth() + 1) + '-' + cursor.getDate();
-        if (counts.has(k)) {
-          currentStreak++;
-          cursor.setDate(cursor.getDate() - 1);
-        } else {
-          break;
-        }
-      }
-      const totalLogs = Array.from(counts.values()).reduce((a, b) => a + b, 0);
-
-      // Build the card
-      container.innerHTML = '';
-      const header = document.createElement('div');
-      header.className = 'streak-card-header';
-      const title = document.createElement('h4');
-      title.className = 'streak-title';
-      title.textContent = isOwn ? 'AKTİVİTE' : (ownerName + ' AKTİVİTE');
-      const stat = document.createElement('div');
-      stat.className = 'streak-stat';
-      stat.innerHTML = '<strong>' + currentStreak + '</strong> günlük seri • <strong>' + totalLogs + '</strong> devlog';
-      header.appendChild(title);
-      header.appendChild(stat);
-      container.appendChild(header);
-
-      if (totalLogs === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'streak-empty';
-        empty.textContent = isOwn ? '> henüz devlog yazmadın' : '> henüz devlog yok';
-        container.appendChild(empty);
-        return;
-      }
-
-      const grid = document.createElement('div');
-      grid.className = 'streak-grid';
-      // Build cells
-      // Note: grid-auto-flow is column → cells fill top-to-bottom then next column
-      // We need the start day to align to its weekday row
-      const startDow = start.getDay(); // 0=Sun..6=Sat — we'll use Sun=top
-      // Pad with invisible cells before start to align rows
-      for (let i = 0; i < startDow; i++) {
-        const pad = document.createElement('div');
-        pad.style.visibility = 'hidden';
-        pad.className = 'streak-cell';
-        grid.appendChild(pad);
-      }
-      const cur = new Date(start);
-      for (let i = 0; i < daysToShow; i++) {
-        const k = cur.getFullYear() + '-' + (cur.getMonth() + 1) + '-' + cur.getDate();
-        const c = counts.get(k) || 0;
-        let level = 0;
-        if (c >= 4) level = 4;
-        else if (c === 3) level = 3;
-        else if (c === 2) level = 2;
-        else if (c === 1) level = 1;
-        const cell = document.createElement('div');
-        cell.className = 'streak-cell';
-        cell.dataset.level = String(level);
-        const dateLabel = cur.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
-        cell.title = dateLabel + ' — ' + c + ' devlog';
-        if (k === todayKey) cell.classList.add('is-today');
-        grid.appendChild(cell);
-        cur.setDate(cur.getDate() + 1);
-      }
-      container.appendChild(grid);
     },
 
     // ---- Devlog actions ----
