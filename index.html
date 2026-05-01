@@ -1820,6 +1820,100 @@
   }
   .ws-pane.active { display: block; }
 
+  /* ============================================
+     PROJECT TABS — multi-project switcher
+     ============================================ */
+  .project-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    /* Subtle horizontal scroll on overflow */
+    scrollbar-width: thin;
+  }
+  .project-tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .project-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+  .project-tab:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-workshop);
+  }
+  .project-tab.active {
+    background: rgba(184, 85, 255, 0.16);
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+    box-shadow: 0 0 8px rgba(184, 85, 255, 0.25);
+  }
+  .project-tab .tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+  /* Cover image preview in the tab — small circular avatar */
+  .project-tab .tab-cover {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-elev);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .project-tab.active .tab-cover {
+    border-color: var(--accent-workshop);
+  }
+
+  /* "+ YENİ PROJE" button */
+  .project-tab.add-new {
+    background: transparent;
+    border-style: dashed;
+    color: var(--text-muted);
+    padding: 7px 12px;
+  }
+  .project-tab.add-new:hover {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.08);
+  }
+
+  /* "..." more menu button (when many projects exist) */
+  .project-tab.more-btn {
+    padding: 7px 10px;
+    color: var(--text-muted);
+  }
+
+  /* Read-only mode (theirs) — no add button, no cursor on hover */
+  .project-tabs.readonly .project-tab.add-new { display: none; }
+
+  /* When theirs has only 0/1 projects, hide the tabs row entirely */
+  .project-tabs:empty { display: none; }
+
+  /* ============================================
+     NEW PROJECT MODAL — uses the same modal style as the existing one
+     (we reuse projectModal HTML for both create + edit)
+     ============================================ */
+
   /* Project header card */
   .project-card {
     background: var(--bg-panel);
@@ -3341,7 +3435,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha2</span></div>
         </div>
 
         <div class="info-card">
@@ -3394,6 +3488,9 @@
 
         <!-- My project sub-pane -->
         <div class="ws-pane active" data-ws-pane="mine">
+          <!-- Project tabs (multi-project switcher) -->
+          <div class="project-tabs" id="mineProjectTabs"></div>
+
           <div id="mineProject"></div>
 
           <!-- TODO list -->
@@ -3427,6 +3524,8 @@
         <!-- Their project sub-pane -->
         <div class="ws-pane" data-ws-pane="theirs">
           <div class="ws-member-picker" id="theirsPicker"></div>
+          <!-- Their project tabs (read-only switcher) -->
+          <div class="project-tabs readonly" id="theirsProjectTabs"></div>
           <div id="theirsProject"></div>
 
           <!-- Their TODO (read-only) -->
@@ -3795,6 +3894,7 @@
     wsTabs: $$('.ws-tab'),
     wsPanes: $$('.ws-pane'),
     mineProject: $('#mineProject'),
+    mineProjectTabs: $('#mineProjectTabs'),
     mineDevlogs: $('#mineDevlogs'),
     mineDevlogFilter: $('#mineDevlogFilter'),
     devlogInput: $('#devlogInput'),
@@ -3803,6 +3903,7 @@
     helpToggleBtn: $('#helpToggleBtn'),
     theirsPicker: $('#theirsPicker'),
     theirsProject: $('#theirsProject'),
+    theirsProjectTabs: $('#theirsProjectTabs'),
     theirsDevlogs: $('#theirsDevlogs'),
     theirsDevlogFilter: $('#theirsDevlogFilter'),
     // TODO
@@ -5810,12 +5911,134 @@
       if (tab === 'resources') this.renderResources();
     },
 
+    // ============================================
+    // Project tabs UI
+    // ============================================
+    // Render the row of project tabs above the project card.
+    // For "mine" view (isOwn=true), includes a "+ YENİ" button at the end.
+    // For "theirs" view (isOwn=false), only shows their projects, read-only.
+    renderProjectTabs(ownerName, container, isOwn) {
+      if (!container) return;
+      const projects = this.getActiveProjects(ownerName);
+      const activeId = (this.workshops[ownerName] && this.workshops[ownerName].activeProjectId) || null;
+
+      container.innerHTML = '';
+
+      // Show only the most recent N projects directly; rest accessed via "..." menu
+      const VISIBLE_LIMIT = 5;
+      const visibleProjects = projects.slice(0, VISIBLE_LIMIT);
+      const overflowProjects = projects.slice(VISIBLE_LIMIT);
+
+      for (const p of visibleProjects) {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'project-tab' + (p.id === activeId ? ' active' : '');
+        tab.dataset.projectId = p.id;
+
+        // Cover image avatar (if set)
+        if (p.coverImage) {
+          const cover = document.createElement('span');
+          cover.className = 'tab-cover';
+          cover.style.backgroundImage = 'url(' + p.coverImage.replace(/"/g, '%22') + ')';
+          tab.appendChild(cover);
+        }
+
+        const label = document.createElement('span');
+        label.className = 'tab-label';
+        label.textContent = p.title;
+        label.title = p.title;
+        tab.appendChild(label);
+
+        if (isOwn) {
+          tab.addEventListener('click', () => this.switchProject(p.id));
+        }
+        container.appendChild(tab);
+      }
+
+      // "..." overflow button if there are extra projects (own only for now)
+      if (overflowProjects.length > 0) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'project-tab more-btn';
+        more.title = overflowProjects.length + ' proje daha';
+        more.textContent = '⋯ +' + overflowProjects.length;
+        if (isOwn) {
+          more.addEventListener('click', () => this.openProjectListModal());
+        }
+        container.appendChild(more);
+      }
+
+      // "+ YENİ" button (own only)
+      if (isOwn) {
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'project-tab add-new';
+        add.textContent = '+ YENİ';
+        add.title = 'Yeni proje aç';
+        add.addEventListener('click', () => this.openNewProjectModal());
+        container.appendChild(add);
+      }
+    },
+
+    // Switch the active project (own only). Writes to Firebase, snapshot
+    // listener will trigger re-render.
+    async switchProject(projectId) {
+      if (!session || !cloudReady()) return;
+      const me = session.playerName;
+      const ws = this.workshops[me];
+      if (!ws || !ws.projects) return;
+      // No-op if already active
+      if (ws.activeProjectId === projectId) return;
+
+      // Optimistic local update
+      const prevActive = ws.activeProjectId;
+      this.workshops[me] = { ...ws, activeProjectId: projectId };
+      this.renderMine();
+
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'workshops', me);
+        const updated = { ...ws, activeProjectId: projectId };
+        const enc = encrypt(JSON.stringify(updated), session.key);
+        await fs.setDoc(ref, { encrypted: enc, updatedAt: Date.now() });
+      } catch (e) {
+        console.error('[Workshop] switchProject failed:', e);
+        // Revert
+        this.workshops[me] = { ...ws, activeProjectId: prevActive };
+        this.renderMine();
+      }
+    },
+
+    // Open the project modal in "new project" mode (empty fields,
+    // saving creates a brand new project instead of editing the active one).
+    openNewProjectModal() {
+      this._creatingNewProject = true;
+      els.pfTitle.value = '';
+      els.pfDesc.value = '';
+      els.projectFormError.textContent = '';
+      els.projectModal.classList.remove('hidden');
+      setTimeout(() => els.pfTitle.focus(), 80);
+    },
+
+    // Stub for project list overflow modal — implemented in stage 5.
+    // For now, show a simple alert.
+    openProjectListModal() {
+      // TODO: build a proper modal listing all projects
+      const me = session.playerName;
+      const all = this.getActiveProjects(me);
+      const names = all.map((p, i) => (i + 1) + '. ' + p.title).join('\n');
+      alert('Tüm projelerin:\n\n' + names + '\n\n(Tüm projeler ekranı yakında geliyor)');
+    },
+
     // ---- My project rendering ----
     renderMine() {
       if (!session) return;
       const me = session.playerName;
       // Get active project (handles both old and new format via getActiveProject)
       const activeProject = this.getActiveProject(me);
+
+      // Render project tabs at the top
+      this.renderProjectTabs(me, els.mineProjectTabs, true);
 
       // Filter devlogs to only those belonging to the active project (or no project — legacy)
       let myLogs = this.devlogs.filter(d => d.author === me);
@@ -5902,6 +6125,10 @@
       // Render selected member's project
       const target = this.selectedTheirsMember;
       const targetActive = this.getActiveProject(target);
+
+      // Render their project tabs (read-only)
+      this.renderProjectTabs(target, els.theirsProjectTabs, false);
+
       let targetLogs = this.devlogs.filter(d => d.author === target);
       if (targetActive) {
         targetLogs = targetLogs.filter(d => !d.projectId || d.projectId === targetActive.id);
@@ -7006,6 +7233,7 @@
 
     closeProjectModal() {
       els.projectModal.classList.add('hidden');
+      this._creatingNewProject = false;
     },
 
     async saveProject() {
@@ -7024,18 +7252,12 @@
         const { doc: baseDoc } = this._normalizeWorkshop(current);
         let newDoc = { ...baseDoc, projects: [...baseDoc.projects] };
 
+        const isNew = !!this._creatingNewProject;
         const activeId = newDoc.activeProjectId;
         const activeIdx = activeId ? newDoc.projects.findIndex(p => p.id === activeId) : -1;
 
-        if (activeIdx >= 0) {
-          // Edit existing active project
-          newDoc.projects[activeIdx] = {
-            ...newDoc.projects[activeIdx],
-            title,
-            description: desc,
-          };
-        } else {
-          // No active project — create one
+        if (isNew || activeIdx < 0) {
+          // Creating a new project — push and set as active
           const id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
           newDoc.projects.push({
             id,
@@ -7046,10 +7268,18 @@
             archived: false,
           });
           newDoc.activeProjectId = id;
+        } else {
+          // Edit existing active project
+          newDoc.projects[activeIdx] = {
+            ...newDoc.projects[activeIdx],
+            title,
+            description: desc,
+          };
         }
 
         const encrypted = encrypt(JSON.stringify(newDoc), session.key);
         await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
+        this._creatingNewProject = false;
         this.closeProjectModal();
       } catch (e) {
         els.projectFormError.textContent = 'Hata: ' + (e.message || e);
