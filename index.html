@@ -1354,6 +1354,178 @@
   }
   .send-btn svg { width: 20px; height: 20px; transform: translateX(1px); }
 
+  /* ============================================
+     EMOJI PICKER
+     ============================================ */
+  .emoji-toggle-btn {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    transition: all 0.15s;
+  }
+  .emoji-toggle-btn:hover {
+    border-color: var(--accent-chat);
+    background: rgba(0, 240, 255, 0.06);
+    transform: translateY(-1px);
+  }
+  .emoji-toggle-btn:active { transform: translateY(0) scale(0.94); }
+  .emoji-toggle-btn.active {
+    border-color: var(--accent-chat);
+    background: rgba(0, 240, 255, 0.12);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  /* Picker panel — absolutely positioned above the composer */
+  .emoji-picker {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 8px;
+    right: 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 340px;
+    z-index: 100;
+    animation: emojiPickerSlideUp 0.18s ease-out;
+  }
+  .emoji-picker.hidden { display: none; }
+
+  @keyframes emojiPickerSlideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .emoji-search-row input {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .emoji-search-row input:focus {
+    border-color: var(--accent-chat);
+  }
+
+  /* Category tabs */
+  .emoji-cats {
+    display: flex;
+    gap: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .emoji-cats::-webkit-scrollbar { height: 2px; }
+  .emoji-cat-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    opacity: 0.6;
+  }
+  .emoji-cat-btn:hover {
+    opacity: 1;
+    background: rgba(0, 240, 255, 0.06);
+  }
+  .emoji-cat-btn.active {
+    opacity: 1;
+    background: rgba(0, 240, 255, 0.14);
+    border-color: var(--accent-chat);
+  }
+
+  /* Emoji grid */
+  .emoji-grid {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 2px;
+    padding: 2px;
+    min-height: 180px;
+    scrollbar-width: thin;
+  }
+  .emoji-grid::-webkit-scrollbar { width: 4px; }
+
+  .emoji-item {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.1s, transform 0.1s;
+  }
+  .emoji-item:hover {
+    background: rgba(0, 240, 255, 0.1);
+    transform: scale(1.15);
+  }
+  .emoji-item:active { transform: scale(0.92); }
+
+  /* Section heading inside grid (when showing all categories) */
+  .emoji-section-heading {
+    grid-column: 1 / -1;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    padding: 8px 4px 4px;
+    text-transform: uppercase;
+  }
+
+  /* Empty state when search has no matches */
+  .emoji-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 13px;
+  }
+
+  /* Mobile-specific: picker takes more screen on narrow viewports */
+  @media (max-width: 600px) {
+    .emoji-picker {
+      max-height: 280px;
+    }
+    .emoji-cat-btn { width: 32px; height: 32px; font-size: 16px; }
+    .emoji-item { font-size: 20px; width: 34px; height: 34px; }
+  }
+
 
   /* Hide bottom nav when chat composer is focused on mobile (keyboard up) */
   /* Keep nav visible but composer sticks above it via parent flex */
@@ -3940,12 +4112,24 @@
           </div>
         </div>
         <div class="composer">
+          <button class="emoji-toggle-btn" id="emojiToggleBtn" type="button" aria-label="Emoji ekle">
+            <span>😀</span>
+          </button>
           <textarea id="msgInput" placeholder="Mesaj yaz..." rows="1" maxlength="2000"></textarea>
           <button class="send-btn" id="sendBtn" aria-label="Gönder" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 12l14-7-7 14-2-5-5-2z"/>
             </svg>
           </button>
+
+          <!-- Emoji picker panel -->
+          <div class="emoji-picker hidden" id="emojiPicker">
+            <div class="emoji-search-row">
+              <input type="text" id="emojiSearch" placeholder="🔍 ara: kalp, ateş, gülüş..." autocomplete="off" />
+            </div>
+            <div class="emoji-cats" id="emojiCats"></div>
+            <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
         </div>
       </div>
 
@@ -4030,7 +4214,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.16.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.17.0</span></div>
         </div>
 
         <div class="info-card">
@@ -4489,6 +4673,11 @@
     msgEmpty: $('#msgEmpty'),
     msgInput: $('#msgInput'),
     sendBtn: $('#sendBtn'),
+    emojiToggleBtn: $('#emojiToggleBtn'),
+    emojiPicker: $('#emojiPicker'),
+    emojiSearch: $('#emojiSearch'),
+    emojiCats: $('#emojiCats'),
+    emojiGrid: $('#emojiGrid'),
     chatSubtitle: $('#chatSubtitle'),
     searchToggleBtn: $('#searchToggleBtn'),
     searchBar: $('#searchBar'),
@@ -4809,6 +4998,7 @@
     Notifications.init();
     SoundFX.init();
     BrowserNotif.init();
+    EmojiPicker.init();
     syncSfxToggleUI();
     syncNotifToggleUI();
     setActiveTab('profile');
@@ -4896,6 +5086,789 @@
   //   { encrypted: <AES payload of {text, author, ts}>,
   //     createdAt: serverTimestamp(),
   //     deleted?: true }
+
+  // ============================================================
+  // EMOJI PICKER MODULE
+  // ============================================================
+  // Provides an emoji picker panel attached to the chat composer.
+  // - 8 categories with curated emoji sets
+  // - Search by keyword (Turkish + English aliases)
+  // - "Recents" tab persists last 24 used emojis in localStorage
+  // - Click outside or send to close
+  const EmojiPicker = {
+    open: false,
+    activeCategory: 'recent',
+    storageKey: 'broop:emoji:recents',
+    recentLimit: 24,
+
+    // ============================================
+    // EMOJI DATA — keyed categories with display label, icon, list
+    // Each emoji is [emoji, ...keywords] — keywords used by search.
+    // Keywords include Turkish + common English to catch both languages.
+    // ============================================
+    categories: [
+      {
+        key: 'recent',
+        label: 'SIK',
+        icon: '⭐',
+        emojis: [], // populated dynamically from localStorage
+      },
+      {
+        key: 'smileys',
+        label: 'YÜZ',
+        icon: '😀',
+        emojis: [
+          ['😀', 'gülüş', 'mutlu', 'smile', 'happy'],
+          ['😃', 'gülüş', 'mutlu', 'smile'],
+          ['😄', 'gülüş', 'mutlu', 'smile'],
+          ['😁', 'sırıtma', 'grin'],
+          ['😆', 'kahkaha', 'gülüş', 'laugh'],
+          ['😅', 'gülüş', 'ter', 'sweat', 'laugh'],
+          ['🤣', 'kahkaha', 'gülme', 'rofl', 'laugh'],
+          ['😂', 'kahkaha', 'gülme', 'joy', 'laugh', 'cry'],
+          ['🙂', 'gülümseme', 'smile'],
+          ['🙃', 'tersine', 'upside'],
+          ['😉', 'göz kırpma', 'wink'],
+          ['😊', 'utangaç', 'gülüş', 'blush'],
+          ['😇', 'melek', 'angel'],
+          ['🥰', 'aşk', 'love', 'sevgi'],
+          ['😍', 'aşk', 'love', 'kalpler', 'hearts'],
+          ['🤩', 'yıldız', 'gözleri', 'star', 'wow'],
+          ['😘', 'öpücük', 'kiss'],
+          ['😗', 'öpücük', 'kiss'],
+          ['😙', 'öpücük', 'kiss'],
+          ['😚', 'öpücük', 'kiss'],
+          ['😋', 'lezzet', 'yum', 'tasty'],
+          ['😛', 'dil', 'tongue'],
+          ['😜', 'dil', 'göz kırpma', 'tongue', 'wink'],
+          ['🤪', 'çılgın', 'crazy', 'zany'],
+          ['😝', 'dil', 'tongue'],
+          ['🤑', 'para', 'money'],
+          ['🤗', 'sarılma', 'hug'],
+          ['🤭', 'kıkırdama', 'giggle', 'hand'],
+          ['🤫', 'sus', 'shh', 'quiet'],
+          ['🤔', 'düşünme', 'think'],
+          ['🤐', 'sus', 'fermuar', 'zip'],
+          ['🤨', 'şüpheli', 'kaş', 'eyebrow'],
+          ['😐', 'düz', 'neutral'],
+          ['😑', 'ifadesiz', 'blank'],
+          ['😶', 'sessiz', 'no mouth'],
+          ['😏', 'sırıtma', 'smirk'],
+          ['😒', 'umursamaz', 'unamused'],
+          ['🙄', 'göz devirme', 'roll', 'eye'],
+          ['😬', 'sıkıntı', 'grimace'],
+          ['🤥', 'yalan', 'lie', 'pinokyo'],
+          ['😌', 'rahatlama', 'relieved'],
+          ['😔', 'üzgün', 'sad', 'pensive'],
+          ['😪', 'uyku', 'sleepy'],
+          ['😴', 'uyumak', 'sleep', 'zz'],
+          ['🤤', 'salyam', 'drool'],
+          ['😷', 'maske', 'mask', 'hasta'],
+          ['🤒', 'hasta', 'sick', 'ateş'],
+          ['🤕', 'yaralı', 'hurt'],
+          ['🤢', 'iğrenç', 'nausea'],
+          ['🤮', 'kusmak', 'vomit'],
+          ['🤧', 'hapşu', 'sneeze'],
+          ['🥵', 'sıcak', 'hot'],
+          ['🥶', 'soğuk', 'cold'],
+          ['🥴', 'sersem', 'dizzy', 'woozy'],
+          ['😵', 'baygın', 'dizzy'],
+          ['🤯', 'kafa atmak', 'patlama', 'mind blown', 'explode'],
+          ['🤠', 'kovboy', 'cowboy'],
+          ['🥳', 'parti', 'kutlama', 'party'],
+          ['😎', 'havalı', 'cool', 'gözlük'],
+          ['🤓', 'inek', 'nerd', 'gözlük'],
+          ['🧐', 'monocle', 'kibar'],
+          ['😕', 'kafa karışık', 'confused'],
+          ['😟', 'endişe', 'worried'],
+          ['🙁', 'üzgün', 'frown'],
+          ['☹️', 'üzgün', 'frown'],
+          ['😮', 'şaşkın', 'wow'],
+          ['😯', 'şaşkın', 'shock'],
+          ['😲', 'şaşkın', 'astonished'],
+          ['😳', 'utanma', 'flushed'],
+          ['🥺', 'yalvarma', 'pleading'],
+          ['😦', 'şaşkın', 'frown'],
+          ['😧', 'sıkıntı', 'anguish'],
+          ['😨', 'korku', 'fearful'],
+          ['😰', 'endişe', 'anxious'],
+          ['😥', 'üzgün', 'sad'],
+          ['😢', 'ağlamak', 'cry'],
+          ['😭', 'ağlamak', 'çok üzgün', 'cry', 'sob'],
+          ['😱', 'çığlık', 'scream'],
+          ['😖', 'sıkıntı', 'confounded'],
+          ['😣', 'sıkılmış', 'persevere'],
+          ['😞', 'üzgün', 'disappointed'],
+          ['😓', 'ter', 'üzgün', 'sweat'],
+          ['😩', 'yorgun', 'weary'],
+          ['😫', 'yorgun', 'tired'],
+          ['🥱', 'esneme', 'yawn'],
+          ['😤', 'sinirli', 'huff', 'angry'],
+          ['😡', 'sinirli', 'rage', 'angry'],
+          ['😠', 'sinirli', 'angry'],
+          ['🤬', 'küfür', 'cursing'],
+          ['😈', 'şeytan', 'devil'],
+          ['👿', 'şeytan', 'devil'],
+          ['💀', 'kafatası', 'skull', 'ölüm'],
+          ['☠️', 'kafatası', 'skull'],
+          ['💩', 'kaka', 'poo', 'sıçtı'],
+          ['🤡', 'palyaço', 'clown'],
+          ['👹', 'canavar', 'ogre'],
+          ['👺', 'goblin'],
+          ['👻', 'hayalet', 'ghost'],
+          ['👽', 'uzaylı', 'alien'],
+          ['👾', 'space invader', 'oyun'],
+          ['🤖', 'robot'],
+        ],
+      },
+      {
+        key: 'gestures',
+        label: 'EL',
+        icon: '✋',
+        emojis: [
+          ['👍', 'beğen', 'iyi', 'thumbs up', 'like'],
+          ['👎', 'kötü', 'thumbs down', 'dislike'],
+          ['👊', 'yumruk', 'fist', 'punch'],
+          ['✊', 'yumruk', 'fist'],
+          ['🤛', 'yumruk', 'fist'],
+          ['🤜', 'yumruk', 'fist'],
+          ['👏', 'alkış', 'clap'],
+          ['🙌', 'kutlama', 'raise', 'celebrate'],
+          ['👐', 'eller', 'hands'],
+          ['🤲', 'eller', 'hands'],
+          ['🤝', 'tokalaşma', 'handshake'],
+          ['🙏', 'dua', 'lütfen', 'pray', 'thanks'],
+          ['✋', 'el', 'hand', 'dur', 'stop'],
+          ['🤚', 'el', 'hand'],
+          ['🖐️', 'el', 'hand'],
+          ['🖖', 'spock'],
+          ['👌', 'tamam', 'ok'],
+          ['🤌', 'parmak öpücüğü', 'pinched'],
+          ['🤏', 'küçük', 'pinch'],
+          ['✌️', 'zafer', 'peace', 'victory'],
+          ['🤞', 'şans', 'fingers crossed', 'luck'],
+          ['🤟', 'rock', 'love you'],
+          ['🤘', 'rock', 'metal'],
+          ['👈', 'sol', 'left'],
+          ['👉', 'sağ', 'right'],
+          ['👆', 'yukarı', 'up'],
+          ['👇', 'aşağı', 'down'],
+          ['☝️', 'işaret', 'index'],
+          ['💪', 'güçlü', 'kas', 'muscle', 'flex'],
+          ['🦵', 'bacak', 'leg'],
+          ['🦶', 'ayak', 'foot'],
+          ['👂', 'kulak', 'ear'],
+          ['👃', 'burun', 'nose'],
+          ['🧠', 'beyin', 'brain'],
+          ['👀', 'gözler', 'eyes'],
+          ['👁️', 'göz', 'eye'],
+          ['👄', 'dudak', 'mouth'],
+          ['🦷', 'diş', 'tooth'],
+          ['🦴', 'kemik', 'bone'],
+          ['👶', 'bebek', 'baby'],
+          ['👦', 'çocuk', 'boy'],
+          ['👧', 'kız', 'girl'],
+          ['👨', 'adam', 'man'],
+          ['👩', 'kadın', 'woman'],
+          ['🧑', 'kişi', 'person'],
+          ['🧔', 'sakallı', 'beard'],
+          ['👴', 'yaşlı adam', 'old man'],
+          ['👵', 'yaşlı kadın', 'old woman'],
+        ],
+      },
+      {
+        key: 'hearts',
+        label: 'KALP',
+        icon: '❤️',
+        emojis: [
+          ['❤️', 'kalp', 'aşk', 'sevgi', 'heart', 'love'],
+          ['🧡', 'turuncu kalp', 'heart'],
+          ['💛', 'sarı kalp', 'heart'],
+          ['💚', 'yeşil kalp', 'heart'],
+          ['💙', 'mavi kalp', 'heart'],
+          ['💜', 'mor kalp', 'heart'],
+          ['🖤', 'siyah kalp', 'heart'],
+          ['🤍', 'beyaz kalp', 'heart'],
+          ['🤎', 'kahverengi kalp', 'heart'],
+          ['💖', 'parıldayan kalp', 'sparkling heart'],
+          ['💗', 'büyüyen kalp', 'growing heart'],
+          ['💓', 'çarpan kalp', 'beating heart'],
+          ['💘', 'okun kalbe', 'cupid'],
+          ['💝', 'kalp hediye', 'heart gift'],
+          ['💞', 'dönen kalpler', 'revolving hearts'],
+          ['💟', 'kalp süslü', 'heart decoration'],
+          ['💕', 'iki kalp', 'two hearts'],
+          ['💔', 'kırık kalp', 'broken heart', 'üzgün'],
+          ['❣️', 'ünlem kalp', 'heart exclamation'],
+          ['💋', 'öpücük', 'kiss mark'],
+          ['💌', 'aşk mektubu', 'love letter'],
+          ['💍', 'yüzük', 'ring'],
+          ['💎', 'elmas', 'diamond'],
+          ['👨‍❤️‍👨', 'çift', 'couple'],
+          ['👩‍❤️‍👩', 'çift', 'couple'],
+          ['👨‍❤️‍👩', 'çift', 'couple'],
+        ],
+      },
+      {
+        key: 'animals',
+        label: 'HAYVAN',
+        icon: '🐶',
+        emojis: [
+          ['🐶', 'köpek', 'dog'],
+          ['🐱', 'kedi', 'cat'],
+          ['🐭', 'fare', 'mouse'],
+          ['🐹', 'hamster'],
+          ['🐰', 'tavşan', 'rabbit'],
+          ['🦊', 'tilki', 'fox'],
+          ['🐻', 'ayı', 'bear'],
+          ['🐼', 'panda'],
+          ['🐨', 'koala'],
+          ['🐯', 'kaplan', 'tiger'],
+          ['🦁', 'aslan', 'lion'],
+          ['🐮', 'inek', 'cow'],
+          ['🐷', 'domuz', 'pig'],
+          ['🐸', 'kurbağa', 'frog'],
+          ['🐵', 'maymun', 'monkey'],
+          ['🐔', 'tavuk', 'chicken'],
+          ['🐧', 'penguen', 'penguin'],
+          ['🐦', 'kuş', 'bird'],
+          ['🐤', 'civciv', 'chick'],
+          ['🦆', 'ördek', 'duck'],
+          ['🦅', 'kartal', 'eagle'],
+          ['🦉', 'baykuş', 'owl'],
+          ['🦇', 'yarasa', 'bat'],
+          ['🐺', 'kurt', 'wolf'],
+          ['🐗', 'yaban domuzu', 'boar'],
+          ['🐴', 'at', 'horse'],
+          ['🦄', 'tek boynuzlu', 'unicorn'],
+          ['🐝', 'arı', 'bee'],
+          ['🐛', 'kurtçuk', 'worm'],
+          ['🦋', 'kelebek', 'butterfly'],
+          ['🐌', 'salyangoz', 'snail'],
+          ['🐞', 'uğur böceği', 'ladybug'],
+          ['🐜', 'karınca', 'ant'],
+          ['🦗', 'çekirge', 'cricket'],
+          ['🕷️', 'örümcek', 'spider'],
+          ['🦂', 'akrep', 'scorpion'],
+          ['🐢', 'kaplumbağa', 'turtle'],
+          ['🐍', 'yılan', 'snake'],
+          ['🦎', 'kertenkele', 'lizard'],
+          ['🦖', 't-rex', 'dinazor', 'dinosaur'],
+          ['🦕', 'dinazor', 'dinosaur'],
+          ['🐙', 'ahtapot', 'octopus'],
+          ['🦑', 'mürekkep balığı', 'squid'],
+          ['🦐', 'karides', 'shrimp'],
+          ['🦀', 'yengeç', 'crab'],
+          ['🐡', 'balon balığı', 'pufferfish'],
+          ['🐠', 'tropikal balık', 'fish'],
+          ['🐟', 'balık', 'fish'],
+          ['🐬', 'yunus', 'dolphin'],
+          ['🐳', 'balina', 'whale'],
+          ['🐋', 'balina', 'whale'],
+          ['🦈', 'köpek balığı', 'shark'],
+          ['🐊', 'timsah', 'crocodile'],
+          ['🐅', 'kaplan', 'tiger'],
+          ['🐆', 'leopar', 'leopard'],
+          ['🦓', 'zebra'],
+          ['🦍', 'goril', 'gorilla'],
+          ['🐘', 'fil', 'elephant'],
+          ['🦏', 'gergedan', 'rhino'],
+          ['🦒', 'zürafa', 'giraffe'],
+          ['🐪', 'deve', 'camel'],
+          ['🦘', 'kanguru', 'kangaroo'],
+        ],
+      },
+      {
+        key: 'food',
+        label: 'YEM',
+        icon: '🍔',
+        emojis: [
+          ['🍎', 'elma', 'apple'],
+          ['🍐', 'armut', 'pear'],
+          ['🍊', 'portakal', 'orange'],
+          ['🍋', 'limon', 'lemon'],
+          ['🍌', 'muz', 'banana'],
+          ['🍉', 'karpuz', 'watermelon'],
+          ['🍇', 'üzüm', 'grapes'],
+          ['🍓', 'çilek', 'strawberry'],
+          ['🫐', 'yaban mersini', 'blueberry'],
+          ['🍈', 'kavun', 'melon'],
+          ['🍒', 'kiraz', 'cherry'],
+          ['🍑', 'şeftali', 'peach'],
+          ['🥭', 'mango'],
+          ['🍍', 'ananas', 'pineapple'],
+          ['🥥', 'hindistan cevizi', 'coconut'],
+          ['🥝', 'kivi', 'kiwi'],
+          ['🍅', 'domates', 'tomato'],
+          ['🍆', 'patlıcan', 'eggplant'],
+          ['🥑', 'avokado', 'avocado'],
+          ['🥦', 'brokoli', 'broccoli'],
+          ['🥒', 'salatalık', 'cucumber'],
+          ['🌶️', 'biber', 'pepper'],
+          ['🌽', 'mısır', 'corn'],
+          ['🥕', 'havuç', 'carrot'],
+          ['🧄', 'sarımsak', 'garlic'],
+          ['🧅', 'soğan', 'onion'],
+          ['🥔', 'patates', 'potato'],
+          ['🍠', 'tatlı patates', 'sweet potato'],
+          ['🥐', 'kruvasan', 'croissant'],
+          ['🥖', 'baget', 'baguette'],
+          ['🍞', 'ekmek', 'bread'],
+          ['🥨', 'simit', 'pretzel'],
+          ['🧀', 'peynir', 'cheese'],
+          ['🥚', 'yumurta', 'egg'],
+          ['🍳', 'kahvaltı', 'breakfast'],
+          ['🥞', 'pankek', 'pancakes'],
+          ['🧇', 'waffle'],
+          ['🥓', 'pastırma', 'bacon'],
+          ['🍔', 'hamburger', 'burger'],
+          ['🍟', 'patates kızartması', 'fries'],
+          ['🍕', 'pizza'],
+          ['🌭', 'sosisli', 'hot dog'],
+          ['🥪', 'sandviç', 'sandwich'],
+          ['🌮', 'taco'],
+          ['🌯', 'dürüm', 'wrap'],
+          ['🥙', 'döner', 'kebab'],
+          ['🥗', 'salata', 'salad'],
+          ['🍝', 'makarna', 'spaghetti'],
+          ['🍜', 'noodle', 'ramen'],
+          ['🍲', 'çorba', 'soup', 'stew'],
+          ['🍛', 'pilav', 'rice', 'curry'],
+          ['🍣', 'sushi'],
+          ['🍤', 'karides', 'shrimp'],
+          ['🍙', 'sushi onigiri'],
+          ['🍱', 'bento'],
+          ['🍰', 'pasta', 'cake'],
+          ['🎂', 'doğum günü pastası', 'birthday'],
+          ['🧁', 'cupcake', 'kek'],
+          ['🍩', 'donut'],
+          ['🍪', 'kurabiye', 'cookie'],
+          ['🍫', 'çikolata', 'chocolate'],
+          ['🍬', 'şeker', 'candy'],
+          ['🍭', 'lolipop', 'lollipop'],
+          ['🍮', 'puding', 'pudding'],
+          ['🍦', 'dondurma', 'ice cream'],
+          ['🍧', 'kazı dondurma', 'shave ice'],
+          ['☕', 'kahve', 'coffee'],
+          ['🍵', 'çay', 'tea'],
+          ['🥤', 'içecek', 'drink'],
+          ['🧋', 'bubble tea'],
+          ['🍺', 'bira', 'beer'],
+          ['🍻', 'şerefe', 'cheers', 'beers'],
+          ['🍷', 'şarap', 'wine'],
+          ['🥂', 'şampanya', 'champagne'],
+          ['🥃', 'viski', 'whiskey'],
+          ['🍹', 'kokteyl', 'cocktail'],
+          ['🥛', 'süt', 'milk'],
+        ],
+      },
+      {
+        key: 'activities',
+        label: 'AKT',
+        icon: '⚽',
+        emojis: [
+          ['⚽', 'futbol', 'soccer'],
+          ['🏀', 'basketbol', 'basketball'],
+          ['🏈', 'amerikan futbolu', 'football'],
+          ['⚾', 'beyzbol', 'baseball'],
+          ['🥎', 'softball'],
+          ['🎾', 'tenis', 'tennis'],
+          ['🏐', 'voleybol', 'volleyball'],
+          ['🏉', 'rugby'],
+          ['🥏', 'frizbi', 'frisbee'],
+          ['🎱', 'bilardo', 'pool', 'eight ball'],
+          ['🏓', 'masa tenisi', 'ping pong'],
+          ['🏸', 'badminton'],
+          ['🏒', 'hokey', 'hockey'],
+          ['🏑', 'çim hokeyi', 'field hockey'],
+          ['🥍', 'lakros', 'lacrosse'],
+          ['🏏', 'kriket', 'cricket'],
+          ['🥅', 'kale', 'goal'],
+          ['⛳', 'golf'],
+          ['🪁', 'uçurtma', 'kite'],
+          ['🏹', 'okçuluk', 'archery'],
+          ['🎣', 'balıkçılık', 'fishing'],
+          ['🤿', 'dalış', 'diving'],
+          ['🥊', 'boks', 'boxing'],
+          ['🥋', 'karate', 'martial arts'],
+          ['🎽', 'koşu', 'running shirt'],
+          ['🛹', 'skate', 'kaykay'],
+          ['🛼', 'paten', 'roller skate'],
+          ['🛷', 'kızak', 'sled'],
+          ['⛸️', 'buz pateni', 'ice skating'],
+          ['🥌', 'curling'],
+          ['🎿', 'kayak', 'ski'],
+          ['⛷️', 'kayakçı', 'skier'],
+          ['🏂', 'snowboard'],
+          ['🪂', 'paraşüt', 'parachute'],
+          ['🏋️', 'halter', 'weightlifting'],
+          ['🤼', 'güreş', 'wrestling'],
+          ['🤸', 'jimnastik', 'gymnast'],
+          ['⛹️', 'top oynayan', 'basketball'],
+          ['🤺', 'eskrim', 'fencing'],
+          ['🤾', 'hentbol', 'handball'],
+          ['🏌️', 'golfçü', 'golfer'],
+          ['🏇', 'binicilik', 'horse racing'],
+          ['🧘', 'yoga'],
+          ['🏄', 'sörf', 'surfing'],
+          ['🏊', 'yüzme', 'swimming'],
+          ['🤽', 'su topu', 'water polo'],
+          ['🚣', 'kürek', 'rowing'],
+          ['🧗', 'tırmanma', 'climbing'],
+          ['🚴', 'bisiklet', 'cycling'],
+          ['🚵', 'dağ bisikleti', 'mountain bike'],
+          ['🏆', 'kupa', 'trophy'],
+          ['🥇', 'altın madalya', 'gold medal'],
+          ['🥈', 'gümüş madalya', 'silver medal'],
+          ['🥉', 'bronz madalya', 'bronze medal'],
+          ['🎮', 'oyun', 'video game'],
+          ['🕹️', 'joystick'],
+          ['🎲', 'zar', 'dice'],
+          ['🎯', 'hedef', 'target', 'dart'],
+          ['🎰', 'slot', 'jackpot'],
+          ['🎳', 'bowling'],
+          ['🎨', 'sanat', 'art', 'palette'],
+          ['🎭', 'tiyatro', 'theatre'],
+          ['🎤', 'mikrofon', 'mic'],
+          ['🎧', 'kulaklık', 'headphones'],
+          ['🎵', 'müzik', 'music'],
+          ['🎶', 'müzik', 'notes'],
+          ['🎸', 'gitar', 'guitar'],
+          ['🎹', 'piyano', 'piano'],
+          ['🥁', 'davul', 'drum'],
+          ['🎺', 'trompet', 'trumpet'],
+          ['🎷', 'saksofon', 'sax'],
+        ],
+      },
+      {
+        key: 'objects',
+        label: 'NES',
+        icon: '💻',
+        emojis: [
+          ['💻', 'bilgisayar', 'laptop', 'computer'],
+          ['🖥️', 'masaüstü', 'desktop'],
+          ['⌨️', 'klavye', 'keyboard'],
+          ['🖱️', 'fare', 'mouse'],
+          ['🖨️', 'yazıcı', 'printer'],
+          ['📱', 'telefon', 'phone', 'mobile'],
+          ['☎️', 'telefon', 'phone'],
+          ['📞', 'telefon', 'phone'],
+          ['📟', 'çağrı', 'pager'],
+          ['📠', 'fax'],
+          ['🔋', 'pil', 'battery'],
+          ['🔌', 'fiş', 'plug'],
+          ['💡', 'fikir', 'lightbulb', 'idea'],
+          ['🔦', 'el feneri', 'flashlight'],
+          ['🕯️', 'mum', 'candle'],
+          ['🧯', 'yangın söndürücü', 'extinguisher'],
+          ['🛢️', 'varil', 'oil drum'],
+          ['💸', 'para', 'flying money'],
+          ['💵', 'dolar', 'dollar'],
+          ['💴', 'yen'],
+          ['💶', 'euro'],
+          ['💷', 'pound'],
+          ['💰', 'para çantası', 'money bag'],
+          ['💳', 'kredi kartı', 'credit card'],
+          ['💎', 'elmas', 'gem'],
+          ['⚖️', 'terazi', 'scale', 'justice'],
+          ['🪜', 'merdiven', 'ladder'],
+          ['🧰', 'alet kutusu', 'toolbox'],
+          ['🔧', 'anahtar', 'wrench'],
+          ['🔨', 'çekiç', 'hammer'],
+          ['⚒️', 'çekiç', 'hammers'],
+          ['🪓', 'balta', 'axe'],
+          ['🪚', 'testere', 'saw'],
+          ['🔩', 'cıvata', 'nut bolt'],
+          ['⚙️', 'dişli', 'gear'],
+          ['🧱', 'tuğla', 'brick'],
+          ['🔗', 'zincir', 'link'],
+          ['⛓️', 'zincir', 'chains'],
+          ['🪝', 'kanca', 'hook'],
+          ['🧲', 'mıknatıs', 'magnet'],
+          ['🔫', 'tabanca', 'water gun'],
+          ['💣', 'bomba', 'bomb'],
+          ['🧨', 'dinamit', 'firecracker'],
+          ['🔪', 'bıçak', 'knife'],
+          ['🛡️', 'kalkan', 'shield'],
+          ['⚔️', 'kılıçlar', 'swords'],
+          ['🗡️', 'hançer', 'dagger'],
+          ['🏹', 'yay', 'bow'],
+          ['🚬', 'sigara', 'cigarette'],
+          ['⚰️', 'tabut', 'coffin'],
+          ['⚱️', 'urn'],
+          ['🏺', 'amphora'],
+          ['🔮', 'kristal küre', 'crystal ball'],
+          ['📿', 'tesbih', 'prayer beads'],
+          ['🧿', 'nazar boncuğu', 'evil eye'],
+          ['💈', 'berber', 'barber'],
+          ['🛎️', 'zil', 'bell'],
+          ['🔑', 'anahtar', 'key'],
+          ['🗝️', 'eski anahtar', 'old key'],
+          ['🚪', 'kapı', 'door'],
+          ['🪑', 'sandalye', 'chair'],
+          ['🛏️', 'yatak', 'bed'],
+          ['🛋️', 'koltuk', 'couch'],
+          ['🚿', 'duş', 'shower'],
+          ['🛁', 'küvet', 'bathtub'],
+          ['🚽', 'tuvalet', 'toilet'],
+          ['🧻', 'tuvalet kağıdı', 'toilet paper'],
+          ['🧴', 'şampuan', 'lotion'],
+          ['🧼', 'sabun', 'soap'],
+          ['🧽', 'sünger', 'sponge'],
+          ['🧹', 'süpürge', 'broom'],
+          ['🧺', 'sepet', 'basket'],
+        ],
+      },
+      {
+        key: 'symbols',
+        label: 'SEM',
+        icon: '✨',
+        emojis: [
+          ['✨', 'parıltı', 'sparkles'],
+          ['🔥', 'ateş', 'fire'],
+          ['💥', 'patlama', 'boom', 'explosion'],
+          ['💫', 'baş dönmesi', 'dizzy'],
+          ['⭐', 'yıldız', 'star'],
+          ['🌟', 'parlayan yıldız', 'glowing star'],
+          ['💯', 'yüz', '100', 'tam'],
+          ['⚡', 'şimşek', 'lightning'],
+          ['☄️', 'kuyruklu yıldız', 'comet'],
+          ['🎉', 'kutlama', 'party', 'tada', 'celebration'],
+          ['🎊', 'konfeti', 'confetti'],
+          ['🎁', 'hediye', 'gift'],
+          ['🎀', 'kurdele', 'ribbon'],
+          ['🏁', 'bitiş bayrağı', 'finish'],
+          ['🚩', 'bayrak', 'flag'],
+          ['🎌', 'çapraz bayraklar', 'crossed flags'],
+          ['🏴', 'kara bayrak', 'black flag'],
+          ['🏳️', 'beyaz bayrak', 'white flag'],
+          ['🏳️‍🌈', 'gökkuşağı bayrağı', 'rainbow flag'],
+          ['☮️', 'barış', 'peace'],
+          ['☯️', 'yin yang'],
+          ['☢️', 'radyoaktif', 'radioactive'],
+          ['☣️', 'biyo tehlike', 'biohazard'],
+          ['❌', 'çarpı', 'cross', 'no'],
+          ['⭕', 'daire', 'circle'],
+          ['🔴', 'kırmızı daire', 'red circle'],
+          ['🟠', 'turuncu daire', 'orange circle'],
+          ['🟡', 'sarı daire', 'yellow circle'],
+          ['🟢', 'yeşil daire', 'green circle'],
+          ['🔵', 'mavi daire', 'blue circle'],
+          ['🟣', 'mor daire', 'purple circle'],
+          ['⚫', 'siyah daire', 'black circle'],
+          ['⚪', 'beyaz daire', 'white circle'],
+          ['🟤', 'kahverengi daire', 'brown circle'],
+          ['❓', 'soru işareti', 'question'],
+          ['❔', 'soru işareti', 'question'],
+          ['❕', 'ünlem', 'exclamation'],
+          ['❗', 'ünlem', 'exclamation'],
+          ['‼️', 'çift ünlem', 'double exclamation'],
+          ['⁉️', 'şaşkınlık', 'interrobang'],
+          ['💢', 'damar', 'anger'],
+          ['💭', 'düşünce balonu', 'thought'],
+          ['💬', 'konuşma balonu', 'speech'],
+          ['🗯️', 'patlama balonu', 'right anger'],
+          ['💤', 'uyku', 'zz', 'sleep'],
+          ['♻️', 'geri dönüşüm', 'recycle'],
+          ['✅', 'onay', 'check'],
+          ['☑️', 'kutu işaretli', 'check box'],
+          ['✔️', 'tik', 'check'],
+          ['🆗', 'tamam', 'ok'],
+          ['🆕', 'yeni', 'new'],
+          ['🆒', 'havalı', 'cool'],
+          ['🆓', 'ücretsiz', 'free'],
+          ['🆙', 'yukarı', 'up'],
+          ['🔝', 'en üst', 'top'],
+          ['🔥', 'ateş', 'fire'],
+          ['💪', 'kas', 'muscle'],
+          ['🌈', 'gökkuşağı', 'rainbow'],
+          ['☀️', 'güneş', 'sun'],
+          ['🌙', 'ay', 'moon'],
+          ['⛅', 'bulut', 'cloud'],
+          ['🌧️', 'yağmur', 'rain'],
+          ['❄️', 'kar', 'snow'],
+          ['☃️', 'kardan adam', 'snowman'],
+          ['🌊', 'dalga', 'wave'],
+          ['💧', 'su damlası', 'droplet'],
+        ],
+      },
+    ],
+
+    // ============================================
+    // INIT — wire DOM events once on app start
+    // ============================================
+    init() {
+      if (!els.emojiToggleBtn) return;
+      // Toggle picker on button click
+      els.emojiToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggle();
+      });
+      // Click outside picker → close
+      document.addEventListener('click', (e) => {
+        if (!this.open) return;
+        if (els.emojiPicker.contains(e.target) || els.emojiToggleBtn.contains(e.target)) return;
+        this.close();
+      });
+      // Search input → re-render grid with filter
+      els.emojiSearch.addEventListener('input', () => {
+        const q = els.emojiSearch.value.trim().toLowerCase();
+        this.renderGrid(q);
+      });
+      // Build cat tabs once
+      this.renderCategories();
+      this.renderGrid('');
+    },
+
+    toggle() {
+      this.open ? this.close() : this.openPicker();
+    },
+
+    openPicker() {
+      this.open = true;
+      els.emojiPicker.classList.remove('hidden');
+      els.emojiToggleBtn.classList.add('active');
+      // Default to recents if any, otherwise smileys
+      const recents = this._getRecents();
+      this.activeCategory = recents.length > 0 ? 'recent' : 'smileys';
+      this.renderCategories();
+      els.emojiSearch.value = '';
+      this.renderGrid('');
+    },
+
+    close() {
+      this.open = false;
+      els.emojiPicker.classList.add('hidden');
+      els.emojiToggleBtn.classList.remove('active');
+    },
+
+    // ============================================
+    // RECENTS — localStorage-backed list of last used emojis
+    // ============================================
+    _getRecents() {
+      try {
+        const raw = localStorage.getItem(this.storageKey);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch { return []; }
+    },
+    _addToRecents(emoji) {
+      let list = this._getRecents();
+      // Move to front (or insert)
+      list = [emoji, ...list.filter(e => e !== emoji)].slice(0, this.recentLimit);
+      try { localStorage.setItem(this.storageKey, JSON.stringify(list)); } catch {}
+    },
+
+    // ============================================
+    // RENDERING
+    // ============================================
+    renderCategories() {
+      els.emojiCats.innerHTML = '';
+      for (const cat of this.categories) {
+        // Skip "recent" tab if no recents yet
+        if (cat.key === 'recent' && this._getRecents().length === 0) continue;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emoji-cat-btn' + (cat.key === this.activeCategory ? ' active' : '');
+        btn.title = cat.label;
+        btn.textContent = cat.icon;
+        btn.addEventListener('click', () => {
+          this.activeCategory = cat.key;
+          els.emojiSearch.value = '';
+          this.renderCategories();
+          this.renderGrid('');
+        });
+        els.emojiCats.appendChild(btn);
+      }
+    },
+
+    // Render the emoji grid. If `query` is non-empty, search across all
+    // categories and show matches; otherwise show the active category's set.
+    renderGrid(query) {
+      els.emojiGrid.innerHTML = '';
+
+      // Search mode: filter all emojis by keyword match
+      if (query) {
+        const matches = [];
+        for (const cat of this.categories) {
+          if (cat.key === 'recent') continue;
+          for (const entry of cat.emojis) {
+            const [emoji, ...keywords] = entry;
+            if (keywords.some(k => k.toLowerCase().includes(query))) {
+              matches.push(emoji);
+            }
+          }
+        }
+        if (matches.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'emoji-empty';
+          empty.textContent = '> "' + query + '" için eşleşme yok';
+          els.emojiGrid.appendChild(empty);
+          return;
+        }
+        // Dedupe (some emojis appear under multiple keywords across cats)
+        const seen = new Set();
+        for (const e of matches) {
+          if (seen.has(e)) continue;
+          seen.add(e);
+          els.emojiGrid.appendChild(this._buildEmojiBtn(e));
+        }
+        return;
+      }
+
+      // Category mode
+      const cat = this.categories.find(c => c.key === this.activeCategory);
+      if (!cat) return;
+      let emojis;
+      if (cat.key === 'recent') {
+        emojis = this._getRecents();
+        if (emojis.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'emoji-empty';
+          empty.textContent = '> henüz emoji kullanmadın';
+          els.emojiGrid.appendChild(empty);
+          return;
+        }
+      } else {
+        emojis = cat.emojis.map(e => e[0]);
+      }
+      for (const e of emojis) {
+        els.emojiGrid.appendChild(this._buildEmojiBtn(e));
+      }
+    },
+
+    _buildEmojiBtn(emoji) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'emoji-item';
+      btn.textContent = emoji;
+      btn.addEventListener('click', () => this.insertEmoji(emoji));
+      return btn;
+    },
+
+    // ============================================
+    // INSERTION — drop emoji at the textarea cursor position
+    // ============================================
+    insertEmoji(emoji) {
+      const ta = els.msgInput;
+      if (!ta) return;
+      const start = ta.selectionStart || 0;
+      const end = ta.selectionEnd || 0;
+      const before = ta.value.slice(0, start);
+      const after = ta.value.slice(end);
+      ta.value = before + emoji + after;
+      // Position cursor after the inserted emoji
+      const pos = start + emoji.length;
+      ta.focus();
+      try { ta.setSelectionRange(pos, pos); } catch {}
+      // Trigger input event so Chat module knows the value changed
+      // (important for enabling the send button + auto-resize)
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      // Track for recents
+      this._addToRecents(emoji);
+    },
+  };
 
   const Chat = {
     unsubscribe: null,
@@ -9857,6 +10830,8 @@
     els.msgInput.value = '';
     syncComposer();
     els.msgInput.focus();
+    // Close emoji picker if open
+    if (typeof EmojiPicker !== 'undefined') EmojiPicker.close();
   }
 
   // Close action menu when clicking outside a message
