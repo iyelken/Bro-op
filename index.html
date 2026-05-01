@@ -658,6 +658,13 @@
   .settings-row {
     align-items: center;
   }
+  .settings-hint {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 4px 0 0;
+    line-height: 1.4;
+  }
   .toggle-btn {
     background: transparent;
     border: none;
@@ -2575,7 +2582,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.7.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.8.0</span></div>
         </div>
 
         <div class="info-card">
@@ -2587,6 +2594,14 @@
               <span class="toggle-label">KAPALI</span>
             </button>
           </div>
+          <div class="info-row settings-row">
+            <span class="k">Tarayıcı Bildirimi</span>
+            <button class="toggle-btn" id="notifToggle" data-on="false">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span class="toggle-label">KAPALI</span>
+            </button>
+          </div>
+          <div class="settings-hint" id="notifHint">Sayfa arka plandayken işletim sistemi bildirimleri.</div>
         </div>
       </div>
 
@@ -3019,6 +3034,7 @@
     onbNextBtn: $('#onbNextBtn'),
     // Settings
     sfxToggle: $('#sfxToggle'),
+    notifToggle: $('#notifToggle'),
   };
 
   // ============================================
@@ -3244,7 +3260,9 @@
 
     Notifications.init();
     SoundFX.init();
+    BrowserNotif.init();
     syncSfxToggleUI();
+    syncNotifToggleUI();
     setActiveTab('profile');
     updateSyncStatus();
 
@@ -3391,6 +3409,7 @@
           for (const m of msgs) {
             if (!this.knownMessageIds.has(m.id) && m.author && m.author !== me && !m.deleted) {
               SoundFX.play('message');
+              BrowserNotif.notify('message', { author: m.author, text: m.text || '' });
               break; // one sound per batch is enough
             }
           }
@@ -4052,16 +4071,19 @@
             // Brand new quest assigned to me
             if (prevStatus === undefined && q.status === 'pending' && q.toAuthor === me) {
               SoundFX.play('quest');
+              BrowserNotif.notify('quest-new', { from: q.fromAuthor, title: q.title });
               break;
             }
-            // Someone submitted my quest for approval (prev was active/pending, now submitted, I gave it)
+            // Someone submitted my quest for approval
             if (prevStatus !== undefined && prevStatus !== 'submitted' && q.status === 'submitted' && q.fromAuthor === me) {
               SoundFX.play('quest');
+              BrowserNotif.notify('quest-submitted', { from: q.toAuthor, title: q.title });
               break;
             }
             // My submitted quest just got approved → coin sound
             if (prevStatus === 'submitted' && q.status === 'completed' && q.toAuthor === me) {
               SoundFX.play('coin');
+              BrowserNotif.notify('quest-approved', { title: q.title });
               break;
             }
           }
@@ -4671,8 +4693,11 @@
             if (prevCount !== undefined && currCount > prevCount) {
               // Look at the latest comments — if any from someone other than me
               const newComments = (d.comments || []).slice(prevCount);
-              if (newComments.some(c => c.by !== me)) {
+              const newFromOthers = newComments.filter(c => c.by !== me);
+              if (newFromOthers.length > 0) {
                 SoundFX.play('comment');
+                const c = newFromOthers[0];
+                BrowserNotif.notify('comment', { from: c.by, text: c.text || '' });
                 break;
               }
             }
@@ -5530,6 +5555,166 @@
     },
   };
 
+  // ============================================
+  // BROWSER NOTIFICATION MODULE (v0.7)
+  // ============================================
+  // Shows OS-level notifications when the page is in background.
+  // Uses the standard Notifications API. Per-device preference.
+  //
+  // Limitation: only works while a tab/PWA instance is open. True push (when
+  // the browser is fully closed) requires a service worker subscription + FCM,
+  // which we don't set up here.
+
+  const BrowserNotif = {
+    storageKey: 'broop_notif_enabled_v1',
+    enabled: false,
+
+    init() {
+      // Read saved preference; we still need OS permission to actually fire
+      this.enabled = localStorage.getItem(this.storageKey) === '1';
+    },
+
+    /** Whether notifications are supported in this browser. */
+    isSupported() {
+      return typeof window !== 'undefined' && 'Notification' in window;
+    },
+
+    /** Current OS-level permission state: 'granted' | 'denied' | 'default' */
+    permission() {
+      if (!this.isSupported()) return 'denied';
+      return Notification.permission;
+    },
+
+    /**
+     * Request OS permission. Returns true if granted.
+     * Must be called from a user gesture (click).
+     */
+    async requestPermission() {
+      if (!this.isSupported()) return false;
+      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'denied') return false;
+      try {
+        const result = await Notification.requestPermission();
+        return result === 'granted';
+      } catch {
+        return false;
+      }
+    },
+
+    async setEnabled(on) {
+      if (on) {
+        const granted = await this.requestPermission();
+        if (!granted) {
+          this.enabled = false;
+          localStorage.setItem(this.storageKey, '0');
+          alert('Tarayıcı bildirim izni vermedin. Tarayıcı ayarlarından izin verebilirsin.');
+          return false;
+        }
+      }
+      this.enabled = !!on;
+      localStorage.setItem(this.storageKey, on ? '1' : '0');
+      if (on) {
+        // Show a confirmation notification
+        this._show('Bro-op', 'Bildirimler açık. Sayfa arka plandayken haber vereceğim.');
+      }
+      return true;
+    },
+
+    /**
+     * Whether we should fire a notification right now.
+     * Skip if disabled, no permission, or page is currently visible.
+     */
+    _shouldFire() {
+      if (!this.enabled) return false;
+      if (!this.isSupported()) return false;
+      if (this.permission() !== 'granted') return false;
+      // Don't notify if user is actively looking at the page
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && document.hasFocus()) {
+        return false;
+      }
+      return true;
+    },
+
+    _show(title, body, opts) {
+      try {
+        const n = new Notification(title, {
+          body: body || '',
+          icon: opts && opts.icon,
+          tag: opts && opts.tag,
+          silent: true, // SoundFX module handles audio if enabled
+        });
+        n.onclick = () => {
+          window.focus();
+          n.close();
+          if (opts && opts.tab) {
+            // Switch to the relevant tab
+            try { setActiveTab(opts.tab); } catch {}
+          }
+        };
+        // Auto-close after 6 seconds
+        setTimeout(() => { try { n.close(); } catch {} }, 6000);
+      } catch (e) {
+        console.warn('[Notif] failed:', e);
+      }
+    },
+
+    /** Public API — call when an event happens. */
+    notify(kind, payload) {
+      if (!this._shouldFire()) return;
+      const me = session && session.playerName;
+
+      switch (kind) {
+        case 'message': {
+          // payload: { author, text }
+          const author = (payload && payload.author) || '?';
+          const text = (payload && payload.text) || '';
+          this._show(
+            author + ' yazdı',
+            text.length > 80 ? text.slice(0, 80) + '...' : text,
+            { tag: 'broop-chat', tab: 'chat' }
+          );
+          break;
+        }
+        case 'quest-new': {
+          // payload: { from, title }
+          const from = (payload && payload.from) || '?';
+          this._show(
+            'Yeni görev: ' + (payload.title || ''),
+            from + ' sana bir görev verdi',
+            { tag: 'broop-quest', tab: 'quest' }
+          );
+          break;
+        }
+        case 'quest-submitted': {
+          const from = (payload && payload.from) || '?';
+          this._show(
+            'Onay bekliyor',
+            from + ' bir görevi tamamladı, onayını bekliyor',
+            { tag: 'broop-quest', tab: 'quest' }
+          );
+          break;
+        }
+        case 'quest-approved': {
+          this._show(
+            'Görev onaylandı 🎉',
+            'XP kazandın!',
+            { tag: 'broop-quest', tab: 'quest' }
+          );
+          break;
+        }
+        case 'comment': {
+          const from = (payload && payload.from) || '?';
+          this._show(
+            from + ' yorum bıraktı',
+            (payload && payload.text) || 'Devloguna bir yorum geldi',
+            { tag: 'broop-workshop', tab: 'workshop' }
+          );
+          break;
+        }
+      }
+    },
+  };
+
   // Composer auto-grow + send button enable/disable
   function syncComposer() {
     const v = els.msgInput.value;
@@ -5683,6 +5868,22 @@
     els.sfxToggle.addEventListener('click', () => {
       SoundFX.setEnabled(!SoundFX.enabled);
       syncSfxToggleUI();
+    });
+  }
+
+  // Browser notification toggle wiring
+  function syncNotifToggleUI() {
+    if (!els.notifToggle) return;
+    const on = BrowserNotif.enabled && BrowserNotif.permission() === 'granted';
+    els.notifToggle.dataset.on = on ? 'true' : 'false';
+    const label = els.notifToggle.querySelector('.toggle-label');
+    if (label) label.textContent = on ? 'AÇIK' : 'KAPALI';
+  }
+  if (els.notifToggle) {
+    els.notifToggle.addEventListener('click', async () => {
+      const wasOn = BrowserNotif.enabled && BrowserNotif.permission() === 'granted';
+      await BrowserNotif.setEnabled(!wasOn);
+      syncNotifToggleUI();
     });
   }
 
