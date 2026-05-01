@@ -2333,6 +2333,328 @@
   }
 
   /* ============================================
+     PROMPT DETAIL MODAL — large, with comments
+     ============================================ */
+  .prompt-detail-card {
+    max-width: 640px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  /* Top bar with close + AI badge */
+  .prompt-detail-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-deep);
+    flex-shrink: 0;
+  }
+  .prompt-detail-back {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .prompt-detail-back:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
+  .prompt-detail-ai-badge {
+    padding: 6px 14px;
+    background: rgba(184, 85, 255, 0.18);
+    color: #d8a8ff;
+    border-radius: 4px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+  }
+
+  /* Body — scrollable inside modal */
+  .prompt-detail-body {
+    overflow-y: auto;
+    padding: 18px 22px 22px;
+    flex: 1;
+  }
+
+  .prompt-detail-author-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .prompt-detail-author-row .prompt-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .prompt-detail-title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.25;
+    font-style: italic;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    word-wrap: break-word;
+  }
+
+  /* Prompt text box — code-like display */
+  .prompt-detail-text-box {
+    background: var(--bg-deep);
+    border: 1px solid rgba(184, 85, 255, 0.18);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .prompt-detail-text-label {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent-workshop);
+    margin-bottom: 12px;
+  }
+  .prompt-detail-text {
+    margin: 0;
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  /* Action row */
+  .prompt-detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .prompt-detail-copy {
+    flex: 1;
+    padding: 12px 22px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    box-shadow: 0 0 16px rgba(184, 85, 255, 0.4);
+  }
+  .prompt-detail-edit-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .prompt-detail-edit-btn:hover {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+  }
+  .prompt-detail-delete-btn {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid rgba(255, 56, 96, 0.3);
+    padding: 12px 14px;
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .prompt-detail-delete-btn:hover {
+    background: rgba(255, 56, 96, 0.08);
+    border-color: var(--danger);
+  }
+
+  /* Comments section */
+  .prompt-detail-comments-section {
+    border-top: 1px dashed var(--border);
+    padding-top: 18px;
+  }
+  .prompt-comments-label {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .prompt-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .prompt-comments-empty {
+    text-align: center;
+    padding: 24px 10px;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 13px;
+  }
+
+  /* Single comment card */
+  .prompt-comment {
+    background: rgba(184, 85, 255, 0.04);
+    border: 1px solid rgba(184, 85, 255, 0.15);
+    border-radius: 4px;
+    padding: 12px 14px;
+    position: relative;
+  }
+  .prompt-comment.theirs {
+    background: rgba(0, 240, 255, 0.04);
+    border-color: rgba(0, 240, 255, 0.15);
+  }
+  .prompt-comment-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .prompt-comment-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(184, 85, 255, 0.2);
+    border: 1px solid rgba(184, 85, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #d8a8ff;
+    font-family: var(--font-pixel);
+    flex-shrink: 0;
+  }
+  .prompt-comment.theirs .prompt-comment-avatar {
+    background: rgba(0, 240, 255, 0.18);
+    border-color: rgba(0, 240, 255, 0.4);
+    color: #6ce5f0;
+  }
+  .prompt-comment-meta {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+  .prompt-comment-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .prompt-comment-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+  }
+  .prompt-comment:hover .prompt-comment-delete { opacity: 0.6; }
+  .prompt-comment-delete:hover {
+    opacity: 1 !important;
+    color: var(--danger);
+  }
+
+  /* Comment composer */
+  .prompt-comment-composer {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    transition: border-color 0.15s;
+  }
+  .prompt-comment-composer:focus-within {
+    border-color: var(--accent-workshop);
+  }
+  .prompt-comment-composer textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 13px;
+    resize: none;
+    min-height: 36px;
+    max-height: 120px;
+    line-height: 1.45;
+  }
+  .prompt-comment-composer textarea::placeholder {
+    color: var(--text-muted);
+  }
+  .prompt-comment-send-btn {
+    background: var(--accent-workshop);
+    color: var(--bg-base);
+    border: none;
+    padding: 8px 14px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .prompt-comment-send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .prompt-comment-send-btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  /* Mobile adjustments for detail modal */
+  @media (max-width: 600px) {
+    .prompt-detail-card {
+      max-height: 95vh;
+    }
+    .prompt-detail-title {
+      font-size: 20px;
+    }
+    .prompt-detail-text {
+      font-size: 12px;
+      max-height: 240px;
+    }
+    .prompt-detail-actions {
+      flex-wrap: wrap;
+    }
+    .prompt-detail-copy {
+      width: 100%;
+      flex: none;
+    }
+  }
+
+  /* ============================================
      ACTIVITY PANE — pattern-based summary cards
      ============================================ */
 
@@ -4480,7 +4802,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.18.0-alpha1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.18.0</span></div>
         </div>
 
         <div class="info-card">
@@ -4735,6 +5057,43 @@
           <div class="modal-footer">
             <button class="ws-btn ghost" id="prFormCancelBtn">İPTAL</button>
             <button class="ws-btn primary" id="prFormSaveBtn">KAYDET</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: prompt detail (with comments) -->
+      <div class="modal-backdrop hidden" id="promptDetailModal">
+        <div class="modal-card prompt-detail-card">
+          <div class="prompt-detail-topbar">
+            <button class="prompt-detail-back" id="prDetailBackBtn" type="button">◂ KAPAT</button>
+            <div class="prompt-detail-ai-badge" id="prDetailAi">CLAUDE</div>
+          </div>
+          <div class="prompt-detail-body">
+            <div class="prompt-detail-author-row">
+              <div class="prompt-avatar" id="prDetailAvatar">?</div>
+              <div class="prompt-author-meta" id="prDetailMeta">— · —</div>
+            </div>
+            <div class="prompt-detail-title" id="prDetailTitle">"..."</div>
+
+            <div class="prompt-detail-text-box">
+              <div class="prompt-detail-text-label">>> PROMPT</div>
+              <pre class="prompt-detail-text" id="prDetailText"></pre>
+            </div>
+
+            <div class="prompt-detail-actions">
+              <button class="prompt-copy-btn prompt-detail-copy" id="prDetailCopyBtn" type="button">📋 PROMPT'U KOPYALA</button>
+              <button class="prompt-detail-edit-btn hidden" id="prDetailEditBtn" type="button">✏️ DÜZENLE</button>
+              <button class="prompt-detail-delete-btn hidden" id="prDetailDeleteBtn" type="button" title="Sil">🗑</button>
+            </div>
+
+            <div class="prompt-detail-comments-section">
+              <div class="prompt-comments-label" id="prCommentsLabel">>> YORUMLAR ( 0 )</div>
+              <div class="prompt-comments-list" id="prCommentsList"></div>
+              <div class="prompt-comment-composer">
+                <textarea id="prCommentInput" placeholder="Bir not / yorum ekle..." rows="2" maxlength="1000"></textarea>
+                <button class="prompt-comment-send-btn" id="prCommentSendBtn" type="button">YORUM YAZ</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -5046,6 +5405,21 @@
     prFormText: $('#prFormText'),
     prFormCancelBtn: $('#prFormCancelBtn'),
     prFormSaveBtn: $('#prFormSaveBtn'),
+    // Prompt detail modal
+    promptDetailModal: $('#promptDetailModal'),
+    prDetailBackBtn: $('#prDetailBackBtn'),
+    prDetailAi: $('#prDetailAi'),
+    prDetailAvatar: $('#prDetailAvatar'),
+    prDetailMeta: $('#prDetailMeta'),
+    prDetailTitle: $('#prDetailTitle'),
+    prDetailText: $('#prDetailText'),
+    prDetailCopyBtn: $('#prDetailCopyBtn'),
+    prDetailEditBtn: $('#prDetailEditBtn'),
+    prDetailDeleteBtn: $('#prDetailDeleteBtn'),
+    prCommentsLabel: $('#prCommentsLabel'),
+    prCommentsList: $('#prCommentsList'),
+    prCommentInput: $('#prCommentInput'),
+    prCommentSendBtn: $('#prCommentSendBtn'),
     // Profile (existing IDs, now wired)
     statStreak: $('#statStreak'),
     statQuests: $('#statQuests'),
@@ -8333,6 +8707,17 @@
         list.sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
         this.prompts = list;
         this.render();
+        // If the detail modal is showing a prompt, refresh its content too
+        // (so live comments from the other person appear instantly)
+        if (this._detailId) {
+          const updated = list.find(p => p.id === this._detailId);
+          if (updated) {
+            this._renderDetail(updated);
+          } else {
+            // Prompt was deleted (probably by us, but could also be other side) — close modal
+            this.closeDetail();
+          }
+        }
       }, (err) => console.warn('[Prompts] snapshot error:', err));
     },
 
@@ -8582,12 +8967,216 @@
       }
     },
 
-    // Stub for stage 2 — will open detail modal with comments
+    // ============================================
+    // DETAIL MODAL — full prompt + comments
+    // ============================================
+    // Currently displayed prompt id (so live updates can re-render comments)
+    _detailId: null,
+
     openDetail(id) {
       const p = this.prompts.find(x => x.id === id);
       if (!p) return;
-      // For now: show prompt in alert (Stage 2 will add the proper modal)
-      alert('"' + p.title + '"\n\n' + p.prompt + '\n\n(Detay sayfası Aşama 2\'de geliyor — yorum, düzenle, sil özellikleri burada olacak.)');
+      this._detailId = id;
+      this._renderDetail(p);
+      els.promptDetailModal.classList.remove('hidden');
+    },
+
+    closeDetail() {
+      this._detailId = null;
+      els.promptDetailModal.classList.add('hidden');
+      if (els.prCommentInput) els.prCommentInput.value = '';
+    },
+
+    // Render the contents of the detail modal for a given prompt
+    _renderDetail(p) {
+      if (!p) return;
+      const me = session.playerName;
+      const isMine = p.author === me;
+
+      // AI badge
+      els.prDetailAi.textContent = AI_LABELS[p.ai] || 'AI';
+
+      // Author avatar + meta
+      els.prDetailAvatar.textContent = (p.author || '?').charAt(0).toUpperCase();
+      els.prDetailMeta.textContent = (p.author || 'unknown') + ' · ' + this._timeAgo(p.createdTs)
+        + (p.updatedTs && p.updatedTs > p.createdTs + 60000 ? ' · düzenlendi' : '');
+
+      // Color the avatar based on whose card it is
+      els.prDetailAvatar.style.background = isMine
+        ? 'rgba(184, 85, 255, 0.2)'
+        : 'rgba(0, 240, 255, 0.18)';
+      els.prDetailAvatar.style.borderColor = isMine
+        ? 'rgba(184, 85, 255, 0.4)'
+        : 'rgba(0, 240, 255, 0.4)';
+      els.prDetailAvatar.style.color = isMine ? '#d8a8ff' : '#6ce5f0';
+
+      // Same coloring for the AI badge
+      els.prDetailAi.style.background = isMine
+        ? 'rgba(184, 85, 255, 0.18)'
+        : 'rgba(0, 240, 255, 0.15)';
+      els.prDetailAi.style.color = isMine ? '#d8a8ff' : '#6ce5f0';
+
+      // Title + body
+      els.prDetailTitle.textContent = '"' + (p.title || 'Başlıksız') + '"';
+      els.prDetailText.textContent = p.prompt || '';
+
+      // Show edit/delete only for owner
+      els.prDetailEditBtn.classList.toggle('hidden', !isMine);
+      els.prDetailDeleteBtn.classList.toggle('hidden', !isMine);
+
+      // Reset copy button text in case it's still showing "kopyalandı"
+      els.prDetailCopyBtn.textContent = '📋 PROMPT\'U KOPYALA';
+      els.prDetailCopyBtn.classList.remove('copied');
+
+      // Comments
+      this._renderComments(p);
+    },
+
+    _renderComments(p) {
+      const comments = p.comments || [];
+      els.prCommentsLabel.textContent = '>> YORUMLAR ( ' + comments.length + ' )';
+      els.prCommentsList.innerHTML = '';
+      const me = session.playerName;
+
+      if (comments.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'prompt-comments-empty';
+        empty.textContent = '> henüz yorum yok, ilk notu sen düş';
+        els.prCommentsList.appendChild(empty);
+        return;
+      }
+
+      // Oldest first (chat-like flow)
+      const sorted = [...comments].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+      for (const c of sorted) {
+        const isMineComment = c.author === me;
+        const item = document.createElement('div');
+        item.className = 'prompt-comment' + (isMineComment ? '' : ' theirs');
+
+        const head = document.createElement('div');
+        head.className = 'prompt-comment-head';
+        const avatar = document.createElement('div');
+        avatar.className = 'prompt-comment-avatar';
+        avatar.textContent = (c.author || '?').charAt(0).toUpperCase();
+        const meta = document.createElement('div');
+        meta.className = 'prompt-comment-meta';
+        meta.textContent = (c.author || 'unknown') + ' · ' + this._timeAgo(c.ts);
+        head.appendChild(avatar);
+        head.appendChild(meta);
+
+        const text = document.createElement('div');
+        text.className = 'prompt-comment-text';
+        text.textContent = c.text || '';
+
+        item.appendChild(head);
+        item.appendChild(text);
+
+        // Delete button (only for the comment author)
+        if (isMineComment) {
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'prompt-comment-delete';
+          del.title = 'Yorumu sil';
+          del.textContent = '✕';
+          del.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.deleteComment(c.id);
+          });
+          item.appendChild(del);
+        }
+
+        els.prCommentsList.appendChild(item);
+      }
+    },
+
+    // ============================================
+    // COMMENT ACTIONS
+    // ============================================
+    async addComment() {
+      if (!this._detailId || !session || !cloudReady()) return;
+      const text = (els.prCommentInput.value || '').trim();
+      if (!text) return;
+      try {
+        const { db, fs } = window.__broop;
+        const p = this.prompts.find(x => x.id === this._detailId);
+        if (!p) return;
+        const newComment = {
+          id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          author: session.playerName,
+          text,
+          ts: Date.now(),
+        };
+        const updated = {
+          title: p.title,
+          prompt: p.prompt,
+          ai: p.ai,
+          author: p.author,
+          createdTs: p.createdTs,
+          updatedTs: p.updatedTs || p.createdTs,
+          comments: [...(p.comments || []), newComment],
+        };
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'prompts', this._detailId);
+        const enc = encrypt(JSON.stringify(updated), session.key);
+        await fs.updateDoc(ref, { encrypted: enc });
+        // Clear input — listener will re-render
+        els.prCommentInput.value = '';
+        els.prCommentSendBtn.disabled = true;
+      } catch (e) {
+        console.error('[Prompts] addComment failed:', e);
+        alert('Yorum eklenemedi: ' + (e.message || e));
+      }
+    },
+
+    async deleteComment(commentId) {
+      if (!this._detailId || !session || !cloudReady()) return;
+      if (!confirm('Bu yorumu silmek istediğine emin misin?')) return;
+      try {
+        const { db, fs } = window.__broop;
+        const p = this.prompts.find(x => x.id === this._detailId);
+        if (!p) return;
+        const remaining = (p.comments || []).filter(c => c.id !== commentId);
+        const updated = {
+          title: p.title,
+          prompt: p.prompt,
+          ai: p.ai,
+          author: p.author,
+          createdTs: p.createdTs,
+          updatedTs: p.updatedTs || p.createdTs,
+          comments: remaining,
+        };
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'prompts', this._detailId);
+        const enc = encrypt(JSON.stringify(updated), session.key);
+        await fs.updateDoc(ref, { encrypted: enc });
+      } catch (e) {
+        console.error('[Prompts] deleteComment failed:', e);
+        alert('Yorum silinemedi: ' + (e.message || e));
+      }
+    },
+
+    // ============================================
+    // PROMPT EDIT / DELETE FROM DETAIL VIEW
+    // ============================================
+    editFromDetail() {
+      if (!this._detailId) return;
+      const id = this._detailId;
+      this.closeDetail();
+      this.openEdit(id);
+    },
+
+    async deleteFromDetail() {
+      if (!this._detailId || !session || !cloudReady()) return;
+      const p = this.prompts.find(x => x.id === this._detailId);
+      if (!p) return;
+      if (!confirm('"' + p.title + '" adlı prompt\'u kalıcı olarak silmek istediğine emin misin?\n\nYorumlar dahil her şey silinir, geri alınamaz.')) return;
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'prompts', this._detailId);
+        await fs.deleteDoc(ref);
+        this.closeDetail();
+      } catch (e) {
+        console.error('[Prompts] delete failed:', e);
+        alert('Silme başarısız: ' + (e.message || e));
+      }
     },
 
     _timeAgo(ts) {
@@ -11660,6 +12249,38 @@
     els.promptModal.addEventListener('click', (e) => {
       if (e.target === els.promptModal) Prompts.closeModal();
     });
+  }
+  // Detail modal events
+  if (els.prDetailBackBtn) els.prDetailBackBtn.addEventListener('click', () => Prompts.closeDetail());
+  if (els.promptDetailModal) {
+    els.promptDetailModal.addEventListener('click', (e) => {
+      if (e.target === els.promptDetailModal) Prompts.closeDetail();
+    });
+  }
+  if (els.prDetailCopyBtn) {
+    els.prDetailCopyBtn.addEventListener('click', () => {
+      const p = Prompts.prompts.find(x => x.id === Prompts._detailId);
+      if (p) Prompts.copyToClipboard(p.prompt || '', els.prDetailCopyBtn);
+    });
+  }
+  if (els.prDetailEditBtn) els.prDetailEditBtn.addEventListener('click', () => Prompts.editFromDetail());
+  if (els.prDetailDeleteBtn) els.prDetailDeleteBtn.addEventListener('click', () => Prompts.deleteFromDetail());
+
+  // Comment send
+  if (els.prCommentSendBtn) els.prCommentSendBtn.addEventListener('click', () => Prompts.addComment());
+  if (els.prCommentInput) {
+    els.prCommentInput.addEventListener('input', () => {
+      els.prCommentSendBtn.disabled = els.prCommentInput.value.trim().length === 0;
+    });
+    // Ctrl/Cmd+Enter to send
+    els.prCommentInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        Prompts.addComment();
+      }
+    });
+    // Initial state: disabled
+    els.prCommentSendBtn.disabled = true;
   }
   // Live preview of cover image as user types/pastes URL
   if (els.pfCover) {
