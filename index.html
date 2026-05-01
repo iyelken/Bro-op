@@ -1190,6 +1190,402 @@
   /* Hide bottom nav when chat composer is focused on mobile (keyboard up) */
   /* Keep nav visible but composer sticks above it via parent flex */
 
+  /* ============================================
+     QUEST MODULE
+     ============================================ */
+  .quest-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .btn-quest-new {
+    flex: 1;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, #2a1f0a 0%, #1f1607 100%);
+    border: 1px solid rgba(255, 176, 0, 0.4);
+    color: var(--accent-quest);
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    border-radius: 4px;
+    text-shadow: 0 0 8px rgba(255, 176, 0, 0.5);
+    box-shadow: 0 3px 0 rgba(255, 176, 0, 0.15), 0 0 16px rgba(255, 176, 0, 0.08);
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .btn-quest-new::before {
+    content: '+ ';
+    color: var(--accent-quest);
+  }
+  .btn-quest-new:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(255, 176, 0, 0.15); }
+
+  /* Section headers */
+  .quest-section {
+    margin-bottom: 20px;
+  }
+  .quest-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  .quest-section-title {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+  }
+  .quest-section-count {
+    font-family: var(--font-crt);
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .quest-section.archive .quest-section-title { color: var(--text-muted); }
+
+  /* Quest cards */
+  .quest-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s, border-color 0.2s;
+  }
+  .quest-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-quest);
+    opacity: 0.6;
+  }
+
+  /* Status-tinted cards */
+  .quest-card[data-status="pending-mine"]::before { background: var(--text-muted); }
+  .quest-card[data-status="pending-theirs"]::before { background: var(--accent-chat); }
+  .quest-card[data-status="active-mine"]::before { background: var(--accent-quest); }
+  .quest-card[data-status="active-theirs"]::before { background: var(--accent-workshop); opacity: 0.5; }
+  .quest-card[data-status="awaiting-approval"]::before { background: var(--accent-match); }
+  .quest-card[data-status="ready-to-approve"]::before {
+    background: var(--accent-match);
+    box-shadow: 0 0 12px var(--accent-match);
+  }
+  .quest-card[data-status="completed"]::before { background: var(--text-dim); opacity: 0.4; }
+  .quest-card[data-status="rejected"]::before { background: var(--danger); opacity: 0.4; }
+
+  .quest-card.completed { opacity: 0.65; }
+
+  .quest-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .quest-title {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+  }
+  .quest-card.completed .quest-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+  }
+  .quest-xp-badge {
+    flex-shrink: 0;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    background: rgba(255, 176, 0, 0.12);
+    border: 1px solid rgba(255, 176, 0, 0.4);
+    color: var(--accent-quest);
+    white-space: nowrap;
+  }
+  .quest-xp-badge.easy { background: rgba(0, 255, 127, 0.1); border-color: rgba(0, 255, 127, 0.4); color: var(--accent-match); }
+  .quest-xp-badge.medium { /* default amber */ }
+  .quest-xp-badge.hard { background: rgba(255, 56, 96, 0.12); border-color: rgba(255, 56, 96, 0.4); color: #ff7090; }
+
+  .quest-desc {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+  .quest-desc:empty { display: none; }
+
+  .quest-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: var(--font-crt);
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .quest-meta-tag {
+    padding: 2px 6px;
+    border: 1px solid var(--border-soft);
+    border-radius: 2px;
+    color: var(--text-secondary);
+  }
+  .quest-meta-arrow { color: var(--accent-quest); }
+
+  .quest-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .quest-btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .quest-btn:active { transform: translateY(1px); }
+  .quest-btn.primary {
+    background: var(--accent-quest);
+    color: var(--bg-base);
+    border-color: var(--accent-quest);
+    box-shadow: 0 2px 0 #b87a00, 0 0 12px rgba(255, 176, 0, 0.25);
+  }
+  .quest-btn.success {
+    background: var(--accent-match);
+    color: var(--bg-base);
+    border-color: var(--accent-match);
+    box-shadow: 0 2px 0 #00b85a, 0 0 12px rgba(0, 255, 127, 0.25);
+  }
+  .quest-btn.danger {
+    color: var(--danger);
+    border-color: rgba(255, 56, 96, 0.4);
+  }
+  .quest-btn.danger:active { background: rgba(255, 56, 96, 0.1); }
+  .quest-btn.ghost { color: var(--text-secondary); }
+
+  .quest-empty {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 16px;
+  }
+  .quest-empty::before { content: "> "; color: var(--accent-quest); }
+
+  /* ============================================
+     QUEST MODAL (new quest form / approval)
+     ============================================ */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: modalIn 0.2s ease-out;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .modal-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(255, 176, 0, 0.05);
+    animation: modalCardIn 0.25s cubic-bezier(.2,.8,.3,1);
+  }
+  @keyframes modalCardIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-card::before,
+  .modal-card::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 2px solid var(--accent-quest);
+  }
+  .modal-card::before {
+    top: -1px; left: -1px;
+    border-right: none; border-bottom: none;
+  }
+  .modal-card::after {
+    bottom: -1px; right: -1px;
+    border-left: none; border-top: none;
+  }
+  .modal-header {
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .modal-title {
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    color: var(--accent-quest);
+    letter-spacing: 1.5px;
+    text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+  }
+  .modal-subtitle {
+    font-family: var(--font-crt);
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .modal-body { padding: 18px 20px; }
+  .modal-footer {
+    padding: 12px 20px 18px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .modal-body .field { margin-bottom: 14px; }
+  .modal-body .field label {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--text-secondary);
+    letter-spacing: 1.2px;
+    margin-bottom: 6px;
+  }
+  .modal-body .field input,
+  .modal-body .field textarea {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .modal-body .field textarea {
+    resize: vertical;
+    min-height: 70px;
+    line-height: 1.4;
+  }
+  .modal-body .field input:focus,
+  .modal-body .field textarea:focus {
+    border-color: var(--accent-quest);
+    box-shadow: 0 0 0 3px rgba(255, 176, 0, 0.1);
+  }
+
+  .difficulty-row {
+    display: flex;
+    gap: 6px;
+  }
+  .difficulty-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .difficulty-btn .dxp {
+    display: block;
+    font-family: var(--font-crt);
+    font-size: 14px;
+    margin-top: 4px;
+    opacity: 0.7;
+  }
+  .difficulty-btn.active[data-difficulty="easy"] {
+    background: rgba(0, 255, 127, 0.12);
+    border-color: var(--accent-match);
+    color: var(--accent-match);
+  }
+  .difficulty-btn.active[data-difficulty="medium"] {
+    background: rgba(255, 176, 0, 0.12);
+    border-color: var(--accent-quest);
+    color: var(--accent-quest);
+  }
+  .difficulty-btn.active[data-difficulty="hard"] {
+    background: rgba(255, 56, 96, 0.12);
+    border-color: var(--danger);
+    color: #ff7090;
+  }
+
+  .modal-error {
+    background: rgba(255, 56, 96, 0.1);
+    border: 1px solid rgba(255, 56, 96, 0.4);
+    color: #ff7090;
+    padding: 8px 10px;
+    border-radius: 3px;
+    font-family: var(--font-crt);
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .modal-error:empty { display: none; }
+
+  /* ============================================
+     XP TOAST (level up / XP gained notification)
+     ============================================ */
+  .xp-toast {
+    position: fixed;
+    top: calc(20px + var(--safe-top));
+    left: 50%;
+    transform: translateX(-50%) translateY(-200%);
+    background: var(--bg-panel);
+    border: 2px solid var(--accent-match);
+    color: var(--accent-match);
+    padding: 12px 20px;
+    border-radius: 4px;
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    box-shadow: 0 8px 30px rgba(0, 255, 127, 0.3), 0 0 20px rgba(0, 255, 127, 0.2);
+    z-index: 2000;
+    transition: transform 0.4s cubic-bezier(.2,.8,.3,1.2);
+    pointer-events: none;
+    text-shadow: 0 0 8px rgba(0, 255, 127, 0.5);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .xp-toast.show { transform: translateX(-50%) translateY(0); }
+  .xp-toast.levelup {
+    border-color: var(--accent-profile);
+    color: var(--accent-profile);
+    box-shadow: 0 8px 30px rgba(255, 0, 128, 0.3), 0 0 24px rgba(255, 0, 128, 0.25);
+    text-shadow: 0 0 8px rgba(255, 0, 128, 0.6);
+  }
+
   /* Hide elements helper — must override flex/block displays everywhere */
   .hidden { display: none !important; }
 
@@ -1217,6 +1613,9 @@
 <div class="scanlines"></div>
 <div class="crt-vignette"></div>
 <div class="crt-flicker"></div>
+
+<!-- XP toast (shows level up / XP gained) -->
+<div class="xp-toast" id="xpToast"></div>
 
 <!-- Boot screen -->
 <div class="boot" id="bootScreen">
@@ -1333,13 +1732,31 @@
       <div class="pane" data-pane="quest">
         <div class="pane-header">
           <div class="pane-title">QUEST</div>
-          <div class="pane-subtitle">Görev panosu</div>
+          <div class="pane-subtitle" id="questSubtitle">Görev panosu</div>
         </div>
-        <div class="soon">
-          <div class="soon-icon">⚔</div>
-          <div class="soon-title">YAKINDA</div>
-          <div class="soon-text">Birbirinize görev verme, XP kazanma ve onay sistemi sonraki sürümde geliyor.</div>
-          <div class="soon-ver">v0.3 — QUEST SYSTEM</div>
+
+        <div class="quest-toolbar">
+          <button class="btn-quest-new" id="newQuestBtn">YENİ GÖREV VER</button>
+        </div>
+
+        <div id="questList">
+          <!-- Sections rendered by Quests.render() -->
+        </div>
+      </div>
+
+      <!-- Quest modal: new / approval / details -->
+      <div class="modal-backdrop hidden" id="questModal">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div class="modal-title" id="questModalTitle">YENİ GÖREV</div>
+            <div class="modal-subtitle" id="questModalSubtitle">arkadaşına ne yapmasını istersin?</div>
+          </div>
+          <div class="modal-body" id="questModalBody">
+            <!-- form or detail content injected here -->
+          </div>
+          <div class="modal-footer" id="questModalFooter">
+            <!-- buttons injected here -->
+          </div>
         </div>
       </div>
 
@@ -1392,7 +1809,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.2.2</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.3.0</span></div>
         </div>
       </div>
 
@@ -1697,6 +2114,22 @@
     vscrollTop: $('#vscrollTop'),
     vscrollBottom: $('#vscrollBottom'),
     vscrollViewport: $('#vscrollViewport'),
+    // Quest
+    questSubtitle: $('#questSubtitle'),
+    newQuestBtn: $('#newQuestBtn'),
+    questList: $('#questList'),
+    questModal: $('#questModal'),
+    questModalTitle: $('#questModalTitle'),
+    questModalSubtitle: $('#questModalSubtitle'),
+    questModalBody: $('#questModalBody'),
+    questModalFooter: $('#questModalFooter'),
+    // Profile (existing IDs, now wired)
+    statStreak: $('#statStreak'),
+    statQuests: $('#statQuests'),
+    statBadges: $('#statBadges'),
+    statDays: $('#statDays'),
+    // XP toast
+    xpToast: $('#xpToast'),
   };
 
   // ============================================
@@ -1848,16 +2281,20 @@
     els.profileAvatar.textContent = (session.playerName[0] || 'P').toUpperCase();
     els.infoCloudId.textContent = session.cloudId;
 
-    // v0.1: profile is the default tab (it's the only one with content)
     setActiveTab('profile');
     updateSyncStatus();
 
-    // v0.2: start chat listener
+    // v0.2: chat listener
     Chat.start();
+    // v0.3: profile + quests listeners
+    Profile.start();
+    Quests.start();
   }
 
   function logout() {
     Chat.stop();
+    Profile.stop();
+    Quests.stop();
     Session.clear();
     session = null;
     els.mainShell.classList.add('hidden');
@@ -2404,6 +2841,607 @@
     },
   };
 
+  // ============================================
+  // PROFILE / XP / LEVEL MODULE (v0.3)
+  // ============================================
+  // Path: broop_app/{cloudId}/players/{playerName}
+  // Doc shape (encrypted):
+  //   { encrypted: <{ xp, level, completedQuests, badges, joinedAt }>, updatedAt }
+  // Each player's stats are visible to both, but encrypted with the room key.
+
+  const Profile = {
+    unsubscribe: null,
+    me: null,            // { xp, level, completedQuests, badges, joinedAt }
+    them: null,          // partner's stats (if their doc exists)
+    partnerName: null,
+
+    xpForNextLevel(level) {
+      // Level n -> n+1 requires (level+1) * 100 XP total threshold from start of level
+      // Simple linear: level 1 needs 100, level 2 needs 200, etc.
+      return level * 100;
+    },
+
+    async start() {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+
+      // Make sure my own doc exists
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'players', session.playerName);
+      const snap = await fs.getDoc(ref);
+      if (!snap.exists()) {
+        await this.writeMine({ xp: 0, level: 1, completedQuests: 0, badges: 0, joinedAt: Date.now() });
+      }
+
+      // Listen to all players in the room
+      const playersCol = fs.collection(db, 'broop_app', session.cloudId, 'players');
+      if (this.unsubscribe) this.unsubscribe();
+      this.unsubscribe = fs.onSnapshot(playersCol, (snap) => {
+        snap.forEach(d => {
+          const data = d.data();
+          const raw = decrypt(data.encrypted || '', session.key);
+          if (!raw) return;
+          try {
+            const parsed = JSON.parse(raw);
+            if (d.id === session.playerName) {
+              this.me = parsed;
+            } else {
+              this.them = parsed;
+              this.partnerName = d.id;
+            }
+          } catch {}
+        });
+        this.renderProfile();
+      }, (err) => console.warn('[Profile] snapshot error:', err));
+    },
+
+    stop() {
+      if (this.unsubscribe) {
+        this.unsubscribe();
+        this.unsubscribe = null;
+      }
+      this.me = null;
+      this.them = null;
+      this.partnerName = null;
+    },
+
+    async writeMine(data) {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'players', session.playerName);
+      const encrypted = encrypt(JSON.stringify(data), session.key);
+      await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
+    },
+
+    async grantXP(amount) {
+      if (!this.me) this.me = { xp: 0, level: 1, completedQuests: 0, badges: 0, joinedAt: Date.now() };
+      const newXp = this.me.xp + amount;
+      let newLevel = this.me.level;
+      let xpRemaining = newXp;
+      // Roll over levels
+      let leveledUp = false;
+      while (xpRemaining >= this.xpForNextLevel(newLevel)) {
+        xpRemaining -= this.xpForNextLevel(newLevel);
+        newLevel++;
+        leveledUp = true;
+      }
+      this.me = {
+        ...this.me,
+        xp: xpRemaining,
+        level: newLevel,
+        completedQuests: (this.me.completedQuests || 0) + 1,
+      };
+      await this.writeMine(this.me);
+      // Toasts
+      if (leveledUp) {
+        showXpToast('LEVEL UP! → ' + String(newLevel).padStart(2, '0'), 'levelup', 2400);
+      } else {
+        showXpToast('+' + amount + ' XP', '', 1500);
+      }
+    },
+
+    renderProfile() {
+      if (!this.me) return;
+      const lvl = this.me.level || 1;
+      const xp = this.me.xp || 0;
+      const need = this.xpForNextLevel(lvl);
+      els.profileLevel.textContent = String(lvl).padStart(2, '0');
+      els.xpFill.style.width = Math.min(100, (xp / need) * 100) + '%';
+      els.xpText.textContent = xp + ' / ' + need + ' XP';
+      els.statQuests.textContent = this.me.completedQuests || 0;
+      els.statBadges.textContent = this.me.badges || 0;
+      // Days in the room
+      if (this.me.joinedAt) {
+        const days = Math.max(1, Math.floor((Date.now() - this.me.joinedAt) / (1000 * 60 * 60 * 24)) + 1);
+        els.statDays.textContent = days;
+      }
+      // streak: deferred — placeholder for now
+      els.statStreak.textContent = '0';
+    },
+  };
+
+  function showXpToast(text, kind, duration) {
+    if (!els.xpToast) return;
+    els.xpToast.className = 'xp-toast' + (kind ? (' ' + kind) : '');
+    els.xpToast.textContent = text;
+    requestAnimationFrame(() => els.xpToast.classList.add('show'));
+    clearTimeout(showXpToast._t);
+    showXpToast._t = setTimeout(() => {
+      els.xpToast.classList.remove('show');
+    }, duration || 1800);
+  }
+
+  // ============================================
+  // QUEST MODULE (v0.3)
+  // ============================================
+  // Path: broop_app/{cloudId}/quests/{questId}
+  // Each doc:
+  //   { encrypted: <payload>, createdAt }
+  // Payload (decrypted):
+  //   { title, description, difficulty, xp,
+  //     fromAuthor, toAuthor,
+  //     status, createdTs, updatedTs,
+  //     history: [{ts, action, by}] }
+
+  const QUEST_STATUSES = {
+    PENDING: 'pending',         // waiting on receiver to accept/reject
+    ACTIVE: 'active',           // accepted, in progress
+    SUBMITTED: 'submitted',     // receiver claims completed, waiting on giver to approve
+    COMPLETED: 'completed',     // approved, XP granted
+    REJECTED: 'rejected',       // rejected (either at acceptance or after submission)
+  };
+
+  const Quests = {
+    unsubscribe: null,
+    quests: [],     // sorted desc by updatedTs
+    modalMode: null, // 'new' | 'detail'
+    selectedQuestId: null,
+    formDifficulty: 'medium',
+
+    start() {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.collection(db, 'broop_app', session.cloudId, 'quests');
+      const q = fs.query(ref, fs.orderBy('createdAt', 'desc'));
+      if (this.unsubscribe) this.unsubscribe();
+      this.unsubscribe = fs.onSnapshot(q, (snap) => {
+        const list = [];
+        snap.forEach(d => {
+          const data = d.data();
+          const raw = decrypt(data.encrypted || '', session.key);
+          if (!raw) return;
+          try {
+            const parsed = JSON.parse(raw);
+            list.push({ id: d.id, ...parsed });
+          } catch {}
+        });
+        // Sort by updatedTs desc, then createdTs
+        list.sort((a, b) => (b.updatedTs || b.createdTs || 0) - (a.updatedTs || a.createdTs || 0));
+        this.quests = list;
+        this.render();
+      }, (err) => console.warn('[Quests] snapshot error:', err));
+    },
+
+    stop() {
+      if (this.unsubscribe) {
+        this.unsubscribe();
+        this.unsubscribe = null;
+      }
+      this.quests = [];
+      this.closeModal();
+    },
+
+    async createQuest(title, description, difficulty) {
+      if (!cloudReady() || !session) return;
+      const xp = { easy: 10, medium: 25, hard: 50 }[difficulty] || 25;
+      const partner = Profile.partnerName;
+      if (!partner) {
+        alert('Henüz arkadaşın bu odaya katılmamış. Aynı oda + şifreyle giriş yapması gerek.');
+        return;
+      }
+      const now = Date.now();
+      const payload = {
+        title: title.trim(),
+        description: (description || '').trim(),
+        difficulty,
+        xp,
+        fromAuthor: session.playerName,
+        toAuthor: partner,
+        status: QUEST_STATUSES.PENDING,
+        createdTs: now,
+        updatedTs: now,
+        history: [{ ts: now, action: 'created', by: session.playerName }],
+      };
+      const { db, fs } = window.__broop;
+      const ref = fs.collection(db, 'broop_app', session.cloudId, 'quests');
+      const encrypted = encrypt(JSON.stringify(payload), session.key);
+      await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+    },
+
+    async updateQuestStatus(questId, newStatus, action) {
+      if (!cloudReady() || !session) return;
+      const q = this.quests.find(x => x.id === questId);
+      if (!q) return;
+      const now = Date.now();
+      const updated = {
+        ...q,
+        status: newStatus,
+        updatedTs: now,
+        history: [...(q.history || []), { ts: now, action, by: session.playerName }],
+      };
+      delete updated.id;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'quests', questId);
+      const encrypted = encrypt(JSON.stringify(updated), session.key);
+      await fs.updateDoc(ref, { encrypted });
+    },
+
+    async deleteQuest(questId) {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'quests', questId);
+      await fs.deleteDoc(ref);
+    },
+
+    // Categorize quests for the current user
+    categorize() {
+      const me = session.playerName;
+      const groups = {
+        readyToApprove: [],  // they did → I approve (top priority)
+        activeMine: [],      // assigned to me, accepted
+        pendingMine: [],     // assigned to me, waiting my accept
+        awaitingApproval: [],// I did, waiting their approval
+        activeTheirs: [],    // assigned to them, they accepted
+        pendingTheirs: [],   // assigned to them, waiting their accept
+        archive: [],         // completed/rejected
+      };
+      for (const q of this.quests) {
+        const isReceiver = q.toAuthor === me;
+        const isGiver = q.fromAuthor === me;
+
+        if (q.status === QUEST_STATUSES.COMPLETED || q.status === QUEST_STATUSES.REJECTED) {
+          groups.archive.push(q);
+        } else if (q.status === QUEST_STATUSES.PENDING) {
+          if (isReceiver) groups.pendingMine.push(q);
+          else groups.pendingTheirs.push(q);
+        } else if (q.status === QUEST_STATUSES.ACTIVE) {
+          if (isReceiver) groups.activeMine.push(q);
+          else groups.activeTheirs.push(q);
+        } else if (q.status === QUEST_STATUSES.SUBMITTED) {
+          if (isGiver) groups.readyToApprove.push(q);
+          else groups.awaitingApproval.push(q);
+        }
+      }
+      return groups;
+    },
+
+    render() {
+      if (!session) return;
+      const groups = this.categorize();
+      const total = this.quests.length;
+      const activeCount = groups.activeMine.length + groups.pendingMine.length + groups.readyToApprove.length;
+      els.questSubtitle.textContent = total === 0
+        ? 'Henüz görev yok'
+        : (activeCount > 0 ? activeCount + ' aksiyon bekliyor' : 'Tüm görevler tamam');
+
+      const list = els.questList;
+      list.innerHTML = '';
+
+      const renderSection = (title, quests, opts) => {
+        if (quests.length === 0) return;
+        const sec = document.createElement('div');
+        sec.className = 'quest-section' + (opts && opts.archive ? ' archive' : '');
+        const header = document.createElement('div');
+        header.className = 'quest-section-header';
+        const t = document.createElement('span');
+        t.className = 'quest-section-title';
+        t.textContent = title;
+        const c = document.createElement('span');
+        c.className = 'quest-section-count';
+        c.textContent = quests.length;
+        header.appendChild(t);
+        header.appendChild(c);
+        sec.appendChild(header);
+        for (const q of quests) sec.appendChild(this.renderCard(q));
+        list.appendChild(sec);
+      };
+
+      // Order matters — most actionable first
+      renderSection('SENİ BEKLİYOR', groups.readyToApprove, {});
+      renderSection('GELEN GÖREVLER', groups.pendingMine, {});
+      renderSection('AKTİF GÖREVLERİN', groups.activeMine, {});
+      renderSection('VERDİĞİN GÖREVLER', [...groups.activeTheirs, ...groups.pendingTheirs, ...groups.awaitingApproval], {});
+      renderSection('ARŞİV', groups.archive, { archive: true });
+
+      if (total === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'quest-empty';
+        empty.textContent = 'Henüz görev yok. Yeni görev ver!';
+        list.appendChild(empty);
+      }
+    },
+
+    renderCard(q) {
+      const me = session.playerName;
+      const isReceiver = q.toAuthor === me;
+      const isGiver = q.fromAuthor === me;
+
+      // Determine status key for visual styling
+      let statusKey = 'pending-mine';
+      if (q.status === QUEST_STATUSES.COMPLETED) statusKey = 'completed';
+      else if (q.status === QUEST_STATUSES.REJECTED) statusKey = 'rejected';
+      else if (q.status === QUEST_STATUSES.PENDING) statusKey = isReceiver ? 'pending-mine' : 'pending-theirs';
+      else if (q.status === QUEST_STATUSES.ACTIVE) statusKey = isReceiver ? 'active-mine' : 'active-theirs';
+      else if (q.status === QUEST_STATUSES.SUBMITTED) statusKey = isGiver ? 'ready-to-approve' : 'awaiting-approval';
+
+      const card = document.createElement('div');
+      card.className = 'quest-card';
+      if (q.status === QUEST_STATUSES.COMPLETED || q.status === QUEST_STATUSES.REJECTED) card.classList.add('completed');
+      card.dataset.status = statusKey;
+
+      // Head: title + xp badge
+      const head = document.createElement('div');
+      head.className = 'quest-head';
+      const title = document.createElement('div');
+      title.className = 'quest-title';
+      title.textContent = q.title;
+      const badge = document.createElement('div');
+      badge.className = 'quest-xp-badge ' + (q.difficulty || 'medium');
+      badge.textContent = '+' + q.xp + ' XP';
+      head.appendChild(title);
+      head.appendChild(badge);
+      card.appendChild(head);
+
+      // Description
+      if (q.description) {
+        const desc = document.createElement('div');
+        desc.className = 'quest-desc';
+        desc.textContent = q.description;
+        card.appendChild(desc);
+      }
+
+      // Meta: from → to + status hint
+      const meta = document.createElement('div');
+      meta.className = 'quest-meta';
+      const from = document.createElement('span');
+      from.className = 'quest-meta-tag';
+      from.textContent = q.fromAuthor;
+      const arrow = document.createElement('span');
+      arrow.className = 'quest-meta-arrow';
+      arrow.textContent = '→';
+      const to = document.createElement('span');
+      to.className = 'quest-meta-tag';
+      to.textContent = q.toAuthor;
+      meta.appendChild(from);
+      meta.appendChild(arrow);
+      meta.appendChild(to);
+
+      const statusHint = this.statusHint(q, isReceiver, isGiver);
+      if (statusHint) {
+        const s = document.createElement('span');
+        s.style.cssText = 'color: var(--text-secondary); margin-left: auto;';
+        s.textContent = statusHint;
+        meta.appendChild(s);
+      }
+      card.appendChild(meta);
+
+      // Actions
+      const actions = this.actionsFor(q, isReceiver, isGiver);
+      if (actions.length > 0) {
+        const wrap = document.createElement('div');
+        wrap.className = 'quest-actions';
+        for (const a of actions) {
+          const btn = document.createElement('button');
+          btn.className = 'quest-btn ' + (a.kind || '');
+          btn.textContent = a.label;
+          btn.addEventListener('click', () => a.onClick(q));
+          wrap.appendChild(btn);
+        }
+        card.appendChild(wrap);
+      }
+
+      return card;
+    },
+
+    statusHint(q, isReceiver, isGiver) {
+      switch (q.status) {
+        case QUEST_STATUSES.PENDING:
+          return isReceiver ? 'cevabını bekliyor' : 'cevap bekleniyor';
+        case QUEST_STATUSES.ACTIVE:
+          return isReceiver ? 'aktif' : 'yapıyor';
+        case QUEST_STATUSES.SUBMITTED:
+          return isGiver ? 'onayını bekliyor' : 'onay bekliyor';
+        case QUEST_STATUSES.COMPLETED:
+          return '✓ tamamlandı';
+        case QUEST_STATUSES.REJECTED:
+          return '✗ reddedildi';
+        default:
+          return '';
+      }
+    },
+
+    actionsFor(q, isReceiver, isGiver) {
+      const acts = [];
+      if (q.status === QUEST_STATUSES.PENDING && isReceiver) {
+        acts.push({ label: 'KABUL ET', kind: 'success', onClick: (qq) => this.acceptQuest(qq) });
+        acts.push({ label: 'REDDET', kind: 'danger', onClick: (qq) => this.rejectQuest(qq) });
+      } else if (q.status === QUEST_STATUSES.ACTIVE && isReceiver) {
+        acts.push({ label: 'TAMAMLADIM', kind: 'primary', onClick: (qq) => this.submitQuest(qq) });
+      } else if (q.status === QUEST_STATUSES.SUBMITTED && isGiver) {
+        acts.push({ label: 'ONAYLA (XP VER)', kind: 'success', onClick: (qq) => this.approveQuest(qq) });
+        acts.push({ label: 'REDDET', kind: 'danger', onClick: (qq) => this.rejectSubmission(qq) });
+      } else if ((q.status === QUEST_STATUSES.PENDING || q.status === QUEST_STATUSES.ACTIVE) && isGiver) {
+        acts.push({ label: 'GERİ ÇEK', kind: 'ghost', onClick: (qq) => this.cancelQuest(qq) });
+      } else if ((q.status === QUEST_STATUSES.COMPLETED || q.status === QUEST_STATUSES.REJECTED)) {
+        // Allow either side to delete archived items
+        acts.push({ label: 'SİL', kind: 'ghost', onClick: (qq) => this.confirmDelete(qq) });
+      }
+      return acts;
+    },
+
+    async acceptQuest(q) {
+      await this.updateQuestStatus(q.id, QUEST_STATUSES.ACTIVE, 'accepted');
+    },
+    async rejectQuest(q) {
+      if (!confirm('Bu görevi reddetmek istediğine emin misin?')) return;
+      await this.updateQuestStatus(q.id, QUEST_STATUSES.REJECTED, 'rejected');
+    },
+    async submitQuest(q) {
+      await this.updateQuestStatus(q.id, QUEST_STATUSES.SUBMITTED, 'submitted');
+    },
+    async approveQuest(q) {
+      // Find receiver's profile and grant XP. Since we are the giver, we update
+      // the receiver's player doc directly. Both have same room key.
+      try {
+        const { db, fs } = window.__broop;
+        const recRef = fs.doc(db, 'broop_app', session.cloudId, 'players', q.toAuthor);
+        const snap = await fs.getDoc(recRef);
+        let stats = { xp: 0, level: 1, completedQuests: 0, badges: 0, joinedAt: Date.now() };
+        if (snap.exists()) {
+          const raw = decrypt(snap.data().encrypted || '', session.key);
+          if (raw) {
+            try { stats = JSON.parse(raw); } catch {}
+          }
+        }
+        // Apply XP + level rollover
+        let newXp = (stats.xp || 0) + (q.xp || 0);
+        let newLevel = stats.level || 1;
+        while (newXp >= Profile.xpForNextLevel(newLevel)) {
+          newXp -= Profile.xpForNextLevel(newLevel);
+          newLevel++;
+        }
+        const updated = {
+          ...stats,
+          xp: newXp,
+          level: newLevel,
+          completedQuests: (stats.completedQuests || 0) + 1,
+        };
+        const encrypted = encrypt(JSON.stringify(updated), session.key);
+        await fs.setDoc(recRef, { encrypted, updatedAt: Date.now() });
+        // Mark the quest itself completed
+        await this.updateQuestStatus(q.id, QUEST_STATUSES.COMPLETED, 'approved');
+      } catch (e) {
+        console.error('[Quests] approve failed:', e);
+        alert('Onaylama başarısız: ' + (e.message || e));
+      }
+    },
+    async rejectSubmission(q) {
+      if (!confirm('Tamamlanmadığını işaretle. Görev "Aktif"e geri dönsün ve arkadaşın tekrar denesin mi?')) return;
+      await this.updateQuestStatus(q.id, QUEST_STATUSES.ACTIVE, 'submission-rejected');
+    },
+    async cancelQuest(q) {
+      if (!confirm('Bu görevi geri çekmek istediğine emin misin?')) return;
+      await this.deleteQuest(q.id);
+    },
+    async confirmDelete(q) {
+      if (!confirm('Görevi arşivden silmek istediğine emin misin?')) return;
+      await this.deleteQuest(q.id);
+    },
+
+    // ---- Modal: new quest form ----
+    openNewModal() {
+      const partner = Profile.partnerName;
+      this.modalMode = 'new';
+      this.formDifficulty = 'medium';
+
+      els.questModalTitle.textContent = 'YENİ GÖREV';
+      els.questModalSubtitle.textContent = partner
+        ? (partner + '\'a ne yapmasını istersin?')
+        : 'arkadaşın henüz odaya bağlanmadı';
+
+      els.questModalBody.innerHTML = '';
+      const errEl = document.createElement('div');
+      errEl.className = 'modal-error';
+      errEl.id = 'questFormError';
+      els.questModalBody.appendChild(errEl);
+
+      // Title
+      const titleField = document.createElement('div');
+      titleField.className = 'field';
+      titleField.innerHTML = '<label>Başlık</label><input type="text" id="qfTitle" maxlength="80" placeholder="Örn: Yeni Unity tutorial izle" />';
+      els.questModalBody.appendChild(titleField);
+
+      // Description
+      const descField = document.createElement('div');
+      descField.className = 'field';
+      descField.innerHTML = '<label>Açıklama (opsiyonel)</label><textarea id="qfDesc" maxlength="500" placeholder="Detay ya da link..."></textarea>';
+      els.questModalBody.appendChild(descField);
+
+      // Difficulty
+      const diffField = document.createElement('div');
+      diffField.className = 'field';
+      diffField.innerHTML = '<label>Zorluk</label>';
+      const row = document.createElement('div');
+      row.className = 'difficulty-row';
+      const diffs = [
+        { key: 'easy', label: 'KOLAY', xp: 10 },
+        { key: 'medium', label: 'ORTA', xp: 25 },
+        { key: 'hard', label: 'ZOR', xp: 50 },
+      ];
+      diffs.forEach(d => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'difficulty-btn' + (d.key === this.formDifficulty ? ' active' : '');
+        b.dataset.difficulty = d.key;
+        b.innerHTML = d.label + '<span class="dxp">+' + d.xp + ' XP</span>';
+        b.addEventListener('click', () => {
+          this.formDifficulty = d.key;
+          row.querySelectorAll('.difficulty-btn').forEach(x => {
+            x.classList.toggle('active', x.dataset.difficulty === d.key);
+          });
+        });
+        row.appendChild(b);
+      });
+      diffField.appendChild(row);
+      els.questModalBody.appendChild(diffField);
+
+      // Footer buttons
+      els.questModalFooter.innerHTML = '';
+      const cancel = document.createElement('button');
+      cancel.className = 'quest-btn ghost';
+      cancel.textContent = 'İPTAL';
+      cancel.addEventListener('click', () => this.closeModal());
+      const submit = document.createElement('button');
+      submit.className = 'quest-btn primary';
+      submit.textContent = 'GÖNDER';
+      submit.addEventListener('click', () => this.submitNewForm());
+      els.questModalFooter.appendChild(cancel);
+      els.questModalFooter.appendChild(submit);
+
+      els.questModal.classList.remove('hidden');
+      setTimeout(() => {
+        const t = document.getElementById('qfTitle');
+        if (t) t.focus();
+      }, 80);
+    },
+
+    async submitNewForm() {
+      const titleEl = document.getElementById('qfTitle');
+      const descEl = document.getElementById('qfDesc');
+      const errEl = document.getElementById('questFormError');
+      const title = (titleEl.value || '').trim();
+      const desc = (descEl.value || '').trim();
+      if (!title) {
+        errEl.textContent = 'Başlık boş olamaz.';
+        return;
+      }
+      if (!Profile.partnerName) {
+        errEl.textContent = 'Arkadaşın henüz odaya bağlanmadı. Önce o da girmeli.';
+        return;
+      }
+      try {
+        await this.createQuest(title, desc, this.formDifficulty);
+        this.closeModal();
+      } catch (e) {
+        errEl.textContent = 'Hata: ' + (e.message || e);
+      }
+    },
+
+    closeModal() {
+      els.questModal.classList.add('hidden');
+      this.modalMode = null;
+      this.selectedQuestId = null;
+    },
+  };
 
   // Composer auto-grow + send button enable/disable
   function syncComposer() {
@@ -2485,6 +3523,18 @@
       Chat.onScroll();
     });
   }, { passive: true });
+
+  // Quest wiring
+  els.newQuestBtn.addEventListener('click', () => Quests.openNewModal());
+  els.questModal.addEventListener('click', (e) => {
+    // Click on backdrop (not the card) closes the modal
+    if (e.target === els.questModal) Quests.closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !els.questModal.classList.contains('hidden')) {
+      Quests.closeModal();
+    }
+  });
 
   // ============================================
   // BOOT
