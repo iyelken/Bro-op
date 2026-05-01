@@ -430,9 +430,9 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    /* Extra padding so the last item doesn't get hidden under the bottom nav.
-       The +80px gives generous breathing room — last message fully visible. */
-    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 80px);
+    /* Generous bottom padding so the last item is fully visible
+       and never hidden under the fixed bottom nav. */
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 120px);
     -webkit-overflow-scrolling: touch;
   }
 
@@ -487,7 +487,7 @@
 
   .pane {
     display: none;
-    padding: 24px 18px;
+    padding: 24px 18px 60px 18px;
     animation: paneIn 0.25s ease-out;
   }
   .pane.active { display: block; }
@@ -2982,7 +2982,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.3</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.4</span></div>
         </div>
 
         <div class="info-card">
