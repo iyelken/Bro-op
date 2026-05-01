@@ -1099,7 +1099,8 @@
   /* Hide bottom nav when chat composer is focused on mobile (keyboard up) */
   /* Keep nav visible but composer sticks above it via parent flex */
 
-
+  /* Hide elements helper — must override flex/block displays everywhere */
+  .hidden { display: none !important; }
 
   /* Small screens — preserve readability */
   @media (max-width: 360px) {
