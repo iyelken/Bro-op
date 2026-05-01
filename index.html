@@ -4030,7 +4030,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.16.0-alpha1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.16.0</span></div>
         </div>
 
         <div class="info-card">
@@ -6391,9 +6391,11 @@
       const DAY = 24 * HOUR;
 
       // --- Build context: target's data slices ---
+      const isMe = target === session.playerName;
       const ctx = {
         now,
         target,
+        isMe,
         // Devlogs the target wrote
         devlogs: (Workshop.devlogs || []).filter(d => d.author === target),
         // Target's todos (whole list including all projects)
@@ -6402,10 +6404,16 @@
         workshop: Workshop._normalizeWorkshop(Workshop.workshops[target]).doc,
         // Quests target is involved in (either side)
         quests: (Quests.quests || []).filter(q => q.fromAuthor === target || q.toAuthor === target),
+        // The "other" person (if exactly one — most common 2-person setup)
+        otherName: (Profile.others().find(o => o.name !== target) || {}).name
+                || (target !== session.playerName ? session.playerName : (Profile.others()[0] && Profile.others()[0].name)),
+        // Profile data
+        myProfile: Profile.members[session.playerName] || null,
+        targetProfile: Profile.members[target] || null,
       };
 
       const cards = [];
-      // Run each detector — each may push 0+ cards
+      // ==== Personal patterns (target only) ====
       this._detectTodoSpree(ctx, cards);
       this._detectNewProjects(ctx, cards);
       this._detectDevlogBurst(ctx, cards);
@@ -6413,6 +6421,24 @@
       this._detectQuestStreak(ctx, cards);
       this._detectQuiet(ctx, cards);
       this._detectHelpRequests(ctx, cards);
+      // ==== New: quest dynamics ====
+      this._detectQuestRejector(ctx, cards);
+      this._detectSlowResponder(ctx, cards);
+      this._detectGenerous(ctx, cards);
+      this._detectStingy(ctx, cards);
+      // ==== New: workshop habits ====
+      this._detectFavoriteTag(ctx, cards);
+      this._detectTodoHoarder(ctx, cards);
+      this._detectGhostTodo(ctx, cards);
+      this._detectWeeklyMVP(ctx, cards);
+      // ==== New: temporal patterns ====
+      this._detectMorningBird(ctx, cards);
+      this._detectWeekendWarrior(ctx, cards);
+      // ==== New: comparative patterns (target vs other) ====
+      this._detectBothNightOwls(ctx, cards);
+      this._detectSyncBurst(ctx, cards);
+      this._detectXpRace(ctx, cards);
+      this._detectQuestImbalance(ctx, cards);
 
       return cards;
     },
@@ -6574,6 +6600,340 @@
         timeText: this._timeAgo(newest.ts),
         priority: 95,
       });
+    },
+
+    // ============================================
+    // QUEST DYNAMICS
+    // ============================================
+
+    // 💢 Reddet eden — son 5 questin 3+'ı reddedildi (receiver olarak)
+    _detectQuestRejector(ctx, out) {
+      const received = ctx.quests
+        .filter(q => q.toAuthor === ctx.target && (q.status === 'completed' || q.status === 'rejected'))
+        .sort((a, b) => (b.updatedTs || 0) - (a.updatedTs || 0))
+        .slice(0, 5);
+      if (received.length < 3) return;
+      const rejected = received.filter(q => q.status === 'rejected').length;
+      if (rejected >= 3) {
+        out.push({
+          icon: '💢',
+          mood: 'warning',
+          headline: (ctx.isMe ? 'Sen' : ctx.target) + ' son ' + received.length + ' questin ' + rejected + ' tanesini reddettin',
+          detail: ctx.isMe ? 'Moralin düşük mü, yoksa quest\'ler mi sıkıcı geldi?' : 'Moralin düşük olabilir, ya da çok zor quest aldı. Bir konuş bakalım.',
+          ts: received[0].updatedTs,
+          priority: 78,
+        });
+      }
+    },
+
+    // 🐌 Yavaş cevap — 3+ gündür pending bekleyen aktif quest
+    _detectSlowResponder(ctx, out) {
+      const cutoff = ctx.now - 3 * 24 * 3600 * 1000;
+      const pending = ctx.quests.filter(q =>
+        q.toAuthor === ctx.target &&
+        q.status === 'pending' &&
+        (q.createdTs || q.updatedTs || 0) < cutoff
+      );
+      if (pending.length === 0) return;
+      const oldest = pending.sort((a, b) => (a.createdTs || 0) - (b.createdTs || 0))[0];
+      const days = Math.floor((ctx.now - (oldest.createdTs || oldest.updatedTs)) / (24 * 3600 * 1000));
+      out.push({
+        icon: '🐌',
+        mood: 'quiet',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' ' + days + ' gündür quest cevaplamamışsın',
+        detail: '"' + oldest.title + '"' + (pending.length > 1 ? ' (+' + (pending.length - 1) + ' tane daha bekliyor)' : '') + ' — unuttun mu?',
+        ts: oldest.createdTs || oldest.updatedTs,
+        priority: 65,
+      });
+    },
+
+    // 💸 Cömert — bu hafta çok zorda quest verdi (giver olarak)
+    _detectGenerous(ctx, out) {
+      const cutoff = ctx.now - 7 * 24 * 3600 * 1000;
+      const given = ctx.quests.filter(q =>
+        q.fromAuthor === ctx.target &&
+        (q.createdTs || 0) >= cutoff &&
+        q.difficulty === 'hard'
+      );
+      if (given.length < 3) return;
+      const totalXp = given.reduce((s, q) => s + (q.xp || 0), 0);
+      out.push({
+        icon: '💸',
+        mood: 'launch',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' bu hafta dağıtıyor',
+        detail: given.length + ' tane EPIC quest verdi (toplam +' + totalXp + ' XP değerinde). Çok inanıyor anlaşılan!',
+        ts: ctx.now,
+        priority: 60,
+      });
+    },
+
+    // 🤏 Cimri — son 5 quest'in hepsi kolay seviyede
+    _detectStingy(ctx, out) {
+      const given = ctx.quests
+        .filter(q => q.fromAuthor === ctx.target)
+        .sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0))
+        .slice(0, 5);
+      if (given.length < 5) return;
+      const allEasy = given.every(q => q.difficulty === 'easy');
+      if (!allEasy) return;
+      out.push({
+        icon: '🤏',
+        mood: 'quiet',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' kıyamamış olabilir',
+        detail: 'Son 5 quest\'in hepsi EASY. Biraz zorlaştırma vakti gelmedi mi? 😏',
+        ts: given[0].createdTs,
+        priority: 55,
+      });
+    },
+
+    // ============================================
+    // WORKSHOP HABITS
+    // ============================================
+
+    // 🐛/🔧/🎨/💡 Favori tag — devlog'larının %50+'sı tek tag
+    _detectFavoriteTag(ctx, out) {
+      if (ctx.devlogs.length < 5) return;
+      // Count tags
+      const counts = {};
+      for (const d of ctx.devlogs) {
+        const tag = d.tag;
+        if (!tag) continue;
+        counts[tag] = (counts[tag] || 0) + 1;
+      }
+      const total = ctx.devlogs.length;
+      let topTag = null, topCount = 0;
+      for (const k in counts) {
+        if (counts[k] > topCount) { topTag = k; topCount = counts[k]; }
+      }
+      if (!topTag || topCount < 5 || topCount / total < 0.5) return;
+
+      const pct = Math.round((topCount / total) * 100);
+      const meta = {
+        bug:    { icon: '🐛', headline: 'bug avcısı', detail: 'devlogların %' + pct + '\'i bug etiketli — sürekli savaşıyor!' },
+        code:   { icon: '🔧', headline: 'kod manyağı', detail: 'devlogların %' + pct + '\'i kod etiketli — durmadan yazıyor.' },
+        art:    { icon: '🎨', headline: 'sanatçı ruhlu', detail: 'devlogların %' + pct + '\'i sanat etiketli — görsele kafayı takmış.' },
+        sound:  { icon: '🎵', headline: 'ses büyücüsü', detail: 'devlogların %' + pct + '\'i ses etiketli — kulağa hitap ediyor.' },
+        design: { icon: '📐', headline: 'tasarım takıntılı', detail: 'devlogların %' + pct + '\'i tasarım etiketli — pixel pixel düşünüyor.' },
+        idea:   { icon: '💡', headline: 'fikir patlaması', detail: 'devlogların %' + pct + '\'i fikir etiketli — kafadan üretiyor.' },
+        other:  { icon: '📝', headline: 'kategori karşıtı', detail: 'devlogların %' + pct + '\'i "diğer" etiketli — kategorize edilmek istemiyor.' },
+      }[topTag];
+      if (!meta) return;
+      out.push({
+        icon: meta.icon,
+        mood: 'good',
+        headline: (ctx.isMe ? 'Sen ' : ctx.target + ' ') + meta.headline,
+        detail: meta.detail,
+        ts: ctx.now,
+        priority: 45,
+      });
+    },
+
+    // 📊 TODO biriktirici — 20+ açık TODO (todo + doing) var
+    _detectTodoHoarder(ctx, out) {
+      const open = ctx.todos.filter(t => t.status === 'todo' || t.status === 'doing');
+      if (open.length < 20) return;
+      out.push({
+        icon: '📊',
+        mood: 'warning',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' ' + open.length + ' TODO biriktirmiş',
+        detail: ctx.isMe ? 'Bunların hepsini gerçekten bitirecek misin? :)' : 'Bunlar gerçekten bitecek mi acaba? Belki bir temizlik vakti.',
+        ts: ctx.now,
+        priority: 50,
+      });
+    },
+
+    // 🏝️ Hayalet TODO — 30+ gündür "yapılıyor"da kalan
+    _detectGhostTodo(ctx, out) {
+      const cutoff = ctx.now - 30 * 24 * 3600 * 1000;
+      const ghosts = ctx.todos.filter(t =>
+        t.status === 'doing' &&
+        (t.updatedTs || t.createdTs || 0) < cutoff
+      );
+      if (ghosts.length === 0) return;
+      const oldest = ghosts.sort((a, b) => (a.updatedTs || a.createdTs || 0) - (b.updatedTs || b.createdTs || 0))[0];
+      const days = Math.floor((ctx.now - (oldest.updatedTs || oldest.createdTs)) / (24 * 3600 * 1000));
+      out.push({
+        icon: '🏝️',
+        mood: 'quiet',
+        headline: (ctx.isMe ? 'Senin' : ctx.target + '\'in') + ' hayalet TODO\'su var',
+        detail: '"' + (oldest.text || '').slice(0, 60) + '" — ' + days + ' gündür "yapılıyor"da kalmış. 😅' + (ghosts.length > 1 ? ' (+' + (ghosts.length - 1) + ' tane daha)' : ''),
+        ts: oldest.updatedTs || oldest.createdTs,
+        priority: 48,
+      });
+    },
+
+    // 🎯 Haftalık MVP — bu hafta 10+ TODO bitirdi
+    _detectWeeklyMVP(ctx, out) {
+      const cutoff = ctx.now - 7 * 24 * 3600 * 1000;
+      const done = ctx.todos.filter(t =>
+        t.status === 'done' && (t.updatedTs || 0) >= cutoff
+      );
+      if (done.length < 10) return;
+      out.push({
+        icon: '🎯',
+        mood: 'streak',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' bu hafta MVP',
+        detail: 'Bu hafta ' + done.length + ' TODO bitirdi, makine gibi çalışıyor!',
+        ts: ctx.now,
+        priority: 75,
+      });
+    },
+
+    // ============================================
+    // TEMPORAL PATTERNS
+    // ============================================
+
+    // 🐦 Sabah erkenci — son aktivitelerin %40+'sı 06:00-09:00 arası
+    _detectMorningBird(ctx, out) {
+      // Combine devlog timestamps and todo updateTs in last 14 days
+      const cutoff = ctx.now - 14 * 24 * 3600 * 1000;
+      const events = [];
+      for (const d of ctx.devlogs) if ((d.ts || 0) >= cutoff) events.push(d.ts);
+      for (const t of ctx.todos) if ((t.updatedTs || 0) >= cutoff) events.push(t.updatedTs);
+      if (events.length < 5) return;
+      const morning = events.filter(ts => {
+        const h = new Date(ts).getHours();
+        return h >= 6 && h < 9;
+      }).length;
+      if (morning / events.length < 0.4) return;
+      out.push({
+        icon: '🐦',
+        mood: 'good',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' sabah erkenci',
+        detail: 'Son aktivitelerin %' + Math.round((morning / events.length) * 100) + '\'i 06:00–09:00 arasında. Sabahçı moduna geçmiş.',
+        ts: ctx.now,
+        priority: 35,
+      });
+    },
+
+    // 📅 Hafta sonu çakı — Cmt-Pzr çok aktif, hafta içi az
+    _detectWeekendWarrior(ctx, out) {
+      const cutoff = ctx.now - 28 * 24 * 3600 * 1000;
+      const events = [];
+      for (const d of ctx.devlogs) if ((d.ts || 0) >= cutoff) events.push(d.ts);
+      for (const t of ctx.todos) if ((t.updatedTs || 0) >= cutoff) events.push(t.updatedTs);
+      if (events.length < 8) return;
+      const weekend = events.filter(ts => {
+        const day = new Date(ts).getDay(); // 0=Sun, 6=Sat
+        return day === 0 || day === 6;
+      }).length;
+      const weekday = events.length - weekend;
+      // Weekend takes ~28% of week → if 50%+ of activity is weekend, it's notable
+      if (weekend / events.length < 0.5 || weekday < 1) return;
+      out.push({
+        icon: '📅',
+        mood: 'good',
+        headline: (ctx.isMe ? 'Sen' : ctx.target) + ' hafta sonu çakı',
+        detail: 'Aktivitenin yarıdan fazlası Cmt-Pzr. Hafta içi nereye kayboluyorsun?',
+        ts: ctx.now,
+        priority: 40,
+      });
+    },
+
+    // ============================================
+    // COMPARATIVE PATTERNS (target + other)
+    // ============================================
+
+    // 🌙 İkiniz de gece kuşu
+    _detectBothNightOwls(ctx, out) {
+      if (!ctx.otherName || ctx.otherName === ctx.target) return;
+      const otherDevlogs = (Workshop.devlogs || []).filter(d => d.author === ctx.otherName);
+      const isNightOwl = (logs) => {
+        const last5 = logs.slice(0, 5);
+        if (last5.length < 3) return false;
+        const night = last5.filter(d => {
+          const h = new Date(d.ts || 0).getHours();
+          return h >= 23 || h < 5;
+        }).length;
+        return night >= Math.ceil(last5.length * 0.6);
+      };
+      if (!isNightOwl(ctx.devlogs) || !isNightOwl(otherDevlogs)) return;
+      out.push({
+        icon: '🌙',
+        mood: 'night',
+        headline: 'İkiniz de gece kuşusunuz',
+        detail: ctx.target + ' ve ' + ctx.otherName + ', son devloglarınız hep gece yarısından sonra. Ortak hastalık.',
+        ts: ctx.now,
+        priority: 58,
+      });
+    },
+
+    // 💪 Senkron patlama — bugün ikisi de çok aktif
+    _detectSyncBurst(ctx, out) {
+      if (!ctx.otherName || ctx.otherName === ctx.target) return;
+      const cutoff = ctx.now - 24 * 3600 * 1000;
+      const targetCount = ctx.todos.filter(t => t.status === 'done' && (t.updatedTs || 0) >= cutoff).length
+        + ctx.devlogs.filter(d => (d.ts || 0) >= cutoff).length;
+      const otherTodos = ((Workshop.todos[ctx.otherName] && Workshop.todos[ctx.otherName].items) || []);
+      const otherDevlogs = (Workshop.devlogs || []).filter(d => d.author === ctx.otherName);
+      const otherCount = otherTodos.filter(t => t.status === 'done' && (t.updatedTs || 0) >= cutoff).length
+        + otherDevlogs.filter(d => (d.ts || 0) >= cutoff).length;
+      if (targetCount < 5 || otherCount < 5) return;
+      out.push({
+        icon: '💪',
+        mood: 'hype',
+        headline: 'Bugün ikiniz birden patlattınız',
+        detail: ctx.target + ': ' + targetCount + ' aksiyon, ' + ctx.otherName + ': ' + otherCount + ' aksiyon. Toplam ' + (targetCount + otherCount) + '!',
+        ts: ctx.now,
+        priority: 82,
+      });
+    },
+
+    // 🥊 XP yarışı — XP'ler birbirine yakın
+    _detectXpRace(ctx, out) {
+      if (!ctx.otherName || ctx.otherName === ctx.target) return;
+      const targetXp = (ctx.targetProfile && ctx.targetProfile.xp) || 0;
+      const otherXp = (Profile.members[ctx.otherName] && Profile.members[ctx.otherName].xp) || 0;
+      if (targetXp < 100 && otherXp < 100) return; // not enough activity yet
+      const diff = Math.abs(targetXp - otherXp);
+      const bigger = targetXp >= otherXp ? targetXp : otherXp;
+      // Close if difference < 10% of leader
+      if (diff > bigger * 0.1) return;
+      const leader = targetXp >= otherXp ? ctx.target : ctx.otherName;
+      const trailer = leader === ctx.target ? ctx.otherName : ctx.target;
+      const leaderXp = leader === ctx.target ? targetXp : otherXp;
+      const trailerXp = trailer === ctx.target ? targetXp : otherXp;
+      out.push({
+        icon: '🥊',
+        mood: 'streak',
+        headline: 'XP yarışı kafa kafaya',
+        detail: leader + ': ' + leaderXp + ' XP  vs  ' + trailer + ': ' + trailerXp + ' XP — fark sadece ' + diff + '!',
+        ts: ctx.now,
+        priority: 70,
+      });
+    },
+
+    // 🎁 Quest dengesizliği — biri çok veriyor diğeri az
+    _detectQuestImbalance(ctx, out) {
+      if (!ctx.otherName || ctx.otherName === ctx.target) return;
+      const cutoff = ctx.now - 7 * 24 * 3600 * 1000;
+      const givenByTarget = ctx.quests.filter(q =>
+        q.fromAuthor === ctx.target && q.toAuthor === ctx.otherName && (q.createdTs || 0) >= cutoff
+      ).length;
+      const givenByOther = (Quests.quests || []).filter(q =>
+        q.fromAuthor === ctx.otherName && q.toAuthor === ctx.target && (q.createdTs || 0) >= cutoff
+      ).length;
+      if (givenByTarget + givenByOther < 4) return; // not enough activity to call out
+      // Imbalance if one gave 3x more than the other (and at least 3 gave more)
+      if (givenByTarget >= 3 && givenByTarget >= givenByOther * 3) {
+        out.push({
+          icon: '🎁',
+          mood: 'launch',
+          headline: ctx.target + ' bu hafta ' + givenByTarget + ' quest verdi, ' + ctx.otherName + ' sadece ' + givenByOther,
+          detail: 'Misilleme zamanı! ' + ctx.otherName + ', biraz daha quest at bakalım.',
+          ts: ctx.now,
+          priority: 62,
+        });
+      } else if (givenByOther >= 3 && givenByOther >= givenByTarget * 3) {
+        out.push({
+          icon: '🎁',
+          mood: 'launch',
+          headline: ctx.otherName + ' bu hafta ' + givenByOther + ' quest verdi, ' + ctx.target + ' sadece ' + givenByTarget,
+          detail: 'Misilleme zamanı! ' + ctx.target + ', biraz daha quest at bakalım.',
+          ts: ctx.now,
+          priority: 62,
+        });
+      }
     },
 
     // Format a timestamp as "X dakika/saat/gün önce"
