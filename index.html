@@ -2556,6 +2556,123 @@
     }
     .crt-flicker, .scanlines { display: none; }
   }
+
+  /* ============================================
+     DESKTOP / TABLET LAYOUT (≥ 768px)
+     ============================================
+     Mobile design is preserved unchanged. These rules add a centered,
+     desktop-friendly layout: wider content area, side margins, and
+     specific tweaks for sub-components (TODO columns side-by-side,
+     chat bubbles capped, etc).
+   */
+  @media (min-width: 768px) {
+    /* Container: cap width and center the whole app */
+    #app {
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Bottom nav must also be constrained — it's fixed, so we center it */
+    .bottom-nav {
+      max-width: 960px;
+      margin: 0 auto;
+      left: 0;
+      right: 0;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    /* More breathing room in the content area */
+    .content {
+      padding: 28px 36px;
+    }
+
+    /* Top bar is more spacious */
+    .top-bar {
+      padding-left: 28px;
+      padding-right: 28px;
+    }
+
+    /* Pane headers — bigger title on desktop */
+    .pane-title { font-size: 28px; }
+
+    /* ============ TODO: 3 columns side by side on desktop ============ */
+    .todo-columns {
+      flex-direction: row !important;
+      gap: 12px;
+    }
+    .todo-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ============ Chat: cap bubble width and center the chat ============ */
+    .msg {
+      max-width: 70%;
+    }
+
+    /* ============ Profile stats: more spacious ============ */
+    .stats-grid {
+      gap: 14px;
+    }
+
+    /* ============ Quest cards: cap width slightly ============ */
+    .quest-card {
+      max-width: 100%;
+    }
+
+    /* ============ Workshop ============ */
+    .project-card,
+    .todo-card,
+    .devlog-entry,
+    .resource-card {
+      /* Already full-width inside the container — just polish padding */
+    }
+    /* Devlog list: full width, but tag/filter rows stay readable */
+    .devlog-tag-row,
+    .devlog-filter-row {
+      gap: 8px;
+    }
+
+    /* Login screen: keep card centered, slightly larger */
+    .login-card {
+      max-width: 460px;
+      padding: 36px 32px;
+    }
+
+    /* Modals: a bit wider */
+    .modal-card {
+      max-width: 540px;
+    }
+
+    /* Side decoration: subtle vertical lines on the page background to
+       fill the empty space outside the container — gives it a "framed"
+       feel rather than empty void. */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+    }
+  }
+
+  /* ============================================
+     EXTRA-WIDE DESKTOP (≥ 1200px)
+     Slightly more generous width for users with big screens.
+     ============================================ */
+  @media (min-width: 1200px) {
+    #app,
+    .bottom-nav {
+      max-width: 1080px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -2787,7 +2904,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.10.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.0</span></div>
         </div>
 
         <div class="info-card">
