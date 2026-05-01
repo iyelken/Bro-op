@@ -2822,6 +2822,44 @@
     color: var(--accent-workshop);
     box-shadow: 0 0 8px rgba(184, 85, 255, 0.25);
   }
+
+  /* "Their active" — the friend's currently-active project (star marker)
+     Filled mor background, glow — like .active above */
+  .project-tab.their-active {
+    background: rgba(184, 85, 255, 0.16);
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+    box-shadow: 0 0 8px rgba(184, 85, 255, 0.25);
+  }
+  .project-tab .tab-star {
+    margin-left: 4px;
+    color: var(--accent-quest);
+    text-shadow: 0 0 6px rgba(255, 176, 0, 0.6);
+  }
+
+  /* "Viewing only" — user is browsing a non-active project of someone else.
+     Dashed mor border, no fill — communicates "I'm just looking" */
+  .project-tab.viewing-only {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+  }
+
+  /* When user is viewing an inactive project, show a subtle dashed top border
+     on the project card so they don't think this is "live" */
+  .project-card.viewing-inactive {
+    border-style: dashed;
+    border-color: rgba(184, 85, 255, 0.35);
+  }
+  .viewing-inactive-note {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
   .project-tab .tab-label {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4802,7 +4840,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.18.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.18.1</span></div>
         </div>
 
         <div class="info-card">
@@ -9196,6 +9234,10 @@
   const Workshop = {
     activeSubTab: 'mine',
     selectedTheirsMember: null,
+    // When viewing another player's projects, this lets the user click through
+    // their projects without affecting which project is "active" for them.
+    // Map: { [memberName]: projectId } — null/undefined means "show their active".
+    viewingTheirsProjectId: {},
 
     workshopsUnsubscribe: null,
     devlogsUnsubscribe: null,
@@ -9372,6 +9414,7 @@
       this.mineFilterTag = 'all';
       this.theirsFilterTag = 'all';
       this._myMigrationDone = false;
+      this.viewingTheirsProjectId = {};
     },
 
     // ============================================
@@ -9424,6 +9467,28 @@
     getActiveProjectId(playerName) {
       const p = this.getActiveProject(playerName);
       return p ? p.id : null;
+    },
+
+    // Get the project the user is currently *viewing* for someone else.
+    // For your own view, this is always your active project (you can't browse
+    // your own non-active projects from the same panel — switch instead).
+    // For others, it's the user's chosen "viewing" project, or their active
+    // one if no override is set.
+    getViewingProject(playerName) {
+      if (!session) return null;
+      const isMe = playerName === session.playerName;
+      if (isMe) return this.getActiveProject(playerName);
+      const overrideId = this.viewingTheirsProjectId[playerName];
+      if (overrideId) {
+        const ws = this.workshops[playerName];
+        if (ws && ws.projects) {
+          const found = ws.projects.find(p => p.id === overrideId && !p.archived);
+          if (found) return found;
+          // Override no longer valid (project archived/deleted) — clear it
+          delete this.viewingTheirsProjectId[playerName];
+        }
+      }
+      return this.getActiveProject(playerName);
     },
 
     // Get all non-archived projects for a player, sorted by recency
@@ -9557,7 +9622,10 @@
     renderProjectTabs(ownerName, container, isOwn) {
       if (!container) return;
       const projects = this.getActiveProjects(ownerName);
+      // The owner's actual active project (yellow-star marker for "they're working on this")
       const activeId = (this.workshops[ownerName] && this.workshops[ownerName].activeProjectId) || null;
+      // For theirs-view: which project is the user currently looking at
+      const viewingId = isOwn ? activeId : (this.viewingTheirsProjectId[ownerName] || activeId);
 
       container.innerHTML = '';
 
@@ -9569,7 +9637,23 @@
       for (const p of visibleProjects) {
         const tab = document.createElement('button');
         tab.type = 'button';
-        tab.className = 'project-tab' + (p.id === activeId ? ' active' : '');
+        // Build the tab class based on multiple states:
+        //   - .active = visually highlighted as the current selection in this view
+        //   - .their-active = mark *their* active project (star + filled)
+        //   - .viewing-only = user is browsing this but it's not their active project
+        const isViewing = p.id === viewingId;
+        const isTheirActive = p.id === activeId;
+        let cls = 'project-tab';
+        if (isOwn) {
+          if (isViewing) cls += ' active';
+        } else {
+          // For others: separate "their active" from "what I'm viewing"
+          if (isTheirActive) cls += ' their-active';
+          if (isViewing && !isTheirActive) cls += ' viewing-only';
+          // If user is viewing the active one too, it stays just .their-active
+          // (no need to add anything else; it already shows as their active)
+        }
+        tab.className = cls;
         tab.dataset.projectId = p.id;
 
         // Cover image avatar (if set)
@@ -9586,8 +9670,23 @@
         label.title = p.title;
         tab.appendChild(label);
 
+        // Star marker for "their active" (only in theirs view)
+        if (!isOwn && isTheirActive) {
+          const star = document.createElement('span');
+          star.className = 'tab-star';
+          star.textContent = '★';
+          star.title = 'Şu an üzerinde çalıştığı proje';
+          tab.appendChild(star);
+        }
+
         if (isOwn) {
           tab.addEventListener('click', () => this.switchProject(p.id));
+        } else {
+          // In theirs-view, clicking switches *your* viewing target only (no Firebase write)
+          tab.addEventListener('click', () => {
+            this.viewingTheirsProjectId[ownerName] = p.id;
+            this.renderTheirs();
+          });
         }
         container.appendChild(tab);
       }
@@ -9601,11 +9700,18 @@
         more.textContent = '⋯ +' + overflowProjects.length;
         if (isOwn) {
           more.addEventListener('click', () => this.openProjectListModal());
+        } else {
+          // In theirs-view, click cycles through overflow projects
+          more.addEventListener('click', () => {
+            // For simplicity in theirs-view, just pick the first overflow project
+            this.viewingTheirsProjectId[ownerName] = overflowProjects[0].id;
+            this.renderTheirs();
+          });
         }
         container.appendChild(more);
       }
 
-      // "+ YENİ" button (own only)
+      // "+ YENİ" and 📂 buttons — own view only (others can't add to your friend's projects)
       if (isOwn) {
         const add = document.createElement('button');
         add.type = 'button';
@@ -10244,49 +10350,61 @@
 
       // Render selected member's project
       const target = this.selectedTheirsMember;
-      const targetActive = this.getActiveProject(target);
+      // Use the project the user is currently viewing (could be the active one
+      // by default, or any other project if they've clicked a different tab)
+      const targetViewing = this.getViewingProject(target);
+      const targetActiveId = this.getActiveProjectId(target);
+      const isViewingActive = targetViewing && targetViewing.id === targetActiveId;
 
-      // Render their project tabs (read-only)
+      // Render their project tabs (clickable in viewing-mode, doesn't write to Firebase)
       this.renderProjectTabs(target, els.theirsProjectTabs, false);
 
       let targetLogs = this.devlogs.filter(d => d.author === target);
-      if (targetActive) {
-        targetLogs = targetLogs.filter(d => !d.projectId || d.projectId === targetActive.id);
+      if (targetViewing) {
+        targetLogs = targetLogs.filter(d => !d.projectId || d.projectId === targetViewing.id);
       }
       if (this.theirsFilterTag !== 'all') {
         targetLogs = targetLogs.filter(d => (d.tag || null) === this.theirsFilterTag);
       }
 
       els.theirsProject.innerHTML = '';
-      if (!targetActive) {
+      if (!targetViewing) {
         const card = document.createElement('div');
         card.className = 'project-card';
         card.innerHTML = `<div class="project-empty"><div class="project-empty-text">${target} henüz proje eklemedi</div></div>`;
         els.theirsProject.appendChild(card);
       } else {
         const card = document.createElement('div');
-        card.className = 'project-card';
+        // Add a marker class when viewing a non-active project — allows subtle CSS styling
+        card.className = 'project-card' + (isViewingActive ? '' : ' viewing-inactive');
         // Cover image (left side, square)
-        if (targetActive.coverImage) {
+        if (targetViewing.coverImage) {
           const cover = document.createElement('div');
           cover.className = 'project-cover';
-          cover.style.backgroundImage = 'url(' + targetActive.coverImage.replace(/"/g, '%22') + ')';
+          cover.style.backgroundImage = 'url(' + targetViewing.coverImage.replace(/"/g, '%22') + ')';
           card.appendChild(cover);
         }
         const content = document.createElement('div');
         content.className = 'project-card-content';
         const t = document.createElement('div');
         t.className = 'project-title';
-        t.textContent = targetActive.title;
+        t.textContent = targetViewing.title;
         const author = document.createElement('div');
         author.className = 'project-author';
         author.textContent = '@' + target;
         content.appendChild(t);
         content.appendChild(author);
-        if (targetActive.description) {
+        // Note when viewing an inactive project (so the user knows the friend isn't on this one)
+        if (!isViewingActive) {
+          const note = document.createElement('div');
+          note.className = 'viewing-inactive-note';
+          note.textContent = '👁 izleme modu — şu an üzerinde çalıştığı proje değil';
+          content.appendChild(note);
+        }
+        if (targetViewing.description) {
           const desc = document.createElement('div');
           desc.className = 'project-desc';
-          desc.textContent = targetActive.description;
+          desc.textContent = targetViewing.description;
           content.appendChild(desc);
         }
         card.appendChild(content);
@@ -10606,10 +10724,12 @@
       const data = this.todos[ownerName] || { items: [] };
       let items = data.items || [];
 
-      // Filter to only items belonging to the active project (or no projectId — legacy)
-      const activeProject = this.getActiveProject(ownerName);
-      if (activeProject) {
-        items = items.filter(it => !it.projectId || it.projectId === activeProject.id);
+      // Filter to only items belonging to the project the user is currently
+      // viewing for this owner. For self this is the active project; for others
+      // it's whatever project they've clicked into (defaults to their active).
+      const viewingProject = this.getViewingProject(ownerName);
+      if (viewingProject) {
+        items = items.filter(it => !it.projectId || it.projectId === viewingProject.id);
       }
 
       // Has this container been rendered before? If yes, suppress animations
