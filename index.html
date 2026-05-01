@@ -2324,9 +2324,148 @@
   }
   .ws-btn.ghost { color: var(--text-secondary); }
 
-  .devlog-composer .ws-btn {
-    width: 100%;
+  /* Devlog composer actions row: help toggle + send button */
+  .devlog-composer-actions {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
     margin-top: 10px;
+  }
+  .devlog-composer .ws-btn {
+    flex: 1;
+    margin-top: 0;
+  }
+
+  /* "Yardım gerek" toggle button */
+  .help-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 3px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .help-toggle-btn .help-icon { font-size: 14px; line-height: 1; }
+  .help-toggle-btn:hover {
+    border-color: #ff3860;
+    color: #ff3860;
+  }
+  .help-toggle-btn.active {
+    background: rgba(255, 56, 96, 0.16);
+    border-color: #ff3860;
+    color: #ff3860;
+    box-shadow: 0 0 8px rgba(255, 56, 96, 0.3);
+    animation: helpPulse 2s infinite;
+  }
+  @keyframes helpPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 56, 96, 0.3); }
+    50% { box-shadow: 0 0 14px rgba(255, 56, 96, 0.5); }
+  }
+
+  /* HELP REQUEST badge on devlog cards */
+  .devlog-entry.help-open {
+    border-left: 3px solid #ff3860;
+    box-shadow: 0 0 0 1px rgba(255, 56, 96, 0.2);
+  }
+  .devlog-help-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .devlog-help-badge.open {
+    background: rgba(255, 56, 96, 0.16);
+    color: #ff3860;
+    border: 1px solid rgba(255, 56, 96, 0.4);
+    animation: helpPulse 2s infinite;
+  }
+  .devlog-help-badge.resolved {
+    background: rgba(0, 255, 127, 0.12);
+    color: #00ff7f;
+    border: 1px solid rgba(0, 255, 127, 0.4);
+  }
+  .devlog-help-badge .help-icon { font-size: 11px; }
+  .devlog-help-toggle {
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    padding: 3px 6px;
+    border-radius: 2px;
+    margin-left: 6px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+  }
+  .devlog-help-toggle:hover { opacity: 1; }
+
+  /* REACTIONS */
+  .devlog-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .reaction-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 9px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .reaction-btn .reaction-emoji { font-size: 14px; line-height: 1; }
+  .reaction-btn .reaction-count {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    min-width: 10px;
+    text-align: center;
+  }
+  .reaction-btn:hover {
+    border-color: var(--accent-workshop);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+  .reaction-btn:active { transform: translateY(0); }
+  .reaction-btn.reacted {
+    background: rgba(184, 85, 255, 0.16);
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+  }
+  .reaction-btn.reacted .reaction-count {
+    color: var(--accent-workshop);
+  }
+  .devlog-reactions.empty .reaction-btn {
+    opacity: 0.5;
+  }
+  .devlog-reactions.empty .reaction-btn:hover {
+    opacity: 1;
   }
 
   /* Member picker (for "theirs" tab) */
@@ -2982,7 +3121,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.4</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.12.0</span></div>
         </div>
 
         <div class="info-card">
@@ -3053,7 +3192,13 @@
           <div class="devlog-composer">
             <div class="devlog-tag-row" id="devlogTagRow"></div>
             <textarea id="devlogInput" placeholder="bugün ne yaptın? (kısa not olur)" rows="2" maxlength="500"></textarea>
-            <button class="ws-btn primary" id="devlogSendBtn" disabled>+ DEVLOG EKLE</button>
+            <div class="devlog-composer-actions">
+              <button class="help-toggle-btn" id="helpToggleBtn" type="button">
+                <span class="help-icon">🆘</span>
+                <span class="help-label">YARDIM GEREK</span>
+              </button>
+              <button class="ws-btn primary" id="devlogSendBtn" disabled>+ DEVLOG EKLE</button>
+            </div>
           </div>
           <div class="devlog-filter-row" id="mineDevlogFilter"></div>
           <div class="devlog-list" id="mineDevlogs"></div>
@@ -3434,6 +3579,7 @@
     devlogInput: $('#devlogInput'),
     devlogSendBtn: $('#devlogSendBtn'),
     devlogTagRow: $('#devlogTagRow'),
+    helpToggleBtn: $('#helpToggleBtn'),
     theirsPicker: $('#theirsPicker'),
     theirsProject: $('#theirsProject'),
     theirsDevlogs: $('#theirsDevlogs'),
@@ -5078,6 +5224,10 @@
     { key: 'idea',    label: 'FİKİR',    icon: '💡', color: '#ff8a3d' },
     { key: 'other',   label: 'DİĞER',    icon: '📝', color: '#9aa3c7' },
   ];
+
+  // Reactions available on devlogs — quick emoji feedback for the other person.
+  // Order matters: shown left-to-right under each devlog.
+  const REACTIONS = ['🔥', '💯', '👏', '🤯', '💪'];
   function tagByKey(key) { return DEVLOG_TAGS.find(t => t.key === key) || null; }
   // Convert hex color to rgba for translucent backgrounds
   function hexToRgba(hex, a) {
@@ -5109,6 +5259,7 @@
     rfCategory: 'tutorial',
     resourceFilter: 'all',
     composerTag: null,        // currently selected tag in composer (null = no tag)
+    composerHelp: false,      // is "yardım gerek" toggled in composer
     mineFilterTag: 'all',     // 'all' | tag.key
     theirsFilterTag: 'all',
 
@@ -5151,12 +5302,13 @@
         // Sound detection: a new comment on my devlog from someone else
         const me = session && session.playerName;
         if (this.knownDevlogState !== null && me) {
+          // Check 1: new comments on my own devlogs (existing behavior)
           for (const d of list) {
             if (d.author !== me) continue; // only my devlogs
-            const prevCount = this.knownDevlogState.get(d.id);
+            const prev = this.knownDevlogState.get(d.id);
+            const prevCount = prev ? prev.commentCount : undefined;
             const currCount = (d.comments || []).length;
             if (prevCount !== undefined && currCount > prevCount) {
-              // Look at the latest comments — if any from someone other than me
               const newComments = (d.comments || []).slice(prevCount);
               const newFromOthers = newComments.filter(c => c.by !== me);
               if (newFromOthers.length > 0) {
@@ -5167,8 +5319,29 @@
               }
             }
           }
+          // Check 2: someone else opened a help request — alert me
+          for (const d of list) {
+            if (d.author === me) continue; // only others' devlogs
+            const prev = this.knownDevlogState.get(d.id);
+            const prevHelp = prev ? prev.helpRequest : undefined;
+            // Newly opened help request: was not 'open' before, is 'open' now
+            if (prevHelp !== 'open' && d.helpRequest === 'open') {
+              SoundFX.play('quest'); // existing alert sound
+              BrowserNotif.notify('comment', {
+                from: d.author,
+                text: '🆘 Yardım istiyor: ' + (d.text || '').slice(0, 80),
+              });
+              break;
+            }
+          }
         }
-        this.knownDevlogState = new Map(list.map(d => [d.id, (d.comments || []).length]));
+        // Track both comment count AND help status per devlog
+        this.knownDevlogState = new Map(
+          list.map(d => [d.id, {
+            commentCount: (d.comments || []).length,
+            helpRequest: d.helpRequest || null,
+          }])
+        );
       }, (err) => console.warn('[Workshop] devlogs error:', err));
 
       // Resources
@@ -5218,6 +5391,7 @@
       this.todos = {};
       this.knownDevlogState = null;
       this.composerTag = null;
+      this.composerHelp = false;
       this.mineFilterTag = 'all';
       this.theirsFilterTag = 'all';
     },
@@ -5375,7 +5549,10 @@
       const isOwn = log.author === me;
 
       const wrap = document.createElement('div');
-      wrap.className = 'devlog-entry' + (isOwn ? ' mine' : '');
+      let cls = 'devlog-entry' + (isOwn ? ' mine' : '');
+      // Highlight cards with open help requests
+      if (log.helpRequest === 'open') cls += ' help-open';
+      wrap.className = cls;
 
       const meta = document.createElement('div');
       meta.className = 'devlog-meta';
@@ -5400,6 +5577,25 @@
       }
       wrap.appendChild(meta);
 
+      // Help request badge — render before tag chip so it's visually prominent
+      if (log.helpRequest === 'open' || log.helpRequest === 'resolved') {
+        const badge = document.createElement('span');
+        const isOpen = log.helpRequest === 'open';
+        badge.className = 'devlog-help-badge ' + (isOpen ? 'open' : 'resolved');
+        const icon = isOpen ? '🆘' : '✅';
+        const label = isOpen ? 'YARDIM GEREK' : 'ÇÖZÜLDÜ';
+        badge.innerHTML = '<span class="help-icon">' + icon + '</span><span>' + label + '</span>';
+        // Owner can toggle status
+        if (isOwn) {
+          const toggle = document.createElement('button');
+          toggle.className = 'devlog-help-toggle';
+          toggle.textContent = isOpen ? 'ÇÖZÜLDÜ İŞARETLE' : 'TEKRAR AÇ';
+          toggle.addEventListener('click', () => this.toggleHelpResolved(log.id));
+          badge.appendChild(toggle);
+        }
+        wrap.appendChild(badge);
+      }
+
       // Tag chip (if devlog has a tag)
       if (log.tag) {
         const tag = tagByKey(log.tag);
@@ -5418,6 +5614,29 @@
       text.className = 'devlog-text';
       text.textContent = log.text;
       wrap.appendChild(text);
+
+      // Reactions bar
+      const reactions = log.reactions || {};
+      const totalReactions = Object.values(reactions).reduce((s, arr) => s + (arr || []).length, 0);
+      const rxBar = document.createElement('div');
+      rxBar.className = 'devlog-reactions' + (totalReactions === 0 ? ' empty' : '');
+      for (const emoji of REACTIONS) {
+        const users = reactions[emoji] || [];
+        const count = users.length;
+        const hasMine = users.includes(me);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'reaction-btn' + (hasMine ? ' reacted' : '');
+        // Tooltip: show who reacted
+        if (count > 0) {
+          btn.title = users.join(', ');
+        }
+        btn.innerHTML = '<span class="reaction-emoji">' + emoji + '</span>'
+          + (count > 0 ? '<span class="reaction-count">' + count + '</span>' : '');
+        btn.addEventListener('click', () => this.toggleReaction(log.id, emoji));
+        rxBar.appendChild(btn);
+      }
+      wrap.appendChild(rxBar);
 
       // Comments
       const comments = log.comments || [];
@@ -5841,12 +6060,25 @@
         ts,
         tag: this.composerTag,  // may be null
         comments: [],
+        // Help request: 'open' if user toggled it, otherwise null. Can later
+        // become 'resolved' via the resolve button on the card.
+        helpRequest: this.composerHelp ? 'open' : null,
+        // Reactions: { '🔥': ['ahmet'], '💯': [] } etc — empty initially
+        reactions: {},
       };
       const { db, fs } = window.__broop;
       const ref = fs.collection(db, 'broop_app', session.cloudId, 'devlogs');
       const encrypted = encrypt(JSON.stringify(payload), session.key);
       await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
-      // Don't clear the tag — user may want to send another devlog with the same tag
+      // Reset help toggle after sending so user explicitly opts in each time.
+      // Tag is intentionally kept (user often writes related entries).
+      this.composerHelp = false;
+      this.renderHelpToggle();
+    },
+
+    renderHelpToggle() {
+      if (!els.helpToggleBtn) return;
+      els.helpToggleBtn.classList.toggle('active', !!this.composerHelp);
     },
 
     async deleteDevlog(id) {
@@ -5873,6 +6105,58 @@
       const ref = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', devlogId);
       const encrypted = encrypt(JSON.stringify(updated), session.key);
       await fs.updateDoc(ref, { encrypted });
+    },
+
+    // ---- Reaction actions ----
+    // Toggle a reaction on a devlog. If the user already reacted with this
+    // emoji, it's removed; otherwise added. Reactions are stored as
+    // { emoji: [usernames] } so we can show counts and who reacted.
+    async toggleReaction(devlogId, emoji) {
+      if (!cloudReady() || !session) return;
+      const log = this.devlogs.find(d => d.id === devlogId);
+      if (!log) return;
+      const me = session.playerName;
+      const reactions = { ...(log.reactions || {}) };
+      const users = reactions[emoji] ? [...reactions[emoji]] : [];
+      const idx = users.indexOf(me);
+      if (idx >= 0) {
+        users.splice(idx, 1);
+      } else {
+        users.push(me);
+      }
+      if (users.length === 0) {
+        delete reactions[emoji];
+      } else {
+        reactions[emoji] = users;
+      }
+      const updated = { ...log, reactions };
+      delete updated.id;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', devlogId);
+      const encrypted = encrypt(JSON.stringify(updated), session.key);
+      try {
+        await fs.updateDoc(ref, { encrypted });
+      } catch (e) {
+        console.error('[Workshop] toggleReaction failed:', e);
+      }
+    },
+
+    // Toggle help-request status on own devlog: open <-> resolved.
+    async toggleHelpResolved(devlogId) {
+      if (!cloudReady() || !session) return;
+      const log = this.devlogs.find(d => d.id === devlogId);
+      if (!log || log.author !== session.playerName) return;
+      const newStatus = log.helpRequest === 'open' ? 'resolved' : 'open';
+      const updated = { ...log, helpRequest: newStatus };
+      delete updated.id;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', devlogId);
+      const encrypted = encrypt(JSON.stringify(updated), session.key);
+      try {
+        await fs.updateDoc(ref, { encrypted });
+      } catch (e) {
+        console.error('[Workshop] toggleHelpResolved failed:', e);
+      }
     },
 
     // ---- Project modal ----
@@ -6682,6 +6966,14 @@
     els.devlogInput.value = '';
     els.devlogSendBtn.disabled = true;
   });
+
+  // "Yardım gerek" toggle — flips state and updates button visual
+  if (els.helpToggleBtn) {
+    els.helpToggleBtn.addEventListener('click', () => {
+      Workshop.composerHelp = !Workshop.composerHelp;
+      Workshop.renderHelpToggle();
+    });
+  }
 
   // TODO composer
   if (els.todoInput && els.todoAddBtn) {
