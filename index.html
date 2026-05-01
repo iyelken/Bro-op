@@ -1979,6 +1979,68 @@
     letter-spacing: 0;
   }
 
+  /* Cover input row: text input + "SEÇ" button + clear button */
+  .cover-input-row {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .cover-input-row input {
+    flex: 1;
+    min-width: 0;
+  }
+  .cover-pick-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cover-pick-btn:hover {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.06);
+  }
+  .cover-pick-btn:active { transform: translateY(1px); }
+  .cover-pick-btn span:first-child { font-size: 14px; }
+  .cover-clear-btn {
+    flex-shrink: 0;
+    width: 32px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.15s;
+  }
+  .cover-clear-btn:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(255, 56, 96, 0.08);
+  }
+
+  /* Status text shown during upload/processing */
+  .cover-status {
+    margin-top: 6px;
+    font-family: var(--font-crt);
+    font-size: 12px;
+    color: var(--text-muted);
+    min-height: 16px;
+  }
+  .cover-status.error { color: var(--danger); }
+  .cover-status.success { color: #00ff7f; }
+
   /* Cover preview shown below URL input in the modal */
   .cover-preview {
     margin-top: 8px;
@@ -3605,7 +3667,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha6</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha7</span></div>
         </div>
 
         <div class="info-card">
@@ -3740,8 +3802,17 @@
               <textarea id="pfDesc" maxlength="500" placeholder="Kısa açıklama, motor, durum..."></textarea>
             </div>
             <div class="field">
-              <label>Kapak Görseli URL <span class="field-hint">(opsiyonel)</span></label>
-              <input type="url" id="pfCover" maxlength="500" placeholder="https://imgur.com/..." />
+              <label>Kapak Görseli <span class="field-hint">(opsiyonel)</span></label>
+              <div class="cover-input-row">
+                <input type="text" id="pfCover" maxlength="500" placeholder="URL yapıştır veya dosya seç" />
+                <button type="button" class="cover-pick-btn" id="pfCoverPickBtn" title="Bilgisayardan/telefondan görsel seç">
+                  <span>📁</span>
+                  <span>SEÇ</span>
+                </button>
+                <button type="button" class="cover-clear-btn hidden" id="pfCoverClearBtn" title="Görseli kaldır">✕</button>
+              </div>
+              <input type="file" id="pfCoverFile" accept="image/*" class="hidden" />
+              <div class="cover-status" id="pfCoverStatus"></div>
               <div class="cover-preview" id="pfCoverPreview"></div>
             </div>
           </div>
@@ -4098,6 +4169,10 @@
     pfDesc: $('#pfDesc'),
     pfCover: $('#pfCover'),
     pfCoverPreview: $('#pfCoverPreview'),
+    pfCoverFile: $('#pfCoverFile'),
+    pfCoverPickBtn: $('#pfCoverPickBtn'),
+    pfCoverClearBtn: $('#pfCoverClearBtn'),
+    pfCoverStatus: $('#pfCoverStatus'),
     pfCancelBtn: $('#pfCancelBtn'),
     pfSaveBtn: $('#pfSaveBtn'),
     projectFormError: $('#projectFormError'),
@@ -6203,6 +6278,10 @@
     _updateCoverPreview(url) {
       if (!els.pfCoverPreview) return;
       const trimmed = (url || '').trim();
+      // Show/hide clear button
+      if (els.pfCoverClearBtn) {
+        els.pfCoverClearBtn.classList.toggle('hidden', !trimmed);
+      }
       if (!trimmed) {
         els.pfCoverPreview.classList.remove('visible', 'error');
         els.pfCoverPreview.style.backgroundImage = '';
@@ -6210,6 +6289,11 @@
       }
       els.pfCoverPreview.classList.add('visible');
       els.pfCoverPreview.classList.remove('error');
+      // For data: URLs (base64) we can use directly without test-load
+      if (trimmed.startsWith('data:')) {
+        els.pfCoverPreview.style.backgroundImage = 'url(' + trimmed + ')';
+        return;
+      }
       // Test if image loads — show error if it fails
       const img = new Image();
       img.onload = () => {
@@ -6221,6 +6305,95 @@
         els.pfCoverPreview.classList.add('error');
       };
       img.src = trimmed;
+    },
+
+    // ============================================
+    // File picker — resize & convert to base64 data URL
+    // ============================================
+    // Reads a File object, draws it onto a canvas at most MAX_DIM in size,
+    // then exports as JPEG with QUALITY compression. Resulting data URL
+    // is small enough (typically 30-80KB) to embed directly in Firestore.
+    async _processCoverFile(file) {
+      const MAX_DIM = 400;     // Max width/height in pixels (square crop)
+      const QUALITY = 0.82;    // JPEG quality (0-1)
+      const MAX_INPUT = 10 * 1024 * 1024; // 10MB raw upload limit
+
+      if (!file) throw new Error('Dosya yok');
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Sadece görsel dosyaları kabul edilir');
+      }
+      if (file.size > MAX_INPUT) {
+        throw new Error('Dosya çok büyük (max 10MB)');
+      }
+
+      // Read file as data URL
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Dosya okunamadı'));
+        reader.readAsDataURL(file);
+      });
+
+      // Load into Image element
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = () => reject(new Error('Görsel yüklenemedi'));
+        i.src = dataUrl;
+      });
+
+      // Calculate target dimensions: scale so longest side = MAX_DIM,
+      // but do center-crop to a square aspect for consistent thumbnails
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const sourceSide = Math.min(w, h);  // crop to square
+      const sx = (w - sourceSide) / 2;
+      const sy = (h - sourceSide) / 2;
+
+      // Draw to canvas at MAX_DIM x MAX_DIM
+      const canvas = document.createElement('canvas');
+      canvas.width = MAX_DIM;
+      canvas.height = MAX_DIM;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, sx, sy, sourceSide, sourceSide, 0, 0, MAX_DIM, MAX_DIM);
+
+      // Export as JPEG (smaller than PNG for photos)
+      const out = canvas.toDataURL('image/jpeg', QUALITY);
+      return out;
+    },
+
+    async handleCoverFilePick(file) {
+      if (!file || !els.pfCoverStatus) return;
+      try {
+        els.pfCoverStatus.className = 'cover-status';
+        els.pfCoverStatus.textContent = '⏳ İşleniyor...';
+        const dataUrl = await this._processCoverFile(file);
+        // Sanity check size (dataUrl length is roughly bytes * 1.37)
+        const sizeKB = Math.round((dataUrl.length * 0.75) / 1024);
+        els.pfCover.value = dataUrl;
+        this._updateCoverPreview(dataUrl);
+        els.pfCoverStatus.className = 'cover-status success';
+        els.pfCoverStatus.textContent = '✓ Hazır (~' + sizeKB + 'KB)';
+        // Clear status after a few seconds
+        setTimeout(() => {
+          if (els.pfCoverStatus) els.pfCoverStatus.textContent = '';
+        }, 2500);
+      } catch (e) {
+        els.pfCoverStatus.className = 'cover-status error';
+        els.pfCoverStatus.textContent = '✗ ' + (e.message || 'Hata');
+      }
+    },
+
+    clearCoverImage() {
+      if (els.pfCover) els.pfCover.value = '';
+      this._updateCoverPreview('');
+      if (els.pfCoverFile) els.pfCoverFile.value = '';
+      if (els.pfCoverStatus) {
+        els.pfCoverStatus.className = 'cover-status';
+        els.pfCoverStatus.textContent = '';
+      }
     },
 
     // Stub for project list overflow modal — implemented in stage 5.
@@ -7638,6 +7811,11 @@
         els.pfCoverPreview.classList.remove('visible', 'error');
         els.pfCoverPreview.style.backgroundImage = '';
       }
+      if (els.pfCoverStatus) {
+        els.pfCoverStatus.className = 'cover-status';
+        els.pfCoverStatus.textContent = '';
+      }
+      if (els.pfCoverFile) els.pfCoverFile.value = '';
     },
 
     async saveProject() {
@@ -8509,6 +8687,20 @@
         Workshop._updateCoverPreview(els.pfCover.value);
       }, 350);
     });
+  }
+  // File picker — opens native file dialog
+  if (els.pfCoverPickBtn && els.pfCoverFile) {
+    els.pfCoverPickBtn.addEventListener('click', () => {
+      els.pfCoverFile.click();
+    });
+    els.pfCoverFile.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) Workshop.handleCoverFilePick(file);
+    });
+  }
+  // Clear button
+  if (els.pfCoverClearBtn) {
+    els.pfCoverClearBtn.addEventListener('click', () => Workshop.clearCoverImage());
   }
   els.projectModal.addEventListener('click', (e) => {
     if (e.target === els.projectModal) Workshop.closeProjectModal();
