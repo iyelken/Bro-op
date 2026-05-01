@@ -2248,6 +2248,24 @@
     font-style: italic;
   }
 
+  /* Inline-edit input — used to edit todo text or subtask text in place */
+  .todo-inline-edit {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--accent-workshop);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: inherit;
+    padding: 4px 8px;
+    border-radius: 2px;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(184, 85, 255, 0.2);
+    line-height: 1.3;
+  }
+  .todo-inline-edit:focus {
+    box-shadow: 0 0 0 3px rgba(184, 85, 255, 0.3);
+  }
+
   /* Celebration toast (shown when task auto-completes via subtasks) */
   .todo-celebrate-toast {
     position: fixed;
@@ -3313,7 +3331,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.1</span></div>
         </div>
 
         <div class="info-card">
@@ -3595,6 +3613,7 @@
         query: fsMod.query,
         orderBy: fsMod.orderBy,
         limit: fsMod.limit,
+        runTransaction: fsMod.runTransaction,
       };
       console.log('[Bro-op] Firebase ready');
     } catch (e) {
@@ -6147,6 +6166,17 @@
       const text = document.createElement('div');
       text.className = 'todo-text';
       text.textContent = it.text;
+      // Inline edit on dblclick for own items
+      if (isOwn) {
+        text.title = 'Çift tıkla düzenle';
+        text.style.cursor = 'text';
+        text.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          this._beginInlineEdit(text, it.text, (newText) => {
+            this.editTodoText(it.id, newText);
+          });
+        });
+      }
       head.appendChild(text);
 
       // Progress indicator (only if has subs)
@@ -6233,6 +6263,18 @@
           const subText = document.createElement('div');
           subText.className = 'todo-sub-text';
           subText.textContent = s.text;
+          // Inline edit: double-click (or single tap on mobile after a small delay)
+          // converts text to an editable input. Enter saves, Escape cancels.
+          if (isOwn) {
+            subText.title = 'Çift tıkla düzenle';
+            subText.style.cursor = 'text';
+            subText.addEventListener('dblclick', (e) => {
+              e.stopPropagation();
+              this._beginInlineEdit(subText, s.text, (newText) => {
+                this.editSubtaskText(it.id, s.id, newText);
+              });
+            });
+          }
           subEl.appendChild(subText);
 
           if (isOwn) {
@@ -6277,20 +6319,75 @@
     },
 
     // ---- TODO actions ----
-    async _writeMyTodos(items) {
-      if (!cloudReady() || !session) return;
+    // ============================================
+    // TODO actions — transaction-based to prevent race conditions
+    // ============================================
+    // The shared todos doc is `todos/{playerName}` and contains an
+    // `items` array. When two devices update at the same time, a naive
+    // setDoc would overwrite the other's changes. By using a Firestore
+    // transaction we always read the latest server state, apply our
+    // mutation, then write — so concurrent edits are merged safely.
+
+    // Internal helper: read latest items from server, apply mutator, write back.
+    // Returns the resulting items array on success, throws on failure.
+    async _mutateMyTodos(mutator) {
+      if (!cloudReady() || !session) return null;
       const { db, fs } = window.__broop;
       const ref = fs.doc(db, 'broop_app', session.cloudId, 'todos', session.playerName);
-      const payload = { items };
-      const encrypted = encrypt(JSON.stringify(payload), session.key);
-      await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
+      // Run inside a transaction so concurrent writes don't clobber each other
+      let resultItems = null;
+      await fs.runTransaction(db, async (txn) => {
+        const snap = await txn.get(ref);
+        let serverItems = [];
+        if (snap.exists()) {
+          const raw = decrypt(snap.data().encrypted || '', session.key);
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              serverItems = parsed.items || [];
+            } catch {}
+          }
+        }
+        // Mutator gets the fresh server items, returns the new items
+        const newItems = mutator(serverItems);
+        const payload = { items: newItems };
+        const encrypted = encrypt(JSON.stringify(payload), session.key);
+        txn.set(ref, { encrypted, updatedAt: Date.now() });
+        resultItems = newItems;
+      });
+      return resultItems;
+    },
+
+    // Wrapper for an action: do optimistic UI, then commit via transaction.
+    // If commit fails, revert UI to the previous state.
+    async _runTodoAction(optimisticMutator, transactionMutator) {
+      const me = session.playerName;
+      const previous = (this.todos[me] && this.todos[me].items) || [];
+      // Optimistic
+      const optimisticItems = optimisticMutator(previous);
+      this.todos[me] = { items: optimisticItems };
+      this.renderMineTodo();
+      // Commit
+      try {
+        const finalItems = await this._mutateMyTodos(transactionMutator);
+        // After commit, the snapshot listener will deliver the merged result,
+        // so we don't need to manually update local state. But just in case
+        // the listener is slow, refresh from finalItems.
+        if (finalItems) {
+          this.todos[me] = { items: finalItems };
+          this.renderMineTodo();
+        }
+      } catch (e) {
+        console.error('[Workshop] todo action failed:', e);
+        // Revert to previous state
+        this.todos[me] = { items: previous };
+        this.renderMineTodo();
+      }
     },
 
     async addTodo(text) {
       text = (text || '').trim();
       if (!text) return;
-      const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
       const now = Date.now();
       const item = {
         id: 't_' + now + '_' + Math.random().toString(36).slice(2, 7),
@@ -6299,78 +6396,47 @@
         createdTs: now,
         updatedTs: now,
       };
-      const nextItems = [...current, item];
-      // Optimistic update
-      this.todos[me] = { items: nextItems };
-      this.renderMineTodo();
-      try {
-        await this._writeMyTodos(nextItems);
-      } catch (e) {
-        console.error('[Workshop] addTodo failed:', e);
-        // Revert
-        this.todos[me] = { items: current };
-        this.renderMineTodo();
-      }
+      // Both optimistic and transaction mutators just append the new item.
+      // The transaction sees the LATEST server items and appends to that,
+      // so concurrent additions are preserved.
+      const append = (items) => [...items, item];
+      await this._runTodoAction(append, append);
     },
 
     async updateTodoStatus(id, newStatus) {
-      const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
-      const next = current.map(it =>
+      const updateStatus = (items) => items.map(it =>
         it.id === id ? { ...it, status: newStatus, updatedTs: Date.now() } : it
       );
-      this.todos[me] = { items: next };
-      this.renderMineTodo();
-      try {
-        await this._writeMyTodos(next);
-      } catch (e) {
-        console.error('[Workshop] updateTodoStatus failed:', e);
-        this.todos[me] = { items: current };
-        this.renderMineTodo();
-      }
+      await this._runTodoAction(updateStatus, updateStatus);
     },
 
     async deleteTodo(id) {
-      const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
-      const next = current.filter(it => it.id !== id);
-      this.todos[me] = { items: next };
-      this.renderMineTodo();
-      try {
-        await this._writeMyTodos(next);
-      } catch (e) {
-        console.error('[Workshop] deleteTodo failed:', e);
-        this.todos[me] = { items: current };
-        this.renderMineTodo();
-      }
+      const remove = (items) => items.filter(it => it.id !== id);
+      await this._runTodoAction(remove, remove);
     },
 
-    // ---- Subtask actions ----
-    // Toggle the expand/collapse state of a todo (showing its subtasks).
-    // This is local UI state but we persist it so it survives reloads
-    // and stays consistent across devices.
     async toggleTodoExpand(id) {
-      const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
-      const next = current.map(it =>
+      // We need the current expanded state to flip it. Use local state for
+      // the optimistic version; for the transaction, read server state and
+      // flip whatever's there.
+      const flip = (items) => items.map(it =>
         it.id === id ? { ...it, expanded: !it.expanded } : it
       );
-      this.todos[me] = { items: next };
-      this.renderMineTodo();
-      try {
-        await this._writeMyTodos(next);
-      } catch (e) {
-        console.error('[Workshop] toggleTodoExpand failed:', e);
-        this.todos[me] = { items: current };
-        this.renderMineTodo();
-      }
+      await this._runTodoAction(flip, flip);
+    },
+
+    async editTodoText(id, newText) {
+      newText = (newText || '').trim();
+      if (!newText) return;
+      const update = (items) => items.map(it =>
+        it.id === id ? { ...it, text: newText, updatedTs: Date.now() } : it
+      );
+      await this._runTodoAction(update, update);
     },
 
     async addSubtask(parentId, text) {
       text = (text || '').trim();
       if (!text) return;
-      const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
       const now = Date.now();
       const sub = {
         id: 's_' + now + '_' + Math.random().toString(36).slice(2, 7),
@@ -6378,37 +6444,29 @@
         done: false,
         createdTs: now,
       };
-      const next = current.map(it =>
+      const append = (items) => items.map(it =>
         it.id === parentId
           ? { ...it, subtasks: [...(it.subtasks || []), sub], updatedTs: now }
           : it
       );
-      this.todos[me] = { items: next };
-      this.renderMineTodo();
-      try {
-        await this._writeMyTodos(next);
-      } catch (e) {
-        console.error('[Workshop] addSubtask failed:', e);
-        this.todos[me] = { items: current };
-        this.renderMineTodo();
-      }
+      await this._runTodoAction(append, append);
     },
 
     async toggleSubtask(parentId, subId) {
       const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
+      // We need to know AFTER the transaction whether we should celebrate.
+      // The transaction mutator runs against fresh server data, so the
+      // answer depends on what's there. Capture it inside the mutator.
       let triggerCelebration = false;
       let parentText = '';
 
-      const next = current.map(it => {
+      const flip = (items) => items.map(it => {
         if (it.id !== parentId) return it;
         const subs = (it.subtasks || []).map(s =>
           s.id === subId ? { ...s, done: !s.done } : s
         );
         const updatedItem = { ...it, subtasks: subs, updatedTs: Date.now() };
-
-        // If all subtasks are now complete and there are some, auto-move to "done"
-        // and trigger a celebration. Only do this if it wasn't already done.
+        // Auto-complete if all subs done and parent isn't already done
         const allDone = subs.length > 0 && subs.every(s => s.done);
         if (allDone && it.status !== 'done') {
           updatedItem.status = 'done';
@@ -6418,35 +6476,61 @@
         return updatedItem;
       });
 
-      this.todos[me] = { items: next };
+      // Optimistic version — same logic, also captures variables locally
+      const optimistic = (items) => items.map(it => {
+        if (it.id !== parentId) return it;
+        const subs = (it.subtasks || []).map(s =>
+          s.id === subId ? { ...s, done: !s.done } : s
+        );
+        const updatedItem = { ...it, subtasks: subs, updatedTs: Date.now() };
+        const allDone = subs.length > 0 && subs.every(s => s.done);
+        if (allDone && it.status !== 'done') {
+          updatedItem.status = 'done';
+        }
+        return updatedItem;
+      });
+
+      const previous = (this.todos[me] && this.todos[me].items) || [];
+      this.todos[me] = { items: optimistic(previous) };
       this.renderMineTodo();
       try {
-        await this._writeMyTodos(next);
+        const finalItems = await this._mutateMyTodos(flip);
+        if (finalItems) {
+          this.todos[me] = { items: finalItems };
+          this.renderMineTodo();
+        }
         if (triggerCelebration) this._celebrateTodoDone(parentText);
       } catch (e) {
         console.error('[Workshop] toggleSubtask failed:', e);
-        this.todos[me] = { items: current };
+        this.todos[me] = { items: previous };
         this.renderMineTodo();
       }
     },
 
+    async editSubtaskText(parentId, subId, newText) {
+      newText = (newText || '').trim();
+      if (!newText) return;
+      const update = (items) => items.map(it =>
+        it.id === parentId
+          ? {
+              ...it,
+              subtasks: (it.subtasks || []).map(s =>
+                s.id === subId ? { ...s, text: newText } : s
+              ),
+              updatedTs: Date.now(),
+            }
+          : it
+      );
+      await this._runTodoAction(update, update);
+    },
+
     async deleteSubtask(parentId, subId) {
-      const me = session.playerName;
-      const current = (this.todos[me] && this.todos[me].items) || [];
-      const next = current.map(it =>
+      const remove = (items) => items.map(it =>
         it.id === parentId
           ? { ...it, subtasks: (it.subtasks || []).filter(s => s.id !== subId), updatedTs: Date.now() }
           : it
       );
-      this.todos[me] = { items: next };
-      this.renderMineTodo();
-      try {
-        await this._writeMyTodos(next);
-      } catch (e) {
-        console.error('[Workshop] deleteSubtask failed:', e);
-        this.todos[me] = { items: current };
-        this.renderMineTodo();
-      }
+      await this._runTodoAction(remove, remove);
     },
 
     // Show a brief celebration when a task auto-completes via subtasks.
@@ -6472,6 +6556,56 @@
       return String(s).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[c]));
+    },
+
+    // Convert a text element into an editable input. When the user presses
+    // Enter, calls onSave with the new text. Escape or blur cancels.
+    // Used for both main todo text and subtask text.
+    _beginInlineEdit(textEl, currentText, onSave) {
+      // Avoid stacking edits if user dblclicks twice quickly
+      if (textEl.dataset.editing === '1') return;
+      textEl.dataset.editing = '1';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentText;
+      input.maxLength = 200;
+      input.className = 'todo-inline-edit';
+      // Replace text with input
+      textEl.style.display = 'none';
+      textEl.parentNode.insertBefore(input, textEl.nextSibling);
+      input.focus();
+      input.select();
+
+      let finished = false;
+      const finish = (commit) => {
+        if (finished) return;
+        finished = true;
+        const newVal = input.value.trim();
+        // Restore the text element either way
+        textEl.style.display = '';
+        delete textEl.dataset.editing;
+        input.remove();
+        if (commit && newVal && newVal !== currentText) {
+          onSave(newVal);
+        }
+      };
+
+      input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finish(true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          finish(false);
+        }
+      });
+      // Prevent the parent draggable from interfering with text editing
+      input.addEventListener('mousedown', (e) => e.stopPropagation());
+      input.addEventListener('click', (e) => e.stopPropagation());
+      // Blur saves (clicking elsewhere)
+      input.addEventListener('blur', () => finish(true));
     },
 
     // ---- Devlog actions ----
