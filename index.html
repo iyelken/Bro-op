@@ -1879,6 +1879,290 @@
     font-size: 16px;
   }
 
+  /* Devlog tag picker (composer) and filter row */
+  .devlog-tag-row,
+  .devlog-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .devlog-filter-row {
+    margin-top: -4px;
+    margin-bottom: 14px;
+  }
+  .devlog-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .devlog-tag-pill:active { transform: translateY(1px); }
+  .devlog-tag-pill .tag-icon { font-size: 11px; }
+  .devlog-tag-pill.active {
+    /* When active, color comes from inline style (per-tag color) */
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  /* Tag chip on devlog entries (display only) */
+  .devlog-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .devlog-tag-chip .tag-icon { font-size: 10px; }
+
+  /* ============================================
+     STREAK CALENDAR (GitHub-style activity grid)
+     ============================================ */
+  .streak-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .streak-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-quest);
+  }
+  .streak-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .streak-title {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .streak-stat {
+    font-family: var(--font-crt);
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .streak-stat strong {
+    color: var(--accent-quest);
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+  }
+  /* The grid itself */
+  .streak-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 1fr);
+    gap: 3px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .streak-cell {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    background: var(--bg-deep);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .streak-cell[data-level="1"] { background: rgba(255, 176, 0, 0.25); border-color: rgba(255, 176, 0, 0.3); }
+  .streak-cell[data-level="2"] { background: rgba(255, 176, 0, 0.5); border-color: rgba(255, 176, 0, 0.5); }
+  .streak-cell[data-level="3"] { background: rgba(255, 176, 0, 0.75); border-color: rgba(255, 176, 0, 0.7); }
+  .streak-cell[data-level="4"] {
+    background: var(--accent-quest);
+    border-color: var(--accent-quest);
+    box-shadow: 0 0 4px rgba(255, 176, 0, 0.5);
+  }
+  .streak-cell:hover { transform: scale(1.4); z-index: 2; }
+  .streak-cell.is-today { outline: 1px solid var(--accent-chat); outline-offset: 1px; }
+  .streak-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  /* ============================================
+     TODO LIST (kanban style, 3 columns)
+     ============================================ */
+  .todo-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .todo-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-workshop);
+  }
+  .todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .todo-title {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .todo-counts {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .todo-counts strong {
+    color: var(--accent-workshop);
+    font-weight: bold;
+  }
+  .todo-composer {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .todo-composer input {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .todo-composer input:focus {
+    border-color: var(--accent-workshop);
+  }
+  .ws-btn.small {
+    padding: 8px 12px;
+    font-size: 8px;
+    flex-shrink: 0;
+  }
+  .todo-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .todo-col {
+    background: var(--bg-deep);
+    border-radius: 3px;
+    padding: 10px;
+    border: 1px solid var(--border);
+  }
+  .todo-col-header {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .todo-col[data-status="todo"] .todo-col-header { color: var(--text-secondary); }
+  .todo-col[data-status="doing"] .todo-col-header { color: var(--accent-quest); }
+  .todo-col[data-status="done"] .todo-col-header { color: var(--accent-match); }
+  .todo-col-count {
+    font-family: var(--font-crt);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .todo-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 8px;
+  }
+  .todo-item {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    animation: paneIn 0.2s ease-out;
+  }
+  .todo-item.done .todo-text {
+    color: var(--text-muted);
+    text-decoration: line-through;
+  }
+  .todo-text {
+    flex: 1;
+    line-height: 1.35;
+  }
+  .todo-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .todo-action-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    padding: 4px 6px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .todo-action-btn:hover { color: var(--accent-workshop); border-color: var(--accent-workshop); }
+  .todo-action-btn.danger:hover { color: var(--danger); border-color: var(--danger); background: rgba(255, 56, 96, 0.08); }
+  .todo-action-btn:active { transform: translateY(1px); }
+  .todo-empty {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 6px 4px;
+    text-align: center;
+    font-style: italic;
+  }
+  /* Read-only theirs view */
+  .todo-card.readonly .todo-action-btn { display: none; }
+
   /* Devlog entries */
   .devlog-list {
     display: flex;
@@ -2584,7 +2868,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.8.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.10.0</span></div>
         </div>
 
         <div class="info-card">
@@ -2638,10 +2922,29 @@
         <!-- My project sub-pane -->
         <div class="ws-pane active" data-ws-pane="mine">
           <div id="mineProject"></div>
+
+          <!-- Streak calendar -->
+          <div class="streak-card" id="mineStreakCard"></div>
+
+          <!-- TODO list -->
+          <div class="todo-card" id="mineTodoCard">
+            <div class="todo-header">
+              <h4 class="todo-title">TODO</h4>
+              <span class="todo-counts" id="mineTodoCounts"></span>
+            </div>
+            <div class="todo-composer">
+              <input type="text" id="todoInput" placeholder="yapılacak iş ekle..." maxlength="120" />
+              <button class="ws-btn primary small" id="todoAddBtn" disabled>+ EKLE</button>
+            </div>
+            <div class="todo-columns" id="mineTodoCols"></div>
+          </div>
+
           <div class="devlog-composer">
+            <div class="devlog-tag-row" id="devlogTagRow"></div>
             <textarea id="devlogInput" placeholder="bugün ne yaptın? (kısa not olur)" rows="2" maxlength="500"></textarea>
             <button class="ws-btn primary" id="devlogSendBtn" disabled>+ DEVLOG EKLE</button>
           </div>
+          <div class="devlog-filter-row" id="mineDevlogFilter"></div>
           <div class="devlog-list" id="mineDevlogs"></div>
         </div>
 
@@ -2649,6 +2952,20 @@
         <div class="ws-pane" data-ws-pane="theirs">
           <div class="ws-member-picker" id="theirsPicker"></div>
           <div id="theirsProject"></div>
+
+          <!-- Their streak (read-only) -->
+          <div class="streak-card" id="theirsStreakCard"></div>
+
+          <!-- Their TODO (read-only) -->
+          <div class="todo-card readonly" id="theirsTodoCard">
+            <div class="todo-header">
+              <h4 class="todo-title">TODO</h4>
+              <span class="todo-counts" id="theirsTodoCounts"></span>
+            </div>
+            <div class="todo-columns" id="theirsTodoCols"></div>
+          </div>
+
+          <div class="devlog-filter-row" id="theirsDevlogFilter"></div>
           <div class="devlog-list" id="theirsDevlogs"></div>
         </div>
 
@@ -3005,11 +3322,26 @@
     wsPanes: $$('.ws-pane'),
     mineProject: $('#mineProject'),
     mineDevlogs: $('#mineDevlogs'),
+    mineDevlogFilter: $('#mineDevlogFilter'),
     devlogInput: $('#devlogInput'),
     devlogSendBtn: $('#devlogSendBtn'),
+    devlogTagRow: $('#devlogTagRow'),
     theirsPicker: $('#theirsPicker'),
     theirsProject: $('#theirsProject'),
     theirsDevlogs: $('#theirsDevlogs'),
+    theirsDevlogFilter: $('#theirsDevlogFilter'),
+    // Streak
+    mineStreakCard: $('#mineStreakCard'),
+    theirsStreakCard: $('#theirsStreakCard'),
+    // TODO
+    mineTodoCard: $('#mineTodoCard'),
+    mineTodoCols: $('#mineTodoCols'),
+    mineTodoCounts: $('#mineTodoCounts'),
+    todoInput: $('#todoInput'),
+    todoAddBtn: $('#todoAddBtn'),
+    theirsTodoCard: $('#theirsTodoCard'),
+    theirsTodoCols: $('#theirsTodoCols'),
+    theirsTodoCounts: $('#theirsTodoCounts'),
     newResourceBtn: $('#newResourceBtn'),
     resourceCatFilter: $('#resourceCatFilter'),
     resourceList: $('#resourceList'),
@@ -4630,6 +4962,27 @@
     { key: 'article', label: 'ARTICLE' },
   ];
 
+  // Devlog category tags — used to label what kind of progress was made.
+  // Each tag has its own color for fast visual scanning.
+  const DEVLOG_TAGS = [
+    { key: 'art',     label: 'SANAT',    icon: '🎨', color: '#ffb000' },
+    { key: 'code',    label: 'KOD',      icon: '🔧', color: '#00f0ff' },
+    { key: 'sound',   label: 'SES',      icon: '🎵', color: '#b855ff' },
+    { key: 'design',  label: 'TASARIM',  icon: '📐', color: '#00ff7f' },
+    { key: 'bug',     label: 'BUG',      icon: '🐛', color: '#ff3860' },
+    { key: 'idea',    label: 'FİKİR',    icon: '💡', color: '#ff8a3d' },
+    { key: 'other',   label: 'DİĞER',    icon: '📝', color: '#9aa3c7' },
+  ];
+  function tagByKey(key) { return DEVLOG_TAGS.find(t => t.key === key) || null; }
+  // Convert hex color to rgba for translucent backgrounds
+  function hexToRgba(hex, a) {
+    const m = hex.replace('#', '');
+    const r = parseInt(m.slice(0, 2), 16);
+    const g = parseInt(m.slice(2, 4), 16);
+    const b = parseInt(m.slice(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
   const Workshop = {
     activeSubTab: 'mine',
     selectedTheirsMember: null,
@@ -4637,10 +4990,12 @@
     workshopsUnsubscribe: null,
     devlogsUnsubscribe: null,
     resourcesUnsubscribe: null,
+    todosUnsubscribe: null,
 
     workshops: {},      // { [playerName]: { title, description } }
-    devlogs: [],        // { id, author, text, ts, comments }[]
+    devlogs: [],        // { id, author, text, ts, tag, comments }[]
     resources: [],      // { id, url, title, category, addedBy, ts }[]
+    todos: {},          // { [playerName]: { items: [{ id, text, status, createdTs, updatedTs }] } }
 
     // Sound detection: Map<devlogId, commentCount>
     knownDevlogState: null,
@@ -4648,6 +5003,9 @@
     // Form state
     rfCategory: 'tutorial',
     resourceFilter: 'all',
+    composerTag: null,        // currently selected tag in composer (null = no tag)
+    mineFilterTag: 'all',     // 'all' | tag.key
+    theirsFilterTag: 'all',
 
     start() {
       if (!cloudReady() || !session) return;
@@ -4724,17 +5082,39 @@
         this.renderResources();
       }, (err) => console.warn('[Workshop] resources error:', err));
 
+      // Todos: per-player single-doc collection. Each doc id = playerName.
+      const todosCol = fs.collection(db, 'broop_app', session.cloudId, 'todos');
+      if (this.todosUnsubscribe) this.todosUnsubscribe();
+      this.todosUnsubscribe = fs.onSnapshot(todosCol, (snap) => {
+        const next = {};
+        snap.forEach(d => {
+          const raw = decrypt(d.data().encrypted || '', session.key);
+          if (!raw) return;
+          try { next[d.id] = JSON.parse(raw); } catch {}
+        });
+        this.todos = next;
+        this.renderMineTodo();
+        this.renderTheirsTodo();
+      }, (err) => console.warn('[Workshop] todos error:', err));
+
       this.renderResourceFilter();
+      this.renderComposerTags();
+      this.renderDevlogFilters();
     },
 
     stop() {
       if (this.workshopsUnsubscribe) { this.workshopsUnsubscribe(); this.workshopsUnsubscribe = null; }
       if (this.devlogsUnsubscribe) { this.devlogsUnsubscribe(); this.devlogsUnsubscribe = null; }
       if (this.resourcesUnsubscribe) { this.resourcesUnsubscribe(); this.resourcesUnsubscribe = null; }
+      if (this.todosUnsubscribe) { this.todosUnsubscribe(); this.todosUnsubscribe = null; }
       this.workshops = {};
       this.devlogs = [];
       this.resources = [];
+      this.todos = {};
       this.knownDevlogState = null;
+      this.composerTag = null;
+      this.mineFilterTag = 'all';
+      this.theirsFilterTag = 'all';
     },
 
     setSubTab(tab) {
@@ -4750,7 +5130,10 @@
       if (!session) return;
       const me = session.playerName;
       const mine = this.workshops[me];
-      const myLogs = this.devlogs.filter(d => d.author === me);
+      let myLogs = this.devlogs.filter(d => d.author === me);
+      if (this.mineFilterTag !== 'all') {
+        myLogs = myLogs.filter(d => (d.tag || null) === this.mineFilterTag);
+      }
 
       // Header card
       els.mineProject.innerHTML = '';
@@ -4791,6 +5174,9 @@
 
       // Devlog list
       this.renderDevlogList(els.mineDevlogs, myLogs, true);
+      // Refresh streak and todo since they depend on devlogs/state
+      this.renderMineStreak();
+      this.renderMineTodo();
     },
 
     // ---- Their project rendering ----
@@ -4826,7 +5212,10 @@
       // Render selected member's project
       const target = this.selectedTheirsMember;
       const ws = this.workshops[target];
-      const targetLogs = this.devlogs.filter(d => d.author === target);
+      let targetLogs = this.devlogs.filter(d => d.author === target);
+      if (this.theirsFilterTag !== 'all') {
+        targetLogs = targetLogs.filter(d => (d.tag || null) === this.theirsFilterTag);
+      }
 
       els.theirsProject.innerHTML = '';
       if (!ws || !ws.title) {
@@ -4855,6 +5244,9 @@
       }
 
       this.renderDevlogList(els.theirsDevlogs, targetLogs, false);
+      // Render their streak and TODO (read-only)
+      this.renderTheirsStreak();
+      this.renderTheirsTodo();
     },
 
     renderDevlogList(container, logs, isMine) {
@@ -4904,6 +5296,20 @@
         meta.appendChild(del);
       }
       wrap.appendChild(meta);
+
+      // Tag chip (if devlog has a tag)
+      if (log.tag) {
+        const tag = tagByKey(log.tag);
+        if (tag) {
+          const chip = document.createElement('span');
+          chip.className = 'devlog-tag-chip';
+          chip.style.background = hexToRgba(tag.color, 0.16);
+          chip.style.color = tag.color;
+          chip.style.border = '1px solid ' + hexToRgba(tag.color, 0.4);
+          chip.innerHTML = '<span class="tag-icon">' + tag.icon + '</span><span>' + tag.label + '</span>';
+          wrap.appendChild(chip);
+        }
+      }
 
       const text = document.createElement('div');
       text.className = 'devlog-text';
@@ -4987,6 +5393,404 @@
       return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }) + ' ' + hh + ':' + mm;
     },
 
+    // ---- Tag UI rendering ----
+    renderComposerTags() {
+      if (!els.devlogTagRow) return;
+      const row = els.devlogTagRow;
+      row.innerHTML = '';
+
+      // "Etiketsiz" option (no tag)
+      const noneBtn = document.createElement('button');
+      noneBtn.type = 'button';
+      noneBtn.className = 'devlog-tag-pill' + (this.composerTag === null ? ' active' : '');
+      noneBtn.textContent = 'ETİKETSİZ';
+      if (this.composerTag === null) {
+        noneBtn.style.background = 'rgba(154,163,199,0.16)';
+        noneBtn.style.borderColor = '#9aa3c7';
+        noneBtn.style.color = '#9aa3c7';
+      }
+      noneBtn.addEventListener('click', () => {
+        this.composerTag = null;
+        this.renderComposerTags();
+      });
+      row.appendChild(noneBtn);
+
+      for (const tag of DEVLOG_TAGS) {
+        const isActive = this.composerTag === tag.key;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'devlog-tag-pill' + (isActive ? ' active' : '');
+        b.innerHTML = '<span class="tag-icon">' + tag.icon + '</span><span>' + tag.label + '</span>';
+        if (isActive) {
+          b.style.background = hexToRgba(tag.color, 0.16);
+          b.style.borderColor = tag.color;
+          b.style.color = tag.color;
+          b.style.boxShadow = '0 0 8px ' + hexToRgba(tag.color, 0.25);
+        }
+        b.addEventListener('click', () => {
+          this.composerTag = tag.key;
+          this.renderComposerTags();
+        });
+        row.appendChild(b);
+      }
+    },
+
+    renderDevlogFilters() {
+      // Render filter row for both mine + theirs
+      this._renderDevlogFilter(els.mineDevlogFilter, 'mine');
+      this._renderDevlogFilter(els.theirsDevlogFilter, 'theirs');
+    },
+
+    _renderDevlogFilter(container, which) {
+      if (!container) return;
+      container.innerHTML = '';
+      const activeFilter = which === 'mine' ? this.mineFilterTag : this.theirsFilterTag;
+
+      const all = document.createElement('button');
+      all.type = 'button';
+      all.className = 'devlog-tag-pill' + (activeFilter === 'all' ? ' active' : '');
+      all.textContent = 'HEPSİ';
+      if (activeFilter === 'all') {
+        all.style.background = hexToRgba('#b855ff', 0.16);
+        all.style.borderColor = '#b855ff';
+        all.style.color = '#b855ff';
+      }
+      all.addEventListener('click', () => {
+        if (which === 'mine') this.mineFilterTag = 'all'; else this.theirsFilterTag = 'all';
+        this.renderDevlogFilters();
+        if (which === 'mine') this.renderMine(); else this.renderTheirs();
+      });
+      container.appendChild(all);
+
+      for (const tag of DEVLOG_TAGS) {
+        const isActive = activeFilter === tag.key;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'devlog-tag-pill' + (isActive ? ' active' : '');
+        b.innerHTML = '<span class="tag-icon">' + tag.icon + '</span><span>' + tag.label + '</span>';
+        if (isActive) {
+          b.style.background = hexToRgba(tag.color, 0.16);
+          b.style.borderColor = tag.color;
+          b.style.color = tag.color;
+          b.style.boxShadow = '0 0 8px ' + hexToRgba(tag.color, 0.25);
+        }
+        b.addEventListener('click', () => {
+          if (which === 'mine') this.mineFilterTag = tag.key;
+          else this.theirsFilterTag = tag.key;
+          this.renderDevlogFilters();
+          if (which === 'mine') this.renderMine(); else this.renderTheirs();
+        });
+        container.appendChild(b);
+      }
+    },
+
+    // ---- TODO rendering ----
+    renderMineTodo() {
+      if (!session) return;
+      this._renderTodoCols(els.mineTodoCols, els.mineTodoCounts, session.playerName, true);
+    },
+
+    renderTheirsTodo() {
+      if (!session || !this.selectedTheirsMember) {
+        if (els.theirsTodoCols) els.theirsTodoCols.innerHTML = '';
+        if (els.theirsTodoCounts) els.theirsTodoCounts.textContent = '';
+        return;
+      }
+      this._renderTodoCols(els.theirsTodoCols, els.theirsTodoCounts, this.selectedTheirsMember, false);
+    },
+
+    _renderTodoCols(container, countsEl, ownerName, isOwn) {
+      if (!container) return;
+      const data = this.todos[ownerName] || { items: [] };
+      const items = data.items || [];
+
+      // Counts
+      const totals = { todo: 0, doing: 0, done: 0 };
+      for (const it of items) {
+        if (totals[it.status] !== undefined) totals[it.status]++;
+      }
+      if (countsEl) {
+        countsEl.innerHTML = '<strong>' + totals.done + '</strong> / ' + items.length;
+      }
+
+      // Build columns
+      container.innerHTML = '';
+      const cols = [
+        { status: 'todo', label: 'YAPILACAK' },
+        { status: 'doing', label: 'YAPILIYOR' },
+        { status: 'done', label: 'BİTTİ' },
+      ];
+      for (const col of cols) {
+        const colItems = items.filter(it => it.status === col.status);
+        const colEl = document.createElement('div');
+        colEl.className = 'todo-col';
+        colEl.dataset.status = col.status;
+        const header = document.createElement('div');
+        header.className = 'todo-col-header';
+        const lbl = document.createElement('span');
+        lbl.textContent = col.label;
+        const cnt = document.createElement('span');
+        cnt.className = 'todo-col-count';
+        cnt.textContent = colItems.length;
+        header.appendChild(lbl);
+        header.appendChild(cnt);
+        colEl.appendChild(header);
+
+        const itemsEl = document.createElement('div');
+        itemsEl.className = 'todo-items';
+        if (colItems.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'todo-empty';
+          empty.textContent = '—';
+          itemsEl.appendChild(empty);
+        } else {
+          for (const it of colItems) {
+            itemsEl.appendChild(this._renderTodoItem(it, ownerName, isOwn));
+          }
+        }
+        colEl.appendChild(itemsEl);
+        container.appendChild(colEl);
+      }
+    },
+
+    _renderTodoItem(it, ownerName, isOwn) {
+      const wrap = document.createElement('div');
+      wrap.className = 'todo-item' + (it.status === 'done' ? ' done' : '');
+      const text = document.createElement('div');
+      text.className = 'todo-text';
+      text.textContent = it.text;
+      wrap.appendChild(text);
+
+      if (isOwn) {
+        const actions = document.createElement('div');
+        actions.className = 'todo-actions';
+        // Status transitions: todo -> doing -> done -> todo (cycle)
+        if (it.status === 'todo') {
+          const startBtn = document.createElement('button');
+          startBtn.className = 'todo-action-btn';
+          startBtn.title = 'Başla';
+          startBtn.textContent = '▶';
+          startBtn.addEventListener('click', () => this.updateTodoStatus(it.id, 'doing'));
+          actions.appendChild(startBtn);
+        } else if (it.status === 'doing') {
+          const doneBtn = document.createElement('button');
+          doneBtn.className = 'todo-action-btn';
+          doneBtn.title = 'Bitir';
+          doneBtn.textContent = '✓';
+          doneBtn.addEventListener('click', () => this.updateTodoStatus(it.id, 'done'));
+          actions.appendChild(doneBtn);
+          const backBtn = document.createElement('button');
+          backBtn.className = 'todo-action-btn';
+          backBtn.title = 'Geri al';
+          backBtn.textContent = '◀';
+          backBtn.addEventListener('click', () => this.updateTodoStatus(it.id, 'todo'));
+          actions.appendChild(backBtn);
+        } else if (it.status === 'done') {
+          const reopenBtn = document.createElement('button');
+          reopenBtn.className = 'todo-action-btn';
+          reopenBtn.title = 'Tekrar aç';
+          reopenBtn.textContent = '↺';
+          reopenBtn.addEventListener('click', () => this.updateTodoStatus(it.id, 'todo'));
+          actions.appendChild(reopenBtn);
+        }
+        const delBtn = document.createElement('button');
+        delBtn.className = 'todo-action-btn danger';
+        delBtn.title = 'Sil';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', () => {
+          if (confirm('Bu görevi silmek istediğine emin misin?')) this.deleteTodo(it.id);
+        });
+        actions.appendChild(delBtn);
+
+        wrap.appendChild(actions);
+      }
+      return wrap;
+    },
+
+    // ---- TODO actions ----
+    async _writeMyTodos(items) {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'todos', session.playerName);
+      const payload = { items };
+      const encrypted = encrypt(JSON.stringify(payload), session.key);
+      await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
+    },
+
+    async addTodo(text) {
+      text = (text || '').trim();
+      if (!text) return;
+      const me = session.playerName;
+      const current = (this.todos[me] && this.todos[me].items) || [];
+      const now = Date.now();
+      const item = {
+        id: 't_' + now + '_' + Math.random().toString(36).slice(2, 7),
+        text,
+        status: 'todo',
+        createdTs: now,
+        updatedTs: now,
+      };
+      const nextItems = [...current, item];
+      // Optimistic update
+      this.todos[me] = { items: nextItems };
+      this.renderMineTodo();
+      try {
+        await this._writeMyTodos(nextItems);
+      } catch (e) {
+        console.error('[Workshop] addTodo failed:', e);
+        // Revert
+        this.todos[me] = { items: current };
+        this.renderMineTodo();
+      }
+    },
+
+    async updateTodoStatus(id, newStatus) {
+      const me = session.playerName;
+      const current = (this.todos[me] && this.todos[me].items) || [];
+      const next = current.map(it =>
+        it.id === id ? { ...it, status: newStatus, updatedTs: Date.now() } : it
+      );
+      this.todos[me] = { items: next };
+      this.renderMineTodo();
+      try {
+        await this._writeMyTodos(next);
+      } catch (e) {
+        console.error('[Workshop] updateTodoStatus failed:', e);
+        this.todos[me] = { items: current };
+        this.renderMineTodo();
+      }
+    },
+
+    async deleteTodo(id) {
+      const me = session.playerName;
+      const current = (this.todos[me] && this.todos[me].items) || [];
+      const next = current.filter(it => it.id !== id);
+      this.todos[me] = { items: next };
+      this.renderMineTodo();
+      try {
+        await this._writeMyTodos(next);
+      } catch (e) {
+        console.error('[Workshop] deleteTodo failed:', e);
+        this.todos[me] = { items: current };
+        this.renderMineTodo();
+      }
+    },
+
+    // ---- Streak rendering (GitHub-style activity grid) ----
+    renderMineStreak() {
+      if (!session || !els.mineStreakCard) return;
+      this._renderStreakCard(els.mineStreakCard, session.playerName, true);
+    },
+
+    renderTheirsStreak() {
+      if (!session || !els.theirsStreakCard) return;
+      if (!this.selectedTheirsMember) {
+        els.theirsStreakCard.innerHTML = '';
+        return;
+      }
+      this._renderStreakCard(els.theirsStreakCard, this.selectedTheirsMember, false);
+    },
+
+    _renderStreakCard(container, ownerName, isOwn) {
+      // Build a calendar of last 17 weeks (~119 days). Each day shows
+      // a "level" 0-4 based on number of devlogs that day.
+      const now = new Date();
+      // End: today (Sunday-aligned to right side)
+      // Start: 17 weeks before this week's Sunday
+      const WEEKS = 17;
+      const daysToShow = WEEKS * 7;
+
+      // Build a Map<dateKey, count> for this owner's devlogs
+      const counts = new Map();
+      for (const d of this.devlogs) {
+        if (d.author !== ownerName || !d.ts) continue;
+        const dt = new Date(d.ts);
+        const key = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+
+      // Determine grid start date (top-left cell)
+      // We want today on the right edge, and rows = day-of-week (Mon-Sun)
+      // Start: today minus (daysToShow - 1) days
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - (daysToShow - 1));
+
+      // Compute streak (consecutive days ending today)
+      let currentStreak = 0;
+      const todayKey = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+      let cursor = new Date(now);
+      cursor.setHours(0, 0, 0, 0);
+      // If today has 0, streak might still continue from yesterday if user hasn't logged today yet —
+      // we count yesterday as the most recent, so check cursor going back
+      if (!counts.has(todayKey)) cursor.setDate(cursor.getDate() - 1);
+      for (let i = 0; i < daysToShow; i++) {
+        const k = cursor.getFullYear() + '-' + (cursor.getMonth() + 1) + '-' + cursor.getDate();
+        if (counts.has(k)) {
+          currentStreak++;
+          cursor.setDate(cursor.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      const totalLogs = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+
+      // Build the card
+      container.innerHTML = '';
+      const header = document.createElement('div');
+      header.className = 'streak-card-header';
+      const title = document.createElement('h4');
+      title.className = 'streak-title';
+      title.textContent = isOwn ? 'AKTİVİTE' : (ownerName + ' AKTİVİTE');
+      const stat = document.createElement('div');
+      stat.className = 'streak-stat';
+      stat.innerHTML = '<strong>' + currentStreak + '</strong> günlük seri • <strong>' + totalLogs + '</strong> devlog';
+      header.appendChild(title);
+      header.appendChild(stat);
+      container.appendChild(header);
+
+      if (totalLogs === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'streak-empty';
+        empty.textContent = isOwn ? '> henüz devlog yazmadın' : '> henüz devlog yok';
+        container.appendChild(empty);
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'streak-grid';
+      // Build cells
+      // Note: grid-auto-flow is column → cells fill top-to-bottom then next column
+      // We need the start day to align to its weekday row
+      const startDow = start.getDay(); // 0=Sun..6=Sat — we'll use Sun=top
+      // Pad with invisible cells before start to align rows
+      for (let i = 0; i < startDow; i++) {
+        const pad = document.createElement('div');
+        pad.style.visibility = 'hidden';
+        pad.className = 'streak-cell';
+        grid.appendChild(pad);
+      }
+      const cur = new Date(start);
+      for (let i = 0; i < daysToShow; i++) {
+        const k = cur.getFullYear() + '-' + (cur.getMonth() + 1) + '-' + cur.getDate();
+        const c = counts.get(k) || 0;
+        let level = 0;
+        if (c >= 4) level = 4;
+        else if (c === 3) level = 3;
+        else if (c === 2) level = 2;
+        else if (c === 1) level = 1;
+        const cell = document.createElement('div');
+        cell.className = 'streak-cell';
+        cell.dataset.level = String(level);
+        const dateLabel = cur.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+        cell.title = dateLabel + ' — ' + c + ' devlog';
+        if (k === todayKey) cell.classList.add('is-today');
+        grid.appendChild(cell);
+        cur.setDate(cur.getDate() + 1);
+      }
+      container.appendChild(grid);
+    },
+
     // ---- Devlog actions ----
     async sendDevlog(text) {
       if (!cloudReady() || !session) return;
@@ -4997,12 +5801,14 @@
         author: session.playerName,
         text,
         ts,
+        tag: this.composerTag,  // may be null
         comments: [],
       };
       const { db, fs } = window.__broop;
       const ref = fs.collection(db, 'broop_app', session.cloudId, 'devlogs');
       const encrypted = encrypt(JSON.stringify(payload), session.key);
       await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+      // Don't clear the tag — user may want to send another devlog with the same tag
     },
 
     async deleteDevlog(id) {
@@ -5838,6 +6644,27 @@
     els.devlogInput.value = '';
     els.devlogSendBtn.disabled = true;
   });
+
+  // TODO composer
+  if (els.todoInput && els.todoAddBtn) {
+    els.todoInput.addEventListener('input', () => {
+      els.todoAddBtn.disabled = !els.todoInput.value.trim();
+    });
+    els.todoInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && els.todoInput.value.trim()) {
+        Workshop.addTodo(els.todoInput.value);
+        els.todoInput.value = '';
+        els.todoAddBtn.disabled = true;
+      }
+    });
+    els.todoAddBtn.addEventListener('click', () => {
+      const text = els.todoInput.value;
+      if (!text.trim()) return;
+      Workshop.addTodo(text);
+      els.todoInput.value = '';
+      els.todoAddBtn.disabled = true;
+    });
+  }
 
   // Project modal
   els.pfCancelBtn.addEventListener('click', () => Workshop.closeProjectModal());
