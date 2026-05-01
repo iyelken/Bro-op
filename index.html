@@ -1927,6 +1927,62 @@
   }
   /* Old ::before accent bar removed — using border-left now */
   .project-card::before { content: none; }
+
+  /* Cover image banner at the top of the project card */
+  .project-cover {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-deep);
+    border-radius: 3px;
+    margin: -4px 0 14px 0;
+    border: 1px solid var(--border);
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.4);
+    /* Prevent ridiculously tall banners on portrait images by capping max height */
+    max-height: 220px;
+  }
+
+  /* Field hint (subtle "(opsiyonel)" type text) */
+  .field-hint {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-left: 4px;
+    font-weight: normal;
+    letter-spacing: 0;
+  }
+
+  /* Cover preview shown below URL input in the modal */
+  .cover-preview {
+    margin-top: 8px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 160px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-deep);
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    display: none;
+    transition: opacity 0.2s;
+  }
+  .cover-preview.visible {
+    display: block;
+  }
+  .cover-preview.error {
+    border-color: var(--danger);
+    background-color: rgba(255, 56, 96, 0.08);
+  }
+  .cover-preview.error::after {
+    content: '⚠ Görsel yüklenemedi — URL doğru mu?';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--danger);
+    font-family: var(--font-crt);
+    font-size: 13px;
+  }
   .project-empty {
     text-align: center;
     padding: 24px 16px;
@@ -3522,7 +3578,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha4</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha5</span></div>
         </div>
 
         <div class="info-card">
@@ -3655,6 +3711,11 @@
             <div class="field">
               <label>Açıklama</label>
               <textarea id="pfDesc" maxlength="500" placeholder="Kısa açıklama, motor, durum..."></textarea>
+            </div>
+            <div class="field">
+              <label>Kapak Görseli URL <span class="field-hint">(opsiyonel)</span></label>
+              <input type="url" id="pfCover" maxlength="500" placeholder="https://imgur.com/..." />
+              <div class="cover-preview" id="pfCoverPreview"></div>
             </div>
           </div>
           <div class="modal-footer">
@@ -4008,6 +4069,8 @@
     projectModal: $('#projectModal'),
     pfTitle: $('#pfTitle'),
     pfDesc: $('#pfDesc'),
+    pfCover: $('#pfCover'),
+    pfCoverPreview: $('#pfCoverPreview'),
     pfCancelBtn: $('#pfCancelBtn'),
     pfSaveBtn: $('#pfSaveBtn'),
     projectFormError: $('#projectFormError'),
@@ -6102,9 +6165,35 @@
       this._creatingNewProject = true;
       els.pfTitle.value = '';
       els.pfDesc.value = '';
+      els.pfCover.value = '';
+      this._updateCoverPreview('');
       els.projectFormError.textContent = '';
       els.projectModal.classList.remove('hidden');
       setTimeout(() => els.pfTitle.focus(), 80);
+    },
+
+    // Update the modal's cover image preview based on current URL input
+    _updateCoverPreview(url) {
+      if (!els.pfCoverPreview) return;
+      const trimmed = (url || '').trim();
+      if (!trimmed) {
+        els.pfCoverPreview.classList.remove('visible', 'error');
+        els.pfCoverPreview.style.backgroundImage = '';
+        return;
+      }
+      els.pfCoverPreview.classList.add('visible');
+      els.pfCoverPreview.classList.remove('error');
+      // Test if image loads — show error if it fails
+      const img = new Image();
+      img.onload = () => {
+        els.pfCoverPreview.style.backgroundImage = 'url(' + trimmed.replace(/"/g, '%22') + ')';
+        els.pfCoverPreview.classList.remove('error');
+      };
+      img.onerror = () => {
+        els.pfCoverPreview.style.backgroundImage = '';
+        els.pfCoverPreview.classList.add('error');
+      };
+      img.src = trimmed;
     },
 
     // Stub for project list overflow modal — implemented in stage 5.
@@ -6275,6 +6364,15 @@
       } else {
         const card = document.createElement('div');
         card.className = 'project-card';
+
+        // Cover image banner (if set)
+        if (activeProject.coverImage) {
+          const cover = document.createElement('div');
+          cover.className = 'project-cover';
+          cover.style.backgroundImage = 'url(' + activeProject.coverImage.replace(/"/g, '%22') + ')';
+          card.appendChild(cover);
+        }
+
         const titleRow = document.createElement('div');
         titleRow.className = 'project-title-row';
         const title = document.createElement('div');
@@ -6403,6 +6501,13 @@
       } else {
         const card = document.createElement('div');
         card.className = 'project-card';
+        // Cover image banner (read-only)
+        if (targetActive.coverImage) {
+          const cover = document.createElement('div');
+          cover.className = 'project-cover';
+          cover.style.backgroundImage = 'url(' + targetActive.coverImage.replace(/"/g, '%22') + ')';
+          card.appendChild(cover);
+        }
         const t = document.createElement('div');
         t.className = 'project-title';
         t.textContent = targetActive.title;
@@ -7483,6 +7588,8 @@
       const active = this.getActiveProject(me);
       els.pfTitle.value = (active && active.title) || '';
       els.pfDesc.value = (active && active.description) || '';
+      els.pfCover.value = (active && active.coverImage) || '';
+      this._updateCoverPreview(els.pfCover.value);
       els.projectFormError.textContent = '';
       els.projectModal.classList.remove('hidden');
       setTimeout(() => els.pfTitle.focus(), 80);
@@ -7491,11 +7598,17 @@
     closeProjectModal() {
       els.projectModal.classList.add('hidden');
       this._creatingNewProject = false;
+      // Clear preview state
+      if (els.pfCoverPreview) {
+        els.pfCoverPreview.classList.remove('visible', 'error');
+        els.pfCoverPreview.style.backgroundImage = '';
+      }
     },
 
     async saveProject() {
       const title = els.pfTitle.value.trim();
       const desc = els.pfDesc.value.trim();
+      const coverImage = (els.pfCover ? els.pfCover.value.trim() : '');
       if (!title) {
         els.projectFormError.textContent = 'Başlık boş olamaz.';
         return;
@@ -7520,7 +7633,7 @@
             id,
             title,
             description: desc,
-            coverImage: '',
+            coverImage,
             createdTs: Date.now(),
             archived: false,
           });
@@ -7531,6 +7644,7 @@
             ...newDoc.projects[activeIdx],
             title,
             description: desc,
+            coverImage,
           };
         }
 
@@ -8350,6 +8464,17 @@
   // Project modal
   els.pfCancelBtn.addEventListener('click', () => Workshop.closeProjectModal());
   els.pfSaveBtn.addEventListener('click', () => Workshop.saveProject());
+  // Live preview of cover image as user types/pastes URL
+  if (els.pfCover) {
+    let previewTimer = null;
+    els.pfCover.addEventListener('input', () => {
+      // Debounce so we don't flood image requests on every keystroke
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(() => {
+        Workshop._updateCoverPreview(els.pfCover.value);
+      }, 350);
+    });
+  }
   els.projectModal.addEventListener('click', (e) => {
     if (e.target === els.projectModal) Workshop.closeProjectModal();
   });
