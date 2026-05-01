@@ -1709,6 +1709,12 @@
         <div class="field-hint">Bu cihazda sen olarak görüneceksin.</div>
       </div>
 
+      <div class="field">
+        <label>4 Haneli PIN</label>
+        <input type="password" id="playerPin" placeholder="••••" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" />
+        <div class="field-hint" id="pinHint">Sadece sana ait. İsmini başkası kullanamasın diye.</div>
+      </div>
+
       <div class="field" data-show-on="signup">
         <label>Diğer Üyelerin Adları (opsiyonel)</label>
         <input type="text" id="otherPlayers" placeholder="mehmet, ali, veli" autocomplete="off" autocapitalize="none" spellcheck="false" />
@@ -1865,7 +1871,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.3.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.3.2</span></div>
         </div>
       </div>
 
@@ -2126,6 +2132,7 @@
     cloudId: $('#cloudId'),
     cloudPass: $('#cloudPass'),
     playerName: $('#playerName'),
+    playerPin: $('#playerPin'),
     otherPlayers: $('#otherPlayers'),
     loginBtn: $('#loginBtn'),
     loginError: $('#loginError'),
@@ -2260,6 +2267,7 @@
     const cloudId = els.cloudId.value.trim().toLowerCase();
     const password = els.cloudPass.value;
     const playerName = els.playerName.value.trim().toLowerCase();
+    const pin = (els.playerPin.value || '').trim();
     const otherPlayersRaw = els.otherPlayers ? els.otherPlayers.value.trim() : '';
 
     // Validate
@@ -2268,6 +2276,7 @@
     if (!password || password.length < 4) { showError('Şifre en az 4 karakter olmalı.'); return; }
     if (!playerName || playerName.length < 1) { showError('Oyuncu adın boş olamaz.'); return; }
     if (!/^[a-z0-9_\-]+$/.test(playerName)) { showError('Oyuncu adı sadece küçük harf, rakam, - ve _ içerebilir.'); return; }
+    if (!/^[0-9]{4}$/.test(pin)) { showError('PIN tam olarak 4 rakam olmalı.'); return; }
 
     els.loginBtn.disabled = true;
     const originalLabel = els.loginBtn.textContent;
@@ -2297,19 +2306,36 @@
 
         await cloudCreateRoom(cloudId, key, [playerName, ...others]);
 
-        // Pre-register the other players as ghosts so they appear in the member list
+        // Pre-register the other players as ghosts (no PIN yet — they set on first login)
         for (const name of others) {
           await preRegisterPlayer(cloudId, name, key);
         }
+        // Save THIS user with their PIN — owner of the room
+        await registerOrUpdatePlayer(cloudId, playerName, key, { pin });
+
       } else {
-        // login
+        // login mode
         if (!room) {
           showError('Böyle bir oda bulunamadı. "YENİ ODA" ile oluşturabilirsin.');
           return;
         }
         if (!checkVerifier(room.verifier, key)) {
-          showError('Şifre yanlış. Tekrar dene.');
+          showError('Oda şifresi yanlış. Tekrar dene.');
           return;
+        }
+        // Check player record
+        const existing = await getPlayerRecord(cloudId, playerName, key);
+        if (existing && existing.pin) {
+          // Existing user with a PIN — verify
+          if (existing.pin !== pin) {
+            showError('PIN yanlış. Bu isim başkasına ait olabilir.');
+            return;
+          }
+          // PIN ok, all good
+        } else {
+          // First-time login (either no doc, or ghost without PIN)
+          // Set PIN now
+          await registerOrUpdatePlayer(cloudId, playerName, key, { pin });
         }
       }
 
@@ -2330,6 +2356,43 @@
       els.loginBtn.textContent = originalLabel;
     }
   }
+
+  /**
+   * Read & decrypt a player's record. Returns null if missing.
+   */
+  async function getPlayerRecord(cloudId, playerName, key) {
+    if (!cloudReady()) return null;
+    const { db, fs } = window.__broop;
+    const ref = fs.doc(db, 'broop_app', cloudId, 'players', playerName);
+    const snap = await fs.getDoc(ref);
+    if (!snap.exists()) return null;
+    const raw = decrypt(snap.data().encrypted || '', key);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  /**
+   * Create or update a player record. Merges new fields into existing data.
+   * Useful for setting PIN on first login or updating XP later.
+   */
+  async function registerOrUpdatePlayer(cloudId, playerName, key, patch) {
+    if (!cloudReady()) return;
+    const { db, fs } = window.__broop;
+    const ref = fs.doc(db, 'broop_app', cloudId, 'players', playerName);
+    const existing = await getPlayerRecord(cloudId, playerName, key);
+    const merged = {
+      xp: 0, level: 1, completedQuests: 0, badges: 0,
+      joinedAt: Date.now(),
+      ...existing,
+      ...patch,
+    };
+    delete merged.ghost; // user has now actually logged in
+    await fs.setDoc(ref, {
+      encrypted: encrypt(JSON.stringify(merged), key),
+      updatedAt: Date.now(),
+    });
+  }
+
 
   // ============================================
   // ENTERING THE APP
@@ -2361,6 +2424,7 @@
     els.mainShell.classList.add('hidden');
     els.loginScreen.classList.remove('hidden');
     if (els.cloudPass) els.cloudPass.value = '';
+    if (els.playerPin) els.playerPin.value = '';
     if (els.otherPlayers) els.otherPlayers.value = '';
     showError('');
   }
@@ -2963,14 +3027,9 @@
       if (!cloudReady() || !session) return;
       const { db, fs } = window.__broop;
 
-      // Make sure my own doc exists
-      const ref = fs.doc(db, 'broop_app', session.cloudId, 'players', session.playerName);
-      const snap = await fs.getDoc(ref);
-      if (!snap.exists()) {
-        await this.writeMine({ xp: 0, level: 1, completedQuests: 0, badges: 0, joinedAt: Date.now() });
-      }
+      // Note: handleLogin already created/updated the player record with PIN.
+      // We just listen to all players here.
 
-      // Listen to all players in the room
       const playersCol = fs.collection(db, 'broop_app', session.cloudId, 'players');
       if (this.unsubscribe) this.unsubscribe();
       this.unsubscribe = fs.onSnapshot(playersCol, (snap) => {
@@ -3658,12 +3717,19 @@
   // ============================================
   els.modeTabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
   els.loginBtn.addEventListener('click', handleLogin);
-  [els.cloudId, els.cloudPass, els.playerName, els.otherPlayers].forEach(input => {
+  [els.cloudId, els.cloudPass, els.playerName, els.playerPin, els.otherPlayers].forEach(input => {
     if (!input) return;
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleLogin();
     });
   });
+
+  // PIN: only allow digits
+  if (els.playerPin) {
+    els.playerPin.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+  }
   els.navBtns.forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
   els.logoutBtn.addEventListener('click', () => {
     if (confirm('Çıkış yapmak istediğine emin misin?')) logout();
