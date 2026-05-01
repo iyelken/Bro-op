@@ -4214,7 +4214,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.17.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.17.1</span></div>
         </div>
 
         <div class="info-card">
@@ -5773,12 +5773,16 @@
         btn.className = 'emoji-cat-btn' + (cat.key === this.activeCategory ? ' active' : '');
         btn.title = cat.label;
         btn.textContent = cat.icon;
-        btn.addEventListener('click', () => {
+        const onActivate = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           this.activeCategory = cat.key;
           els.emojiSearch.value = '';
           this.renderCategories();
           this.renderGrid('');
-        });
+        };
+        btn.addEventListener('mousedown', onActivate);
+        btn.addEventListener('touchend', onActivate);
         els.emojiCats.appendChild(btn);
       }
     },
@@ -5843,7 +5847,20 @@
       btn.type = 'button';
       btn.className = 'emoji-item';
       btn.textContent = emoji;
-      btn.addEventListener('click', () => this.insertEmoji(emoji));
+      // Use mousedown (fires before blur/click), stop propagation so the
+      // outside-click handler doesn't see this and try to close the picker.
+      // preventDefault stops the textarea from losing focus.
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.insertEmoji(emoji);
+      });
+      // Also handle touch on mobile (some browsers don't fire mousedown reliably)
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.insertEmoji(emoji);
+      });
       return btn;
     },
 
@@ -5867,6 +5884,10 @@
       ta.dispatchEvent(new Event('input', { bubbles: true }));
       // Track for recents
       this._addToRecents(emoji);
+      // If we're on the recents tab, re-render grid so the order updates
+      if (this.activeCategory === 'recent') {
+        this.renderGrid('');
+      }
     },
   };
 
