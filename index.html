@@ -1605,6 +1605,471 @@
   .modal-error:empty { display: none; }
 
   /* ============================================
+     WORKSHOP MODULE
+     ============================================ */
+  .ws-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ws-tab {
+    flex: 1;
+    padding: 9px 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ws-tab.active {
+    background: var(--accent-workshop);
+    color: var(--bg-base);
+  }
+
+  .ws-pane {
+    display: none;
+    animation: paneIn 0.2s ease-out;
+  }
+  .ws-pane.active { display: block; }
+
+  /* Project header card */
+  .project-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .project-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-workshop);
+  }
+  .project-empty {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-muted);
+  }
+  .project-empty-text {
+    font-family: var(--font-crt);
+    font-size: 16px;
+    margin-bottom: 14px;
+  }
+  .project-empty-text::before { content: "> "; color: var(--accent-workshop); }
+
+  .project-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .project-title {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+  }
+  .project-edit-btn {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .project-edit-btn:hover {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+  }
+  .project-author {
+    font-family: var(--font-crt);
+    font-size: 14px;
+    color: var(--accent-workshop);
+    margin-bottom: 8px;
+  }
+  .project-desc {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+  .project-desc:empty { display: none; }
+
+  /* Devlog composer */
+  .devlog-composer {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .devlog-composer textarea {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 3px;
+    resize: none;
+    outline: none;
+    line-height: 1.4;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .devlog-composer textarea:focus {
+    border-color: var(--accent-workshop);
+    box-shadow: 0 0 0 3px rgba(184, 85, 255, 0.1);
+  }
+  .devlog-composer textarea::placeholder {
+    color: var(--text-dim);
+    font-family: var(--font-crt);
+    font-size: 16px;
+  }
+
+  /* Devlog entries */
+  .devlog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .devlog-empty {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 16px;
+  }
+  .devlog-empty::before { content: "> "; color: var(--accent-workshop); }
+
+  .devlog-entry {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    position: relative;
+  }
+  .devlog-entry.mine {
+    border-left: 2px solid var(--accent-workshop);
+  }
+
+  .devlog-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-family: var(--font-crt);
+    font-size: 13px;
+  }
+  .devlog-author {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--accent-workshop);
+  }
+  .devlog-time {
+    color: var(--text-muted);
+  }
+  .devlog-delete {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .devlog-delete:hover { color: var(--danger); background: rgba(255, 56, 96, 0.08); }
+
+  .devlog-text {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--text-primary);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Comments */
+  .devlog-comments {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-soft);
+  }
+  .devlog-comment {
+    padding: 6px 0;
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .devlog-comment-meta {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .devlog-comment-author {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    margin-right: 6px;
+  }
+  .devlog-comment-text {
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .devlog-comment-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .devlog-comment-form input {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 14px;
+    outline: none;
+  }
+  .devlog-comment-form input:focus {
+    border-color: var(--accent-workshop);
+  }
+  .devlog-comment-form button {
+    flex-shrink: 0;
+    background: var(--accent-workshop);
+    color: var(--bg-base);
+    border: none;
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+  .devlog-comment-form button:disabled {
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  /* Generic workshop button */
+  .ws-btn {
+    padding: 10px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .ws-btn:active { transform: translateY(1px); }
+  .ws-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .ws-btn.primary {
+    background: var(--accent-workshop);
+    color: #fff;
+    border-color: var(--accent-workshop);
+    box-shadow: 0 2px 0 #7a3acc, 0 0 12px rgba(184, 85, 255, 0.25);
+  }
+  .ws-btn.primary:disabled {
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+  .ws-btn.ghost { color: var(--text-secondary); }
+
+  .devlog-composer .ws-btn {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Member picker (for "theirs" tab) */
+  .ws-member-picker {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .ws-member-pill {
+    padding: 8px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 18px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .ws-member-pill.active {
+    background: rgba(184, 85, 255, 0.16);
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+  }
+  .ws-member-empty {
+    font-family: var(--font-crt);
+    font-size: 16px;
+    color: var(--text-muted);
+    padding: 8px;
+  }
+
+  /* Resources */
+  .ws-toolbar {
+    margin-bottom: 16px;
+  }
+  .ws-toolbar .ws-btn { width: 100%; margin-bottom: 12px; }
+
+  .ws-cat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ws-cat-pill {
+    padding: 6px 12px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .ws-cat-pill.active {
+    background: rgba(184, 85, 255, 0.16);
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+  }
+  .ws-cat-pill[data-cat="tutorial"].active { background: rgba(0, 240, 255, 0.16); border-color: var(--accent-chat); color: var(--accent-chat); }
+  .ws-cat-pill[data-cat="asset"].active { background: rgba(255, 176, 0, 0.16); border-color: var(--accent-quest); color: var(--accent-quest); }
+  .ws-cat-pill[data-cat="tool"].active { background: rgba(0, 255, 127, 0.16); border-color: var(--accent-match); color: var(--accent-match); }
+  .ws-cat-pill[data-cat="article"].active { background: rgba(255, 0, 128, 0.16); border-color: var(--accent-profile); color: var(--accent-profile); }
+
+  .resource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .resource-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .resource-card:active { transform: translateY(1px); }
+  .resource-card:hover { border-color: var(--accent-workshop); }
+  .resource-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .resource-card[data-cat="tutorial"]::before { background: var(--accent-chat); }
+  .resource-card[data-cat="asset"]::before { background: var(--accent-quest); }
+  .resource-card[data-cat="tool"]::before { background: var(--accent-match); }
+  .resource-card[data-cat="article"]::before { background: var(--accent-profile); }
+
+  .resource-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .resource-title {
+    flex: 1;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--text-primary);
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+  .resource-cat-tag {
+    flex-shrink: 0;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .resource-cat-tag[data-cat="tutorial"] { background: rgba(0, 240, 255, 0.12); color: var(--accent-chat); }
+  .resource-cat-tag[data-cat="asset"] { background: rgba(255, 176, 0, 0.12); color: var(--accent-quest); }
+  .resource-cat-tag[data-cat="tool"] { background: rgba(0, 255, 127, 0.12); color: var(--accent-match); }
+  .resource-cat-tag[data-cat="article"] { background: rgba(255, 0, 128, 0.12); color: var(--accent-profile); }
+
+  .resource-url {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .resource-meta {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .resource-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  .resource-delete:hover { color: var(--danger); background: rgba(255, 56, 96, 0.08); }
+
+  /* ============================================
      XP TOAST (level up / XP gained notification)
      ============================================ */
   .xp-toast {
@@ -1871,7 +2336,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.3.3</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.4.0</span></div>
         </div>
       </div>
 
@@ -1893,13 +2358,95 @@
       <div class="pane" data-pane="workshop">
         <div class="pane-header">
           <div class="pane-title">ATÖLYE</div>
-          <div class="pane-subtitle">Geliştirici alanı</div>
+          <div class="pane-subtitle" id="workshopSubtitle">Geliştirici alanı</div>
         </div>
-        <div class="soon">
-          <div class="soon-icon">⚒</div>
-          <div class="soon-title">YAKINDA</div>
-          <div class="soon-text">İki ayrı proje sayfası, devlog ve kaynak havuzu sonraki sürümde geliyor.</div>
-          <div class="soon-ver">v0.5 — WORKSHOP</div>
+
+        <!-- Workshop sub-tabs -->
+        <div class="ws-tabs">
+          <button class="ws-tab active" data-ws-tab="mine">PROJEM</button>
+          <button class="ws-tab" data-ws-tab="theirs">DİĞERLERİ</button>
+          <button class="ws-tab" data-ws-tab="resources">KAYNAKLAR</button>
+        </div>
+
+        <!-- My project sub-pane -->
+        <div class="ws-pane active" data-ws-pane="mine">
+          <div id="mineProject"></div>
+          <div class="devlog-composer">
+            <textarea id="devlogInput" placeholder="bugün ne yaptın? (kısa not olur)" rows="2" maxlength="500"></textarea>
+            <button class="ws-btn primary" id="devlogSendBtn" disabled>+ DEVLOG EKLE</button>
+          </div>
+          <div class="devlog-list" id="mineDevlogs"></div>
+        </div>
+
+        <!-- Their project sub-pane -->
+        <div class="ws-pane" data-ws-pane="theirs">
+          <div class="ws-member-picker" id="theirsPicker"></div>
+          <div id="theirsProject"></div>
+          <div class="devlog-list" id="theirsDevlogs"></div>
+        </div>
+
+        <!-- Resources sub-pane -->
+        <div class="ws-pane" data-ws-pane="resources">
+          <div class="ws-toolbar">
+            <button class="ws-btn primary" id="newResourceBtn">+ KAYNAK EKLE</button>
+            <div class="ws-cat-row" id="resourceCatFilter"></div>
+          </div>
+          <div class="resource-list" id="resourceList"></div>
+        </div>
+
+      </div>
+
+      <!-- Modal: edit my project -->
+      <div class="modal-backdrop hidden" id="projectModal">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div class="modal-title">PROJEM</div>
+            <div class="modal-subtitle">üzerinde çalıştığın oyun</div>
+          </div>
+          <div class="modal-body">
+            <div class="modal-error" id="projectFormError"></div>
+            <div class="field">
+              <label>Proje Adı</label>
+              <input type="text" id="pfTitle" maxlength="80" placeholder="Örn: Pixel Roguelike" />
+            </div>
+            <div class="field">
+              <label>Açıklama</label>
+              <textarea id="pfDesc" maxlength="500" placeholder="Kısa açıklama, motor, durum..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="ws-btn ghost" id="pfCancelBtn">İPTAL</button>
+            <button class="ws-btn primary" id="pfSaveBtn">KAYDET</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: add resource -->
+      <div class="modal-backdrop hidden" id="resourceModal">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div class="modal-title">KAYNAK EKLE</div>
+            <div class="modal-subtitle">tutorial, asset, tool ya da article</div>
+          </div>
+          <div class="modal-body">
+            <div class="modal-error" id="resourceFormError"></div>
+            <div class="field">
+              <label>Başlık</label>
+              <input type="text" id="rfTitle" maxlength="120" placeholder="Brackeys 2D Movement Tutorial" />
+            </div>
+            <div class="field">
+              <label>URL</label>
+              <input type="url" id="rfUrl" maxlength="500" placeholder="https://youtube.com/..." />
+            </div>
+            <div class="field">
+              <label>Kategori</label>
+              <div class="ws-cat-row" id="rfCategoryRow"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="ws-btn ghost" id="rfCancelBtn">İPTAL</button>
+            <button class="ws-btn primary" id="rfSaveBtn">KAYDET</button>
+          </div>
         </div>
       </div>
 
@@ -2182,6 +2729,33 @@
     statDays: $('#statDays'),
     // XP toast
     xpToast: $('#xpToast'),
+    // Workshop
+    workshopSubtitle: $('#workshopSubtitle'),
+    wsTabs: $$('.ws-tab'),
+    wsPanes: $$('.ws-pane'),
+    mineProject: $('#mineProject'),
+    mineDevlogs: $('#mineDevlogs'),
+    devlogInput: $('#devlogInput'),
+    devlogSendBtn: $('#devlogSendBtn'),
+    theirsPicker: $('#theirsPicker'),
+    theirsProject: $('#theirsProject'),
+    theirsDevlogs: $('#theirsDevlogs'),
+    newResourceBtn: $('#newResourceBtn'),
+    resourceCatFilter: $('#resourceCatFilter'),
+    resourceList: $('#resourceList'),
+    projectModal: $('#projectModal'),
+    pfTitle: $('#pfTitle'),
+    pfDesc: $('#pfDesc'),
+    pfCancelBtn: $('#pfCancelBtn'),
+    pfSaveBtn: $('#pfSaveBtn'),
+    projectFormError: $('#projectFormError'),
+    resourceModal: $('#resourceModal'),
+    rfTitle: $('#rfTitle'),
+    rfUrl: $('#rfUrl'),
+    rfCategoryRow: $('#rfCategoryRow'),
+    rfCancelBtn: $('#rfCancelBtn'),
+    rfSaveBtn: $('#rfSaveBtn'),
+    resourceFormError: $('#resourceFormError'),
   };
 
   // ============================================
@@ -2413,12 +2987,14 @@
     // v0.3: profile + quests listeners
     Profile.start();
     Quests.start();
+    Workshop.start();
   }
 
   function logout() {
     Chat.stop();
     Profile.stop();
     Quests.stop();
+    Workshop.stop();
     Session.clear();
     session = null;
     els.mainShell.classList.add('hidden');
@@ -3686,6 +4262,596 @@
     },
   };
 
+  // ============================================
+  // WORKSHOP MODULE (v0.4)
+  // ============================================
+  // Path:
+  //   broop_app/{cloudId}/workshops/{playerName}  -> { encrypted: {title, description}, updatedAt }
+  //   broop_app/{cloudId}/devlogs/{logId}         -> { encrypted: {author, text, ts, comments[]}, createdAt }
+  //   broop_app/{cloudId}/resources/{resId}       -> { encrypted: {url, title, category, addedBy, ts}, createdAt }
+
+  const RESOURCE_CATEGORIES = [
+    { key: 'tutorial', label: 'TUTORIAL' },
+    { key: 'asset', label: 'ASSET' },
+    { key: 'tool', label: 'TOOL' },
+    { key: 'article', label: 'ARTICLE' },
+  ];
+
+  const Workshop = {
+    activeSubTab: 'mine',
+    selectedTheirsMember: null,
+
+    workshopsUnsubscribe: null,
+    devlogsUnsubscribe: null,
+    resourcesUnsubscribe: null,
+
+    workshops: {},      // { [playerName]: { title, description } }
+    devlogs: [],        // { id, author, text, ts, comments }[]
+    resources: [],      // { id, url, title, category, addedBy, ts }[]
+
+    // Form state
+    rfCategory: 'tutorial',
+    resourceFilter: 'all',
+
+    start() {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+
+      // Workshops collection
+      const wsCol = fs.collection(db, 'broop_app', session.cloudId, 'workshops');
+      if (this.workshopsUnsubscribe) this.workshopsUnsubscribe();
+      this.workshopsUnsubscribe = fs.onSnapshot(wsCol, (snap) => {
+        const next = {};
+        snap.forEach(d => {
+          const raw = decrypt(d.data().encrypted || '', session.key);
+          if (!raw) return;
+          try { next[d.id] = JSON.parse(raw); } catch {}
+        });
+        this.workshops = next;
+        this.renderMine();
+        this.renderTheirs();
+      }, (err) => console.warn('[Workshop] workshops error:', err));
+
+      // Devlogs
+      const devCol = fs.collection(db, 'broop_app', session.cloudId, 'devlogs');
+      const devQ = fs.query(devCol, fs.orderBy('createdAt', 'desc'));
+      if (this.devlogsUnsubscribe) this.devlogsUnsubscribe();
+      this.devlogsUnsubscribe = fs.onSnapshot(devQ, (snap) => {
+        const list = [];
+        snap.forEach(d => {
+          const raw = decrypt(d.data().encrypted || '', session.key);
+          if (!raw) return;
+          try { list.push({ id: d.id, ...JSON.parse(raw) }); } catch {}
+        });
+        list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        this.devlogs = list;
+        this.renderMine();
+        this.renderTheirs();
+      }, (err) => console.warn('[Workshop] devlogs error:', err));
+
+      // Resources
+      const resCol = fs.collection(db, 'broop_app', session.cloudId, 'resources');
+      const resQ = fs.query(resCol, fs.orderBy('createdAt', 'desc'));
+      if (this.resourcesUnsubscribe) this.resourcesUnsubscribe();
+      this.resourcesUnsubscribe = fs.onSnapshot(resQ, (snap) => {
+        const list = [];
+        snap.forEach(d => {
+          const raw = decrypt(d.data().encrypted || '', session.key);
+          if (!raw) return;
+          try { list.push({ id: d.id, ...JSON.parse(raw) }); } catch {}
+        });
+        list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        this.resources = list;
+        this.renderResources();
+      }, (err) => console.warn('[Workshop] resources error:', err));
+
+      this.renderResourceFilter();
+    },
+
+    stop() {
+      if (this.workshopsUnsubscribe) { this.workshopsUnsubscribe(); this.workshopsUnsubscribe = null; }
+      if (this.devlogsUnsubscribe) { this.devlogsUnsubscribe(); this.devlogsUnsubscribe = null; }
+      if (this.resourcesUnsubscribe) { this.resourcesUnsubscribe(); this.resourcesUnsubscribe = null; }
+      this.workshops = {};
+      this.devlogs = [];
+      this.resources = [];
+    },
+
+    setSubTab(tab) {
+      this.activeSubTab = tab;
+      els.wsTabs.forEach(t => t.classList.toggle('active', t.dataset.wsTab === tab));
+      els.wsPanes.forEach(p => p.classList.toggle('active', p.dataset.wsPane === tab));
+      if (tab === 'theirs') this.renderTheirs();
+      if (tab === 'resources') this.renderResources();
+    },
+
+    // ---- My project rendering ----
+    renderMine() {
+      if (!session) return;
+      const me = session.playerName;
+      const mine = this.workshops[me];
+      const myLogs = this.devlogs.filter(d => d.author === me);
+
+      // Header card
+      els.mineProject.innerHTML = '';
+      if (!mine || !mine.title) {
+        const empty = document.createElement('div');
+        empty.className = 'project-card';
+        empty.innerHTML = `
+          <div class="project-empty">
+            <div class="project-empty-text">henüz projen yok</div>
+            <button class="ws-btn primary" id="mineSetupBtn">+ PROJE EKLE</button>
+          </div>
+        `;
+        els.mineProject.appendChild(empty);
+        document.getElementById('mineSetupBtn').addEventListener('click', () => this.openProjectModal());
+      } else {
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        const titleRow = document.createElement('div');
+        titleRow.className = 'project-title-row';
+        const title = document.createElement('div');
+        title.className = 'project-title';
+        title.textContent = mine.title;
+        const editBtn = document.createElement('button');
+        editBtn.className = 'project-edit-btn';
+        editBtn.textContent = 'DÜZENLE';
+        editBtn.addEventListener('click', () => this.openProjectModal());
+        titleRow.appendChild(title);
+        titleRow.appendChild(editBtn);
+        card.appendChild(titleRow);
+        if (mine.description) {
+          const desc = document.createElement('div');
+          desc.className = 'project-desc';
+          desc.textContent = mine.description;
+          card.appendChild(desc);
+        }
+        els.mineProject.appendChild(card);
+      }
+
+      // Devlog list
+      this.renderDevlogList(els.mineDevlogs, myLogs, true);
+    },
+
+    // ---- Their project rendering ----
+    renderTheirs() {
+      if (!session) return;
+      // Render member picker
+      const others = Profile.others();
+      els.theirsPicker.innerHTML = '';
+      if (others.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'ws-member-empty';
+        empty.textContent = '> odada başka biri yok';
+        els.theirsPicker.appendChild(empty);
+        els.theirsProject.innerHTML = '';
+        els.theirsDevlogs.innerHTML = '';
+        return;
+      }
+      // Auto-select first member if none selected
+      if (!this.selectedTheirsMember || !others.find(o => o.name === this.selectedTheirsMember)) {
+        this.selectedTheirsMember = others[0].name;
+      }
+      for (const o of others) {
+        const pill = document.createElement('button');
+        pill.className = 'ws-member-pill' + (o.name === this.selectedTheirsMember ? ' active' : '');
+        pill.textContent = o.name;
+        pill.addEventListener('click', () => {
+          this.selectedTheirsMember = o.name;
+          this.renderTheirs();
+        });
+        els.theirsPicker.appendChild(pill);
+      }
+
+      // Render selected member's project
+      const target = this.selectedTheirsMember;
+      const ws = this.workshops[target];
+      const targetLogs = this.devlogs.filter(d => d.author === target);
+
+      els.theirsProject.innerHTML = '';
+      if (!ws || !ws.title) {
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.innerHTML = `<div class="project-empty"><div class="project-empty-text">${target} henüz proje eklemedi</div></div>`;
+        els.theirsProject.appendChild(card);
+      } else {
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        const t = document.createElement('div');
+        t.className = 'project-title';
+        t.textContent = ws.title;
+        const author = document.createElement('div');
+        author.className = 'project-author';
+        author.textContent = '@' + target;
+        card.appendChild(t);
+        card.appendChild(author);
+        if (ws.description) {
+          const desc = document.createElement('div');
+          desc.className = 'project-desc';
+          desc.textContent = ws.description;
+          card.appendChild(desc);
+        }
+        els.theirsProject.appendChild(card);
+      }
+
+      this.renderDevlogList(els.theirsDevlogs, targetLogs, false);
+    },
+
+    renderDevlogList(container, logs, isMine) {
+      container.innerHTML = '';
+      if (!logs || logs.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'devlog-empty';
+        empty.textContent = isMine ? 'henüz devlog yazmadın' : 'henüz devlog yok';
+        container.appendChild(empty);
+        return;
+      }
+      for (const log of logs) {
+        container.appendChild(this.renderDevlogEntry(log, isMine));
+      }
+    },
+
+    renderDevlogEntry(log, isMine) {
+      const me = session.playerName;
+      const isOwn = log.author === me;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'devlog-entry' + (isOwn ? ' mine' : '');
+
+      const meta = document.createElement('div');
+      meta.className = 'devlog-meta';
+      const author = document.createElement('span');
+      author.className = 'devlog-author';
+      author.textContent = log.author;
+      const time = document.createElement('span');
+      time.className = 'devlog-time';
+      time.textContent = this.formatTime(log.ts);
+      meta.appendChild(author);
+      meta.appendChild(time);
+      if (isOwn) {
+        const del = document.createElement('button');
+        del.className = 'devlog-delete';
+        del.textContent = 'SİL';
+        del.addEventListener('click', () => {
+          if (confirm('Bu devlog girişini silmek istediğine emin misin?')) {
+            this.deleteDevlog(log.id);
+          }
+        });
+        meta.appendChild(del);
+      }
+      wrap.appendChild(meta);
+
+      const text = document.createElement('div');
+      text.className = 'devlog-text';
+      text.textContent = log.text;
+      wrap.appendChild(text);
+
+      // Comments
+      const comments = log.comments || [];
+      if (comments.length > 0 || !isOwn) {
+        const cs = document.createElement('div');
+        cs.className = 'devlog-comments';
+        for (const c of comments) {
+          const cdiv = document.createElement('div');
+          cdiv.className = 'devlog-comment';
+          const cmeta = document.createElement('div');
+          cmeta.className = 'devlog-comment-meta';
+          const cauthor = document.createElement('span');
+          cauthor.className = 'devlog-comment-author';
+          cauthor.textContent = c.by;
+          cauthor.style.color = Chat.colorForAuthor(c.by);
+          const ctime = document.createElement('span');
+          ctime.textContent = this.formatTime(c.ts);
+          cmeta.appendChild(cauthor);
+          cmeta.appendChild(ctime);
+          const ctext = document.createElement('div');
+          ctext.className = 'devlog-comment-text';
+          ctext.textContent = c.text;
+          cdiv.appendChild(cmeta);
+          cdiv.appendChild(ctext);
+          cs.appendChild(cdiv);
+        }
+        // Comment form (only if not own — you don't comment on your own post)
+        if (!isOwn) {
+          const form = document.createElement('div');
+          form.className = 'devlog-comment-form';
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Yorum yaz...';
+          input.maxLength = 300;
+          const btn = document.createElement('button');
+          btn.textContent = 'YOR';
+          btn.disabled = true;
+          input.addEventListener('input', () => {
+            btn.disabled = !input.value.trim();
+          });
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && input.value.trim()) {
+              this.addComment(log.id, input.value.trim());
+              input.value = '';
+              btn.disabled = true;
+            }
+          });
+          btn.addEventListener('click', () => {
+            if (input.value.trim()) {
+              this.addComment(log.id, input.value.trim());
+              input.value = '';
+              btn.disabled = true;
+            }
+          });
+          form.appendChild(input);
+          form.appendChild(btn);
+          cs.appendChild(form);
+        }
+        wrap.appendChild(cs);
+      }
+
+      return wrap;
+    },
+
+    formatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const today = new Date();
+      const isToday = d.toDateString() === today.toDateString();
+      const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+      const isYesterday = d.toDateString() === yesterday.toDateString();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      if (isToday) return 'bugün ' + hh + ':' + mm;
+      if (isYesterday) return 'dün ' + hh + ':' + mm;
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }) + ' ' + hh + ':' + mm;
+    },
+
+    // ---- Devlog actions ----
+    async sendDevlog(text) {
+      if (!cloudReady() || !session) return;
+      text = text.trim();
+      if (!text) return;
+      const ts = Date.now();
+      const payload = {
+        author: session.playerName,
+        text,
+        ts,
+        comments: [],
+      };
+      const { db, fs } = window.__broop;
+      const ref = fs.collection(db, 'broop_app', session.cloudId, 'devlogs');
+      const encrypted = encrypt(JSON.stringify(payload), session.key);
+      await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+    },
+
+    async deleteDevlog(id) {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', id);
+      await fs.deleteDoc(ref);
+    },
+
+    async addComment(devlogId, text) {
+      if (!cloudReady() || !session) return;
+      const log = this.devlogs.find(d => d.id === devlogId);
+      if (!log) return;
+      const updated = {
+        ...log,
+        comments: [...(log.comments || []), {
+          by: session.playerName,
+          text,
+          ts: Date.now(),
+        }],
+      };
+      delete updated.id;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', devlogId);
+      const encrypted = encrypt(JSON.stringify(updated), session.key);
+      await fs.updateDoc(ref, { encrypted });
+    },
+
+    // ---- Project modal ----
+    openProjectModal() {
+      const me = session.playerName;
+      const mine = this.workshops[me] || { title: '', description: '' };
+      els.pfTitle.value = mine.title || '';
+      els.pfDesc.value = mine.description || '';
+      els.projectFormError.textContent = '';
+      els.projectModal.classList.remove('hidden');
+      setTimeout(() => els.pfTitle.focus(), 80);
+    },
+
+    closeProjectModal() {
+      els.projectModal.classList.add('hidden');
+    },
+
+    async saveProject() {
+      const title = els.pfTitle.value.trim();
+      const desc = els.pfDesc.value.trim();
+      if (!title) {
+        els.projectFormError.textContent = 'Başlık boş olamaz.';
+        return;
+      }
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'workshops', session.playerName);
+        const encrypted = encrypt(JSON.stringify({ title, description: desc }), session.key);
+        await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
+        this.closeProjectModal();
+      } catch (e) {
+        els.projectFormError.textContent = 'Hata: ' + (e.message || e);
+      }
+    },
+
+    // ---- Resources ----
+    renderResourceFilter() {
+      els.resourceCatFilter.innerHTML = '';
+      const all = document.createElement('button');
+      all.className = 'ws-cat-pill' + (this.resourceFilter === 'all' ? ' active' : '');
+      all.textContent = 'HEPSİ';
+      all.addEventListener('click', () => {
+        this.resourceFilter = 'all';
+        this.renderResourceFilter();
+        this.renderResources();
+      });
+      els.resourceCatFilter.appendChild(all);
+      for (const cat of RESOURCE_CATEGORIES) {
+        const p = document.createElement('button');
+        p.className = 'ws-cat-pill' + (this.resourceFilter === cat.key ? ' active' : '');
+        p.dataset.cat = cat.key;
+        p.textContent = cat.label;
+        p.addEventListener('click', () => {
+          this.resourceFilter = cat.key;
+          this.renderResourceFilter();
+          this.renderResources();
+        });
+        els.resourceCatFilter.appendChild(p);
+      }
+    },
+
+    renderResources() {
+      els.resourceList.innerHTML = '';
+      const filtered = this.resourceFilter === 'all'
+        ? this.resources
+        : this.resources.filter(r => r.category === this.resourceFilter);
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'devlog-empty';
+        empty.textContent = this.resources.length === 0
+          ? 'henüz kaynak yok. ekle!'
+          : 'bu kategoride kaynak yok.';
+        els.resourceList.appendChild(empty);
+        return;
+      }
+
+      for (const r of filtered) {
+        els.resourceList.appendChild(this.renderResourceCard(r));
+      }
+    },
+
+    renderResourceCard(r) {
+      const a = document.createElement('a');
+      a.className = 'resource-card';
+      a.dataset.cat = r.category;
+      a.href = r.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+
+      const head = document.createElement('div');
+      head.className = 'resource-head';
+      const title = document.createElement('div');
+      title.className = 'resource-title';
+      title.textContent = r.title;
+      const tag = document.createElement('span');
+      tag.className = 'resource-cat-tag';
+      tag.dataset.cat = r.category;
+      tag.textContent = (RESOURCE_CATEGORIES.find(c => c.key === r.category) || { label: r.category }).label;
+      head.appendChild(title);
+      head.appendChild(tag);
+      a.appendChild(head);
+
+      const url = document.createElement('div');
+      url.className = 'resource-url';
+      try {
+        url.textContent = new URL(r.url).hostname.replace(/^www\./, '');
+      } catch { url.textContent = r.url; }
+      a.appendChild(url);
+
+      const meta = document.createElement('div');
+      meta.className = 'resource-meta';
+      const by = document.createElement('span');
+      by.textContent = '@' + (r.addedBy || '?') + ' • ' + this.formatTime(r.ts);
+      meta.appendChild(by);
+      if (r.addedBy === session.playerName) {
+        const del = document.createElement('button');
+        del.className = 'resource-delete';
+        del.textContent = 'SİL';
+        del.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (confirm('Bu kaynağı silmek istediğine emin misin?')) {
+            this.deleteResource(r.id);
+          }
+        });
+        meta.appendChild(del);
+      }
+      a.appendChild(meta);
+
+      return a;
+    },
+
+    openResourceModal() {
+      this.rfCategory = 'tutorial';
+      els.rfTitle.value = '';
+      els.rfUrl.value = '';
+      els.resourceFormError.textContent = '';
+
+      // Render category pills
+      els.rfCategoryRow.innerHTML = '';
+      for (const cat of RESOURCE_CATEGORIES) {
+        const p = document.createElement('button');
+        p.type = 'button';
+        p.className = 'ws-cat-pill' + (cat.key === this.rfCategory ? ' active' : '');
+        p.dataset.cat = cat.key;
+        p.textContent = cat.label;
+        p.addEventListener('click', () => {
+          this.rfCategory = cat.key;
+          els.rfCategoryRow.querySelectorAll('.ws-cat-pill').forEach(x => {
+            x.classList.toggle('active', x.dataset.cat === cat.key);
+          });
+        });
+        els.rfCategoryRow.appendChild(p);
+      }
+
+      els.resourceModal.classList.remove('hidden');
+      setTimeout(() => els.rfTitle.focus(), 80);
+    },
+
+    closeResourceModal() {
+      els.resourceModal.classList.add('hidden');
+    },
+
+    async saveResource() {
+      const title = els.rfTitle.value.trim();
+      const url = els.rfUrl.value.trim();
+      if (!title) {
+        els.resourceFormError.textContent = 'Başlık boş olamaz.';
+        return;
+      }
+      if (!url) {
+        els.resourceFormError.textContent = 'URL boş olamaz.';
+        return;
+      }
+      // Basic URL validation
+      let validUrl = url;
+      if (!/^https?:\/\//i.test(validUrl)) validUrl = 'https://' + validUrl;
+      try { new URL(validUrl); } catch {
+        els.resourceFormError.textContent = 'Geçerli bir URL gir.';
+        return;
+      }
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.collection(db, 'broop_app', session.cloudId, 'resources');
+        const payload = {
+          title, url: validUrl,
+          category: this.rfCategory,
+          addedBy: session.playerName,
+          ts: Date.now(),
+        };
+        const encrypted = encrypt(JSON.stringify(payload), session.key);
+        await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+        this.closeResourceModal();
+      } catch (e) {
+        els.resourceFormError.textContent = 'Hata: ' + (e.message || e);
+      }
+    },
+
+    async deleteResource(id) {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.doc(db, 'broop_app', session.cloudId, 'resources', id);
+      await fs.deleteDoc(ref);
+    },
+  };
+
   // Composer auto-grow + send button enable/disable
   function syncComposer() {
     const v = els.msgInput.value;
@@ -3785,6 +4951,42 @@
     if (e.key === 'Escape' && !els.questModal.classList.contains('hidden')) {
       Quests.closeModal();
     }
+    if (e.key === 'Escape' && !els.projectModal.classList.contains('hidden')) {
+      Workshop.closeProjectModal();
+    }
+    if (e.key === 'Escape' && !els.resourceModal.classList.contains('hidden')) {
+      Workshop.closeResourceModal();
+    }
+  });
+
+  // Workshop wiring
+  els.wsTabs.forEach(t => t.addEventListener('click', () => Workshop.setSubTab(t.dataset.wsTab)));
+
+  // Devlog composer
+  els.devlogInput.addEventListener('input', () => {
+    els.devlogSendBtn.disabled = !els.devlogInput.value.trim();
+  });
+  els.devlogSendBtn.addEventListener('click', () => {
+    const text = els.devlogInput.value;
+    if (!text.trim()) return;
+    Workshop.sendDevlog(text);
+    els.devlogInput.value = '';
+    els.devlogSendBtn.disabled = true;
+  });
+
+  // Project modal
+  els.pfCancelBtn.addEventListener('click', () => Workshop.closeProjectModal());
+  els.pfSaveBtn.addEventListener('click', () => Workshop.saveProject());
+  els.projectModal.addEventListener('click', (e) => {
+    if (e.target === els.projectModal) Workshop.closeProjectModal();
+  });
+
+  // Resource modal
+  els.newResourceBtn.addEventListener('click', () => Workshop.openResourceModal());
+  els.rfCancelBtn.addEventListener('click', () => Workshop.closeResourceModal());
+  els.rfSaveBtn.addEventListener('click', () => Workshop.saveResource());
+  els.resourceModal.addEventListener('click', (e) => {
+    if (e.target === els.resourceModal) Workshop.closeResourceModal();
   });
 
   // ============================================
