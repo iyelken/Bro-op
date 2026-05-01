@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a14" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Bro-op" />
+<title>Bro-op</title>
+
+<!-- PWA Manifest (inline) -->
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Bro-op","short_name":"Bro-op","description":"İki kişilik özel oyunlaştırılmış arkadaşlık alanı","start_url":"./","display":"standalone","background_color":"%230a0a14","theme_color":"%230a0a14","orientation":"portrait","icons":[{"src":"data:image/svg%2Bxml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect width=%22192%22 height=%22192%22 fill=%22%230a0a14%22/><text x=%2296%22 y=%22120%22 font-family=%22monospace%22 font-size=%2280%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%2300f0ff%22>B</text></svg>","sizes":"192x192","type":"image/svg+xml"},{"src":"data:image/svg%2Bxml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 fill=%22%230a0a14%22/><text x=%22256%22 y=%22340%22 font-family=%22monospace%22 font-size=%22240%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%2300f0ff%22>B</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}' />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
+<style>
+  /* ============================================
+     BRO-OP — MODERN RETRO / CRT THEME
+     Color tokens, typography, base layout
+     ============================================ */
+  :root {
+    /* Background layers */
+    --bg-base: #0a0a14;
+    --bg-deep: #050509;
+    --bg-panel: #11111d;
+    --bg-panel-2: #161624;
+    --bg-elev: #1c1c2e;
+
+    /* Borders & lines */
+    --border: #232338;
+    --border-soft: #1a1a2a;
+    --border-strong: #2e2e4a;
+
+    /* Text */
+    --text-primary: #e8e8f0;
+    --text-secondary: #9090a8;
+    --text-muted: #5a5a72;
+    --text-dim: #3e3e54;
+
+    /* Accent palette per tab */
+    --accent-chat: #00f0ff;       /* Cyan — terminal */
+    --accent-quest: #ffb000;      /* Amber — arcade */
+    --accent-profile: #ff0080;    /* Magenta — synthwave */
+    --accent-match: #00ff7f;      /* Green — go */
+    --accent-workshop: #b855ff;   /* Purple — creative */
+
+    /* State */
+    --success: #00ff7f;
+    --danger: #ff3860;
+    --warning: #ffb000;
+
+    /* Active accent — set dynamically per tab */
+    --accent: var(--accent-chat);
+    --accent-glow: rgba(0, 240, 255, 0.35);
+
+    /* Fonts */
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-crt: 'VT323', monospace;
+    --font-body: 'Manrope', system-ui, sans-serif;
+    --font-display: 'Fraunces', serif;
+
+    /* Layout */
+    --nav-height: 68px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Allow text selection in inputs and chat */
+  input, textarea, .selectable { user-select: text; -webkit-user-select: text; }
+
+  /* ============================================
+     CRT BACKGROUND ATMOSPHERE
+     ============================================ */
+  .crt-bg {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(0, 240, 255, 0.04), transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(184, 85, 255, 0.04), transparent 60%),
+      var(--bg-base);
+    pointer-events: none;
+  }
+
+  .scanlines {
+    position: fixed; inset: 0; z-index: 9998;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0) 4px
+    );
+    mix-blend-mode: multiply;
+    opacity: 0.6;
+  }
+
+  .crt-flicker {
+    position: fixed; inset: 0; z-index: 9999;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.01);
+    animation: flicker 0.15s infinite alternate;
+  }
+  @keyframes flicker {
+    from { opacity: 0.97; }
+    to { opacity: 1; }
+  }
+
+  .crt-vignette {
+    position: fixed; inset: 0; z-index: 9997;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.45) 100%);
+  }
+
+  /* ============================================
+     APP SHELL
+     ============================================ */
+  #app {
+    position: relative;
+    z-index: 1;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ============================================
+     LOGIN SCREEN
+     ============================================ */
+  .login-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 32px 24px;
+    padding-top: calc(32px + var(--safe-top));
+    padding-bottom: calc(32px + var(--safe-bottom));
+    overflow-y: auto;
+  }
+
+  .logo-block {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: bootIn 0.8s ease-out;
+  }
+
+  @keyframes bootIn {
+    0% { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(8px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  .logo {
+    font-family: var(--font-pixel);
+    font-size: 32px;
+    color: var(--accent-chat);
+    text-shadow:
+      0 0 8px var(--accent-chat),
+      0 0 20px rgba(0, 240, 255, 0.4),
+      2px 2px 0 #ff0080;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+
+  .logo-tagline {
+    font-family: var(--font-crt);
+    font-size: 18px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+  .logo-tagline::before { content: "> "; color: var(--accent-quest); }
+  .logo-tagline::after {
+    content: "_";
+    color: var(--accent-quest);
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px 22px;
+    position: relative;
+    box-shadow:
+      0 0 0 1px var(--border-soft),
+      0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  /* Corner brackets — arcade UI feel */
+  .login-card::before,
+  .login-card::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 2px solid var(--accent-chat);
+  }
+  .login-card::before {
+    top: -1px; left: -1px;
+    border-right: none; border-bottom: none;
+  }
+  .login-card::after {
+    bottom: -1px; right: -1px;
+    border-left: none; border-top: none;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-tab.active {
+    background: var(--accent-chat);
+    color: var(--bg-base);
+    text-shadow: none;
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1.2px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-primary);
+    font-family: var(--font-crt);
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input:focus {
+    border-color: var(--accent-chat);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.12);
+  }
+  .field input::placeholder { color: var(--text-dim); }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent-chat);
+    color: var(--bg-base);
+    border: none;
+    border-radius: 2px;
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    margin-top: 8px;
+    position: relative;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 0 #00a8b8, 0 4px 16px rgba(0, 240, 255, 0.3);
+  }
+  .btn-primary:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #00a8b8, 0 2px 8px rgba(0, 240, 255, 0.3);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .login-error {
+    background: rgba(255, 56, 96, 0.1);
+    border: 1px solid rgba(255, 56, 96, 0.4);
+    color: #ff7090;
+    padding: 10px 12px;
+    border-radius: 2px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    font-family: var(--font-crt);
+    font-size: 16px;
+  }
+
+  .login-error:empty { display: none; }
+
+  /* ============================================
+     MAIN APP SHELL (after login)
+     ============================================ */
+  .main-shell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    padding: 14px 18px;
+    padding-top: calc(14px + var(--safe-top));
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+
+  .top-bar::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      var(--accent),
+      transparent);
+    opacity: 0.6;
+  }
+
+  .top-title {
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent-glow);
+    letter-spacing: 1.5px;
+  }
+
+  .top-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-crt);
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .sync-dot.offline {
+    background: var(--text-muted);
+    box-shadow: none;
+    animation: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: 2px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .logout-btn:active {
+    background: var(--bg-elev);
+  }
+
+  /* ============================================
+     CONTENT AREA — TAB PANES
+     ============================================ */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pane {
+    display: none;
+    padding: 24px 18px;
+    animation: paneIn 0.25s ease-out;
+  }
+  .pane.active { display: block; }
+
+  @keyframes paneIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pane-header {
+    margin-bottom: 24px;
+  }
+  .pane-title {
+    font-family: var(--font-pixel);
+    font-size: 16px;
+    color: var(--accent);
+    text-shadow: 0 0 12px var(--accent-glow);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .pane-subtitle {
+    font-family: var(--font-crt);
+    font-size: 17px;
+    color: var(--text-secondary);
+  }
+  .pane-subtitle::before { content: ">> "; color: var(--accent); opacity: 0.7; }
+
+  /* ============================================
+     PROFILE PANE — actually populated in v0.1
+     ============================================ */
+  .profile-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent, var(--accent-profile), transparent);
+  }
+
+  .avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .avatar {
+    width: 64px; height: 64px;
+    border-radius: 4px;
+    background:
+      linear-gradient(135deg, var(--accent-profile), #b800ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-pixel);
+    font-size: 22px;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+    box-shadow:
+      inset 0 0 0 2px rgba(255,255,255,0.1),
+      0 0 20px rgba(255, 0, 128, 0.3);
+    position: relative;
+  }
+  .avatar::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .player-info { flex: 1; min-width: 0; }
+  .player-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .player-tag {
+    font-family: var(--font-crt);
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+
+  /* Level / XP block */
+  .level-block {
+    margin-bottom: 18px;
+  }
+  .level-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .level-label {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+  }
+  .level-num {
+    font-family: var(--font-pixel);
+    font-size: 18px;
+    color: var(--accent-profile);
+    text-shadow: 0 0 8px rgba(255, 0, 128, 0.5);
+  }
+  .xp-bar {
+    height: 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .xp-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-profile), #ff5ab8);
+    box-shadow: 0 0 12px rgba(255, 0, 128, 0.6);
+    transition: width 0.6s cubic-bezier(.2,.8,.2,1);
+    position: relative;
+  }
+  .xp-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.15) 0px,
+      rgba(255,255,255,0.15) 3px,
+      transparent 3px,
+      transparent 6px
+    );
+  }
+  .xp-text {
+    font-family: var(--font-crt);
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-cell {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-soft);
+    border-radius: 2px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: var(--font-pixel);
+    font-size: 18px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    text-shadow: 0 0 8px var(--accent-glow);
+  }
+  .stat-label {
+    font-family: var(--font-crt);
+    font-size: 14px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Cloud info card */
+  .info-card {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .info-card h4 {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-family: var(--font-crt);
+    font-size: 16px;
+  }
+  .info-row .k { color: var(--text-muted); }
+  .info-row .v {
+    color: var(--text-primary);
+    font-family: var(--font-crt);
+    letter-spacing: 0.5px;
+  }
+
+  /* ============================================
+     COMING SOON PLACEHOLDER (other tabs)
+     ============================================ */
+  .soon {
+    text-align: center;
+    padding: 60px 20px 40px;
+  }
+
+  .soon-icon {
+    width: 80px; height: 80px;
+    margin: 0 auto 20px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-pixel);
+    font-size: 24px;
+    color: var(--accent);
+    text-shadow: 0 0 12px var(--accent-glow);
+    position: relative;
+  }
+  .soon-icon::before,
+  .soon-icon::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 10px;
+    border: 2px solid var(--accent);
+  }
+  .soon-icon::before {
+    top: -1px; left: -1px;
+    border-right: none; border-bottom: none;
+  }
+  .soon-icon::after {
+    bottom: -1px; right: -1px;
+    border-left: none; border-top: none;
+  }
+
+  .soon-title {
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+  .soon-text {
+    font-family: var(--font-crt);
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 280px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .soon-ver {
+    margin-top: 18px;
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  /* ============================================
+     BOTTOM NAVIGATION
+     ============================================ */
+  .bottom-nav {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: calc(var(--nav-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.4);
+  }
+
+  .bottom-nav::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: -1px;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 5%,
+      var(--accent-chat) 15%,
+      var(--accent-quest) 35%,
+      var(--accent-profile) 50%,
+      var(--accent-match) 65%,
+      var(--accent-workshop) 85%,
+      transparent 95%);
+    opacity: 0.4;
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    padding: 6px 2px;
+  }
+
+  .nav-btn[data-tab="chat"].active { color: var(--accent-chat); }
+  .nav-btn[data-tab="quest"].active { color: var(--accent-quest); }
+  .nav-btn[data-tab="profile"].active { color: var(--accent-profile); }
+  .nav-btn[data-tab="match"].active { color: var(--accent-match); }
+  .nav-btn[data-tab="workshop"].active { color: var(--accent-workshop); }
+
+  .nav-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 2px;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .nav-icon {
+    width: 26px; height: 26px;
+    display: block;
+  }
+  .nav-icon svg { width: 100%; height: 100%; }
+
+  .nav-label {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .nav-btn.active .nav-icon {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  /* ============================================
+     LOADING / BOOT SCREEN
+     ============================================ */
+  .boot {
+    position: fixed; inset: 0;
+    z-index: 10000;
+    background: var(--bg-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .boot-text {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    color: var(--accent-chat);
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px var(--accent-chat);
+  }
+  .boot-bar {
+    width: 200px;
+    height: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .boot-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--accent-chat), transparent);
+    animation: bootBar 1.2s ease-in-out infinite;
+  }
+  @keyframes bootBar {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Hide elements helper */
+  .hidden { display: none !important; }
+
+  /* Small screens — preserve readability */
+  @media (max-width: 360px) {
+    .logo { font-size: 26px; }
+    .nav-label { font-size: 6px; }
+    .pane-title { font-size: 14px; }
+  }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+    .crt-flicker, .scanlines { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CRT atmosphere layers -->
+<div class="crt-bg"></div>
+<div class="scanlines"></div>
+<div class="crt-vignette"></div>
+<div class="crt-flicker"></div>
+
+<!-- Boot screen -->
+<div class="boot" id="bootScreen">
+  <div class="boot-text">BRO-OP LOADING</div>
+  <div class="boot-bar"></div>
+</div>
+
+<!-- Main app -->
+<div id="app" class="hidden">
+
+  <!-- ===== LOGIN SCREEN ===== -->
+  <div class="login-screen" id="loginScreen">
+    <div class="logo-block">
+      <div class="logo">BRO-OP</div>
+      <div class="logo-tagline">player 2 connected</div>
+    </div>
+
+    <div class="login-card">
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="login">GİRİŞ</button>
+        <button class="mode-tab" data-mode="signup">YENİ ODA</button>
+      </div>
+
+      <div class="login-error" id="loginError"></div>
+
+      <div class="field">
+        <label>Bulut ID</label>
+        <input type="text" id="cloudId" placeholder="ortak-oda-adı" autocomplete="off" autocapitalize="none" spellcheck="false" />
+        <div class="field-hint">İkinizin de aynı ID'yi kullanması gerekir.</div>
+      </div>
+
+      <div class="field">
+        <label>Şifre</label>
+        <input type="password" id="cloudPass" placeholder="••••••••" autocomplete="off" />
+        <div class="field-hint">Verileriniz bu şifreyle uçtan uca şifrelenir.</div>
+      </div>
+
+      <div class="field">
+        <label>Oyuncu Adın</label>
+        <input type="text" id="playerName" placeholder="Sen kimsin?" autocomplete="off" maxlength="20" />
+        <div class="field-hint">Bu cihazda sen olarak görüneceksin.</div>
+      </div>
+
+      <button class="btn-primary" id="loginBtn">▶ BAĞLAN</button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN SHELL ===== -->
+  <div class="main-shell hidden" id="mainShell">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div class="top-title" id="topTitle">CHAT</div>
+      <div class="top-meta">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">SYNC</span>
+        <button class="logout-btn" id="logoutBtn">ÇIKIŞ</button>
+      </div>
+    </div>
+
+    <!-- Content / panes -->
+    <div class="content">
+
+      <!-- Chat -->
+      <div class="pane" data-pane="chat">
+        <div class="pane-header">
+          <div class="pane-title">CHAT</div>
+          <div class="pane-subtitle">İkinize özel kanal</div>
+        </div>
+        <div class="soon">
+          <div class="soon-icon">💬</div>
+          <div class="soon-title">YAKINDA</div>
+          <div class="soon-text">Mesajlaşma, link önizleme ve paylaşılan içerik kütüphanesi sonraki sürümde geliyor.</div>
+          <div class="soon-ver">v0.2 — CHAT MODULE</div>
+        </div>
+      </div>
+
+      <!-- Quest -->
+      <div class="pane" data-pane="quest">
+        <div class="pane-header">
+          <div class="pane-title">QUEST</div>
+          <div class="pane-subtitle">Görev panosu</div>
+        </div>
+        <div class="soon">
+          <div class="soon-icon">⚔</div>
+          <div class="soon-title">YAKINDA</div>
+          <div class="soon-text">Birbirinize görev verme, XP kazanma ve onay sistemi sonraki sürümde geliyor.</div>
+          <div class="soon-ver">v0.3 — QUEST SYSTEM</div>
+        </div>
+      </div>
+
+      <!-- Profile (active in v0.1) -->
+      <div class="pane active" data-pane="profile">
+        <div class="pane-header">
+          <div class="pane-title">PROFİL</div>
+          <div class="pane-subtitle">Karakter ekranı</div>
+        </div>
+
+        <div class="profile-card">
+          <div class="avatar-row">
+            <div class="avatar" id="profileAvatar">P1</div>
+            <div class="player-info">
+              <div class="player-name" id="profileName">Player</div>
+              <div class="player-tag" id="profileTag">@oda</div>
+            </div>
+          </div>
+
+          <div class="level-block">
+            <div class="level-row">
+              <span class="level-label">LEVEL</span>
+              <span class="level-num" id="profileLevel">01</span>
+            </div>
+            <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+            <div class="xp-text" id="xpText">0 / 100 XP</div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-cell">
+              <div class="stat-value" id="statStreak" style="--accent: var(--accent-quest); color: var(--accent-quest); text-shadow: 0 0 8px rgba(255, 176, 0, 0.5);">0</div>
+              <div class="stat-label">streak (gün)</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-value" id="statQuests" style="color: var(--accent-match); text-shadow: 0 0 8px rgba(0, 255, 127, 0.5);">0</div>
+              <div class="stat-label">tamamlanan quest</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-value" id="statBadges" style="color: var(--accent-chat); text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);">0</div>
+              <div class="stat-label">rozet</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-value" id="statDays" style="color: var(--accent-workshop); text-shadow: 0 0 8px rgba(184, 85, 255, 0.5);">1</div>
+              <div class="stat-label">odadaki gün</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h4>ODA BİLGİSİ</h4>
+          <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
+          <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.1.0</span></div>
+        </div>
+      </div>
+
+      <!-- Match -->
+      <div class="pane" data-pane="match">
+        <div class="pane-header">
+          <div class="pane-title">MATCH</div>
+          <div class="pane-subtitle">Rekabetçi seans takibi</div>
+        </div>
+        <div class="soon">
+          <div class="soon-icon">🎯</div>
+          <div class="soon-title">YAKINDA</div>
+          <div class="soon-text">CS, PUBG ve diğer maçlarınızın W/L kaydı, momentler ve istatistikler sonraki sürümde geliyor.</div>
+          <div class="soon-ver">v0.4 — MATCH TRACKER</div>
+        </div>
+      </div>
+
+      <!-- Workshop -->
+      <div class="pane" data-pane="workshop">
+        <div class="pane-header">
+          <div class="pane-title">ATÖLYE</div>
+          <div class="pane-subtitle">Geliştirici alanı</div>
+        </div>
+        <div class="soon">
+          <div class="soon-icon">⚒</div>
+          <div class="soon-title">YAKINDA</div>
+          <div class="soon-text">İki ayrı proje sayfası, devlog ve kaynak havuzu sonraki sürümde geliyor.</div>
+          <div class="soon-ver">v0.5 — WORKSHOP</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-btn" data-tab="chat">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M4 5h16v11H8l-4 4V5z" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="nav-label">CHAT</span>
+      </button>
+      <button class="nav-btn" data-tab="quest">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3l3 6 6 1-4.5 4.5L18 21l-6-3-6 3 1.5-6.5L3 10l6-1z" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="nav-label">QUEST</span>
+      </button>
+      <button class="nav-btn active" data-tab="profile">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="nav-label">PROFİL</span>
+      </button>
+      <button class="nav-btn" data-tab="match">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="9"/>
+            <circle cx="12" cy="12" r="5"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="nav-label">MATCH</span>
+      </button>
+      <button class="nav-btn" data-tab="workshop">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M14 7l3-3 3 3-3 3-3-3z" stroke-linejoin="round"/>
+            <path d="M16 9l-9 9-3 1 1-3 9-9" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="nav-label">ATÖLYE</span>
+      </button>
+    </nav>
+
+  </div>
+
+</div>
+
+<!-- ============================================
+     SCRIPTS
+     ============================================ -->
+
+<!-- CryptoJS for AES-256 (placeholder until Firebase wiring is added) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+<!-- Firebase SDK (modular, v10) — wired up but inactive until config provided -->
+<script type="module">
+  // ============================================
+  // FIREBASE PLACEHOLDER (filled in when user provides config)
+  // ============================================
+  // To activate cloud sync:
+  //   1. Create a Firebase project, enable Firestore (in production mode is fine)
+  //   2. Copy your firebaseConfig object below
+  //   3. Apply the security rules from the README
+  //
+  // Until then, the app runs in LOCAL-ONLY mode (data persists in localStorage,
+  // no cross-device sync). Login still works — Bulut ID + password are validated
+  // locally so the UX is identical.
+
+  const firebaseConfig = {
+    // apiKey: "...",
+    // authDomain: "...",
+    // projectId: "...",
+    // storageBucket: "...",
+    // messagingSenderId: "...",
+    // appId: "..."
+  };
+
+  const FIREBASE_ENABLED = Object.keys(firebaseConfig).length > 0;
+
+  // Will be populated if FIREBASE_ENABLED
+  window.__broop = {
+    firebaseEnabled: FIREBASE_ENABLED,
+    db: null,
+    app: null,
+  };
+
+  if (FIREBASE_ENABLED) {
+    try {
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+      const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      window.__broop.app = initializeApp(firebaseConfig);
+      window.__broop.db = getFirestore(window.__broop.app);
+      console.log('[Bro-op] Firebase ready');
+    } catch (e) {
+      console.warn('[Bro-op] Firebase init failed, falling back to local mode:', e);
+      window.__broop.firebaseEnabled = false;
+    }
+  } else {
+    console.log('[Bro-op] Running in LOCAL-ONLY mode (no Firebase config)');
+  }
+
+  // Signal readiness to the main script
+  window.dispatchEvent(new Event('broop:ready'));
+</script>
+
+<!-- Main app logic -->
+<script>
+(function () {
+  'use strict';
+
+  // ============================================
+  // CONSTANTS & UTILITIES
+  // ============================================
+  const STORAGE_KEY = 'broop_session_v1';
+
+  const ACCENT_BY_TAB = {
+    chat:     { color: 'var(--accent-chat)',     glow: 'rgba(0, 240, 255, 0.35)' },
+    quest:    { color: 'var(--accent-quest)',    glow: 'rgba(255, 176, 0, 0.35)' },
+    profile:  { color: 'var(--accent-profile)',  glow: 'rgba(255, 0, 128, 0.35)' },
+    match:    { color: 'var(--accent-match)',    glow: 'rgba(0, 255, 127, 0.35)' },
+    workshop: { color: 'var(--accent-workshop)', glow: 'rgba(184, 85, 255, 0.35)' },
+  };
+
+  const TAB_TITLES = {
+    chat: 'CHAT',
+    quest: 'QUEST',
+    profile: 'PROFİL',
+    match: 'MATCH',
+    workshop: 'ATÖLYE',
+  };
+
+  // ============================================
+  // ENCRYPTION HELPERS (CryptoJS AES-256)
+  // ============================================
+  // Used to (1) derive a deterministic room key from Bulut ID + password,
+  // (2) encrypt/decrypt payloads written to Firestore.
+  // In v0.1 we don't write data yet — these are scaffolded for v0.2+.
+  function deriveKey(cloudId, password) {
+    const salt = CryptoJS.SHA256('broop:' + cloudId).toString();
+    return CryptoJS.PBKDF2(password, salt, {
+      keySize: 256 / 32,
+      iterations: 10000,
+    }).toString();
+  }
+
+  function encrypt(plaintext, key) {
+    return CryptoJS.AES.encrypt(plaintext, key).toString();
+  }
+
+  function decrypt(ciphertext, key) {
+    try {
+      const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch {
+      return null;
+    }
+  }
+
+  // Make a "verifier" — we encrypt a known token with the derived key,
+  // store it on the room. On future logins, if we can't decrypt the verifier,
+  // password is wrong.
+  function makeVerifier(key) {
+    return encrypt('BROOP_OK', key);
+  }
+  function checkVerifier(verifier, key) {
+    return decrypt(verifier, key) === 'BROOP_OK';
+  }
+
+  // ============================================
+  // SESSION (localStorage — persistent login)
+  // ============================================
+  const Session = {
+    get() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); }
+      catch { return null; }
+    },
+    set(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    },
+    clear() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
+
+  // ============================================
+  // ROOM REGISTRY (local for v0.1; will move to Firestore in v0.2)
+  // ============================================
+  // Stores { [cloudId]: verifier } so subsequent logins can validate password.
+  const Rooms = {
+    KEY: 'broop_rooms_v1',
+    all() {
+      try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; }
+      catch { return {}; }
+    },
+    save(rooms) {
+      localStorage.setItem(this.KEY, JSON.stringify(rooms));
+    },
+    get(cloudId) { return this.all()[cloudId]; },
+    set(cloudId, verifier) {
+      const r = this.all();
+      r[cloudId] = verifier;
+      this.save(r);
+    }
+  };
+
+  // ============================================
+  // DOM REFS
+  // ============================================
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  const els = {
+    boot: $('#bootScreen'),
+    app: $('#app'),
+    loginScreen: $('#loginScreen'),
+    mainShell: $('#mainShell'),
+    cloudId: $('#cloudId'),
+    cloudPass: $('#cloudPass'),
+    playerName: $('#playerName'),
+    loginBtn: $('#loginBtn'),
+    loginError: $('#loginError'),
+    modeTabs: $$('.mode-tab'),
+    navBtns: $$('.nav-btn'),
+    panes: $$('.pane'),
+    topTitle: $('#topTitle'),
+    syncDot: $('#syncDot'),
+    syncText: $('#syncText'),
+    logoutBtn: $('#logoutBtn'),
+    profileAvatar: $('#profileAvatar'),
+    profileName: $('#profileName'),
+    profileTag: $('#profileTag'),
+    infoCloudId: $('#infoCloudId'),
+    profileLevel: $('#profileLevel'),
+    xpFill: $('#xpFill'),
+    xpText: $('#xpText'),
+  };
+
+  // ============================================
+  // STATE
+  // ============================================
+  let mode = 'login'; // 'login' or 'signup'
+  let activeTab = 'profile';
+  let session = null;
+
+  // ============================================
+  // LOGIN HANDLING
+  // ============================================
+  function setMode(m) {
+    mode = m;
+    els.modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+    els.loginBtn.textContent = m === 'login' ? '▶ BAĞLAN' : '▶ ODAYI KUR';
+    showError('');
+  }
+
+  function showError(msg) {
+    els.loginError.textContent = msg || '';
+  }
+
+  function validate(cloudId, password, playerName) {
+    if (!cloudId || cloudId.length < 3) return 'Bulut ID en az 3 karakter olmalı.';
+    if (!/^[a-zA-Z0-9_\-]+$/.test(cloudId)) return 'Bulut ID sadece harf/rakam/-/_ içerebilir.';
+    if (!password || password.length < 4) return 'Şifre en az 4 karakter olmalı.';
+    if (!playerName || playerName.length < 1) return 'Oyuncu adı boş olamaz.';
+    return null;
+  }
+
+  function handleLogin() {
+    const cloudId = els.cloudId.value.trim().toLowerCase();
+    const password = els.cloudPass.value;
+    const playerName = els.playerName.value.trim();
+
+    const err = validate(cloudId, password, playerName);
+    if (err) { showError(err); return; }
+
+    const key = deriveKey(cloudId, password);
+    const existing = Rooms.get(cloudId);
+
+    if (mode === 'signup') {
+      if (existing) {
+        showError('Bu Bulut ID zaten kullanılıyor. "GİRİŞ" sekmesinden gir.');
+        return;
+      }
+      Rooms.set(cloudId, makeVerifier(key));
+    } else {
+      if (!existing) {
+        showError('Bu odayı bulamadık. "YENİ ODA" sekmesinden oluşturabilirsin.');
+        return;
+      }
+      if (!checkVerifier(existing, key)) {
+        showError('Şifre yanlış. Tekrar dene.');
+        return;
+      }
+    }
+
+    // All good — persist session
+    session = {
+      cloudId,
+      playerName,
+      key,
+      createdAt: Date.now(),
+    };
+    Session.set(session);
+    enterApp();
+  }
+
+  // ============================================
+  // ENTERING THE APP
+  // ============================================
+  function enterApp() {
+    els.loginScreen.classList.add('hidden');
+    els.mainShell.classList.remove('hidden');
+    els.profileName.textContent = session.playerName;
+    els.profileTag.textContent = '@' + session.cloudId;
+    els.profileAvatar.textContent = (session.playerName[0] || 'P').toUpperCase();
+    els.infoCloudId.textContent = session.cloudId;
+
+    // v0.1: profile is the default tab (it's the only one with content)
+    setActiveTab('profile');
+    updateSyncStatus();
+  }
+
+  function logout() {
+    Session.clear();
+    session = null;
+    els.mainShell.classList.add('hidden');
+    els.loginScreen.classList.remove('hidden');
+    els.cloudPass.value = '';
+    showError('');
+  }
+
+  // ============================================
+  // TAB NAVIGATION
+  // ============================================
+  function setActiveTab(tab) {
+    activeTab = tab;
+    els.navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    els.panes.forEach(p => p.classList.toggle('active', p.dataset.pane === tab));
+    els.topTitle.textContent = TAB_TITLES[tab];
+
+    // Update active accent CSS variables
+    const a = ACCENT_BY_TAB[tab];
+    document.documentElement.style.setProperty('--accent', a.color);
+    document.documentElement.style.setProperty('--accent-glow', a.glow);
+    els.topTitle.style.color = a.color;
+  }
+
+  // ============================================
+  // SYNC STATUS (v0.1: stub)
+  // ============================================
+  function updateSyncStatus() {
+    const enabled = window.__broop && window.__broop.firebaseEnabled;
+    if (enabled) {
+      els.syncDot.classList.remove('offline');
+      els.syncText.textContent = 'SYNC';
+    } else {
+      els.syncDot.classList.add('offline');
+      els.syncText.textContent = 'LOCAL';
+    }
+  }
+
+  // ============================================
+  // EVENT WIRING
+  // ============================================
+  els.modeTabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
+  els.loginBtn.addEventListener('click', handleLogin);
+  [els.cloudId, els.cloudPass, els.playerName].forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  });
+  els.navBtns.forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
+  els.logoutBtn.addEventListener('click', () => {
+    if (confirm('Çıkış yapmak istediğine emin misin?')) logout();
+  });
+
+  // ============================================
+  // BOOT
+  // ============================================
+  function boot() {
+    // Mock minimum boot delay for retro feel (~500ms)
+    const minDelay = new Promise(r => setTimeout(r, 600));
+    const fbReady = new Promise(r => {
+      if (window.__broop) r();
+      else window.addEventListener('broop:ready', r, { once: true });
+    });
+
+    Promise.all([minDelay, fbReady]).then(() => {
+      els.boot.style.opacity = '0';
+      els.boot.style.transition = 'opacity 0.3s';
+      setTimeout(() => els.boot.remove(), 300);
+      els.app.classList.remove('hidden');
+
+      // Restore session if present
+      const saved = Session.get();
+      if (saved && saved.cloudId && Rooms.get(saved.cloudId)) {
+        session = saved;
+        enterApp();
+      } else if (saved) {
+        Session.clear();
+      }
+    });
+  }
+
+  // PWA service worker — minimal cache-first strategy via Blob
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      const CACHE = 'broop-v0-1';
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+      self.addEventListener('fetch', e => {
+        if (e.request.method !== 'GET') return;
+        e.respondWith(
+          caches.open(CACHE).then(cache =>
+            cache.match(e.request).then(cached => {
+              const network = fetch(e.request).then(res => {
+                if (res.ok && e.request.url.startsWith(self.location.origin)) {
+                  cache.put(e.request, res.clone());
+                }
+                return res;
+              }).catch(() => cached);
+              return cached || network;
+            })
+          )
+        );
+      });
+    `;
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    // Note: Blob-based SW only works on initial page load and is a simplification.
+    // For production, use a real /sw.js file at the GitHub Pages root.
+    // We register it best-effort and silently skip on failure.
+    navigator.serviceWorker.register(swUrl).catch(() => {});
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
