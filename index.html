@@ -2093,8 +2093,15 @@
     color: var(--text-primary);
     word-wrap: break-word;
     overflow-wrap: anywhere;
+    /* Animation only plays on first render of the container.
+       Once container has data-rendered="1", subsequent re-renders skip it
+       to avoid the flicker effect during real-time syncs. */
     animation: paneIn 0.2s ease-out;
     transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  /* Suppress paneIn animation on re-renders (after first paint) */
+  .todo-items[data-rendered="1"] .todo-item {
+    animation: none;
   }
   /* Header row inside a todo item — what was the whole item before */
   .todo-item-head {
@@ -2165,6 +2172,9 @@
     border-top: 1px dashed var(--border);
     margin-top: 2px;
     animation: paneIn 0.18s ease-out;
+  }
+  .todo-items[data-rendered="1"] .todo-subs {
+    animation: none;
   }
   .todo-sub {
     display: flex;
@@ -3331,7 +3341,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.2</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.3</span></div>
         </div>
 
         <div class="info-card">
@@ -6045,6 +6055,10 @@
       const data = this.todos[ownerName] || { items: [] };
       const items = data.items || [];
 
+      // Has this container been rendered before? If yes, suppress animations
+      // on re-renders to avoid flickering when the other user makes changes.
+      const isReRender = container.dataset.everRendered === '1';
+
       // Counts
       const totals = { todo: 0, doing: 0, done: 0 };
       for (const it of items) {
@@ -6079,6 +6093,8 @@
 
         const itemsEl = document.createElement('div');
         itemsEl.className = 'todo-items';
+        // On re-renders, mark this container so CSS suppresses paneIn anim
+        if (isReRender) itemsEl.dataset.rendered = '1';
         if (colItems.length === 0) {
           const empty = document.createElement('div');
           empty.className = 'todo-empty';
@@ -6123,6 +6139,8 @@
 
         container.appendChild(colEl);
       }
+      // Mark container as rendered so subsequent renders skip animations
+      container.dataset.everRendered = '1';
     },
 
     _renderTodoItem(it, ownerName, isOwn) {
