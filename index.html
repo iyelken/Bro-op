@@ -878,7 +878,7 @@
   .nav-btn[data-tab="chat"].active { color: var(--accent-chat); }
   .nav-btn[data-tab="quest"].active { color: var(--accent-quest); }
   .nav-btn[data-tab="profile"].active { color: var(--accent-profile); }
-  .nav-btn[data-tab="match"].active { color: var(--accent-match); }
+  .nav-btn[data-tab="activity"].active { color: var(--accent-match); }
   .nav-btn[data-tab="workshop"].active { color: var(--accent-workshop); }
 
   .nav-btn.active::before {
@@ -1893,6 +1893,130 @@
     animation: paneIn 0.2s ease-out;
   }
   .ws-pane.active { display: block; }
+
+  /* ============================================
+     ACTIVITY PANE — pattern-based summary cards
+     ============================================ */
+
+  /* Sub-tabs at top: pick which person to view */
+  .activity-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding: 4px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .activity-tab {
+    flex: 1;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .activity-tab:hover {
+    color: var(--text-primary);
+  }
+  .activity-tab.active {
+    background: rgba(0, 255, 127, 0.1);
+    color: var(--accent-match);
+    box-shadow: 0 0 8px rgba(0, 255, 127, 0.2);
+  }
+
+  /* List container */
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Pattern card — each "observation" about the user */
+  .activity-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-match);
+    border-radius: 4px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: transform 0.15s, border-color 0.2s;
+  }
+  .activity-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 255, 127, 0.3);
+  }
+  /* Color variants by mood */
+  .activity-card.mood-hype { border-left-color: #ff6b00; }
+  .activity-card.mood-hype:hover { border-color: rgba(255, 107, 0, 0.4); }
+  .activity-card.mood-launch { border-left-color: var(--accent-workshop); }
+  .activity-card.mood-launch:hover { border-color: rgba(184, 85, 255, 0.4); }
+  .activity-card.mood-streak { border-left-color: var(--accent-quest); }
+  .activity-card.mood-streak:hover { border-color: rgba(255, 176, 0, 0.4); }
+  .activity-card.mood-quiet { border-left-color: var(--text-muted); opacity: 0.85; }
+  .activity-card.mood-night { border-left-color: var(--accent-chat); }
+  .activity-card.mood-night:hover { border-color: rgba(0, 240, 255, 0.4); }
+  .activity-card.mood-warning { border-left-color: var(--danger); }
+  .activity-card.mood-warning:hover { border-color: rgba(255, 56, 96, 0.4); }
+  .activity-card.mood-good { border-left-color: var(--accent-match); }
+
+  .activity-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .activity-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .activity-headline {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .activity-detail {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+  }
+  .activity-time {
+    font-family: var(--font-crt);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Empty state */
+  .activity-empty {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-muted);
+  }
+  .activity-empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .activity-empty-title {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .activity-empty-text {
+    font-family: var(--font-crt);
+    font-size: 14px;
+  }
 
   /* ============================================
      PROJECT TABS — multi-project switcher
@@ -3906,7 +4030,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.15.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.16.0-alpha1</span></div>
         </div>
 
         <div class="info-card">
@@ -3929,18 +4053,18 @@
         </div>
       </div>
 
-      <!-- Match -->
-      <div class="pane" data-pane="match">
+      <!-- Activity (replaces old Match) -->
+      <div class="pane" data-pane="activity">
         <div class="pane-header">
-          <div class="pane-title">MATCH</div>
-          <div class="pane-subtitle">Rekabetçi seans takibi</div>
+          <div class="pane-title">A K T İ V İ T E</div>
+          <div class="pane-subtitle" id="activitySubtitle">>> ne yapıyor bu insanlar</div>
         </div>
-        <div class="soon">
-          <div class="soon-icon">🎯</div>
-          <div class="soon-title">YAKINDA</div>
-          <div class="soon-text">CS, PUBG ve diğer maçlarınızın W/L kaydı, momentler ve istatistikler sonraki sürümde geliyor.</div>
-          <div class="soon-ver">v0.4 — MATCH TRACKER</div>
-        </div>
+
+        <!-- Sub-tabs: who to view -->
+        <div class="activity-tabs" id="activityTabs"></div>
+
+        <!-- Pattern cards list -->
+        <div class="activity-list" id="activityList"></div>
       </div>
 
       <!-- Workshop -->
@@ -4142,15 +4266,13 @@
         </span>
         <span class="nav-label">PROFİL</span>
       </button>
-      <button class="nav-btn" data-tab="match">
+      <button class="nav-btn" data-tab="activity">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <circle cx="12" cy="12" r="9"/>
-            <circle cx="12" cy="12" r="5"/>
-            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+            <path d="M3 12h4l2.5-7 5 14L17 12h4" stroke-linejoin="round" stroke-linecap="round"/>
           </svg>
         </span>
-        <span class="nav-label">MATCH</span>
+        <span class="nav-label">AKTİVİTE</span>
       </button>
       <button class="nav-btn" data-tab="workshop">
         <span class="nav-icon">
@@ -4256,7 +4378,7 @@
     chat:     { color: 'var(--accent-chat)',     glow: 'rgba(0, 240, 255, 0.35)' },
     quest:    { color: 'var(--accent-quest)',    glow: 'rgba(255, 176, 0, 0.35)' },
     profile:  { color: 'var(--accent-profile)',  glow: 'rgba(255, 0, 128, 0.35)' },
-    match:    { color: 'var(--accent-match)',    glow: 'rgba(0, 255, 127, 0.35)' },
+    activity: { color: 'var(--accent-match)',    glow: 'rgba(0, 255, 127, 0.35)' },
     workshop: { color: 'var(--accent-workshop)', glow: 'rgba(184, 85, 255, 0.35)' },
   };
 
@@ -4264,7 +4386,7 @@
     chat: 'CHAT',
     quest: 'QUEST',
     profile: 'PROFİL',
-    match: 'MATCH',
+    activity: 'AKTİVİTE',
     workshop: 'ATÖLYE',
   };
 
@@ -4387,6 +4509,10 @@
     questModalSubtitle: $('#questModalSubtitle'),
     questModalBody: $('#questModalBody'),
     questModalFooter: $('#questModalFooter'),
+    // Activity pane
+    activitySubtitle: $('#activitySubtitle'),
+    activityTabs: $('#activityTabs'),
+    activityList: $('#activityList'),
     // Profile (existing IDs, now wired)
     statStreak: $('#statStreak'),
     statQuests: $('#statQuests'),
@@ -4694,6 +4820,8 @@
     Profile.start();
     Quests.start();
     Workshop.start();
+    // v0.16: activity feed (derives from above modules)
+    Activity.start();
 
     // Show onboarding tour on first login (per device)
     setTimeout(() => Onboarding.maybeShow(), 600);
@@ -4704,6 +4832,7 @@
     Profile.stop();
     Quests.stop();
     Workshop.stop();
+    Activity.stop();
     Notifications.reset();
     Session.clear();
     session = null;
@@ -4733,6 +4862,10 @@
     // Chat: when entering tab, scroll to bottom
     if (tab === 'chat' && Chat.rendered) {
       Chat.scrollToBottom(true);
+    }
+    // Activity: refresh whenever entering this tab so latest patterns show
+    if (tab === 'activity' && typeof Activity !== 'undefined') {
+      Activity.render();
     }
 
     // Mark this tab as seen, refresh badges
@@ -5354,6 +5487,7 @@
         this.renderProfile();
         // Quests UI may show member list — update it
         if (typeof Quests !== 'undefined' && Quests.refreshMembersUI) Quests.refreshMembersUI();
+        if (typeof Activity !== 'undefined') Activity.refresh();
       }, (err) => console.warn('[Profile] snapshot error:', err));
     },
 
@@ -5484,6 +5618,7 @@
         this.quests = list;
         this.render();
         Notifications.refresh();
+        if (typeof Activity !== 'undefined') Activity.refresh();
 
         // Sound detection: a new quest assigned to me, or a submission for me to approve
         const me = session && session.playerName;
@@ -6120,6 +6255,342 @@
     return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
   }
 
+  // ============================================================
+  // ACTIVITY MODULE — pattern detection over user behavior
+  // ============================================================
+  // Reads from the *already-loaded* state of other modules (Quests,
+  // Workshop, Profile) and runs a set of pattern detectors. Each
+  // detector returns 0 or more "cards" describing an observation.
+  // Cards are sorted by priority and rendered.
+  //
+  // No new Firestore queries — purely derived. Re-renders whenever
+  // the source data changes (we hook into renderMine/renderTheirs
+  // and the Quests render flow).
+  const Activity = {
+    selectedTarget: null, // playerName whose feed we're viewing
+
+    start() {
+      // Default to viewing self
+      if (session) this.selectedTarget = session.playerName;
+      this.render();
+    },
+
+    stop() {
+      this.selectedTarget = null;
+      if (els.activityList) els.activityList.innerHTML = '';
+      if (els.activityTabs) els.activityTabs.innerHTML = '';
+    },
+
+    // Re-render — called from data listeners after they update
+    refresh() {
+      // Only re-render if the activity pane is currently active
+      const pane = document.querySelector('.pane[data-pane="activity"]');
+      if (pane && pane.classList.contains('active')) {
+        this.render();
+      } else {
+        // Just update the tabs so badge/active state stays right
+        this.renderTabs();
+      }
+    },
+
+    render() {
+      this.renderTabs();
+      this.renderCards();
+    },
+
+    renderTabs() {
+      if (!els.activityTabs || !session) return;
+      els.activityTabs.innerHTML = '';
+      // List of all room members (self + others)
+      const members = [session.playerName, ...Profile.others().map(o => o.name)];
+      // If selected target is no longer in the room, fall back to self
+      if (!members.includes(this.selectedTarget)) {
+        this.selectedTarget = session.playerName;
+      }
+      for (const name of members) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'activity-tab' + (name === this.selectedTarget ? ' active' : '');
+        btn.textContent = (name === session.playerName ? '◉ ' : '○ ') + name.toUpperCase();
+        btn.addEventListener('click', () => {
+          this.selectedTarget = name;
+          this.render();
+        });
+        els.activityTabs.appendChild(btn);
+      }
+    },
+
+    renderCards() {
+      if (!els.activityList || !session) return;
+      const target = this.selectedTarget;
+      els.activityList.innerHTML = '';
+
+      const cards = this.detectPatterns(target);
+
+      if (cards.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'activity-empty';
+        empty.innerHTML = `
+          <div class="activity-empty-icon">🔍</div>
+          <div class="activity-empty-title">SESSİZLİK</div>
+          <div class="activity-empty-text">${target} son zamanlarda pek bir şey yapmamış. <br>Belki bir quest at?</div>
+        `;
+        els.activityList.appendChild(empty);
+        return;
+      }
+
+      // Sort by priority desc, then by timestamp desc (recent first)
+      cards.sort((a, b) => {
+        const p = (b.priority || 0) - (a.priority || 0);
+        if (p !== 0) return p;
+        return (b.ts || 0) - (a.ts || 0);
+      });
+
+      // Cap at top 8 to avoid overwhelming the UI
+      const top = cards.slice(0, 8);
+      for (const c of top) els.activityList.appendChild(this._buildCard(c));
+    },
+
+    _buildCard(c) {
+      const card = document.createElement('div');
+      card.className = 'activity-card mood-' + (c.mood || 'good');
+      const icon = document.createElement('div');
+      icon.className = 'activity-icon';
+      icon.textContent = c.icon;
+      const body = document.createElement('div');
+      body.className = 'activity-body';
+      const head = document.createElement('div');
+      head.className = 'activity-headline';
+      head.textContent = c.headline;
+      body.appendChild(head);
+      if (c.detail) {
+        const det = document.createElement('div');
+        det.className = 'activity-detail';
+        det.textContent = c.detail;
+        body.appendChild(det);
+      }
+      if (c.timeText) {
+        const t = document.createElement('div');
+        t.className = 'activity-time';
+        t.textContent = c.timeText;
+        body.appendChild(t);
+      }
+      card.appendChild(icon);
+      card.appendChild(body);
+      return card;
+    },
+
+    // ============================================
+    // PATTERN DETECTORS
+    // ============================================
+    // Each detector receives (target, ctx) and returns a card or null.
+    // ctx contains pre-computed slices so we don't recompute repeatedly.
+    detectPatterns(target) {
+      const now = Date.now();
+      const HOUR = 3600 * 1000;
+      const DAY = 24 * HOUR;
+
+      // --- Build context: target's data slices ---
+      const ctx = {
+        now,
+        target,
+        // Devlogs the target wrote
+        devlogs: (Workshop.devlogs || []).filter(d => d.author === target),
+        // Target's todos (whole list including all projects)
+        todos: ((Workshop.todos[target] && Workshop.todos[target].items) || []),
+        // Target's workshop doc with normalized projects array
+        workshop: Workshop._normalizeWorkshop(Workshop.workshops[target]).doc,
+        // Quests target is involved in (either side)
+        quests: (Quests.quests || []).filter(q => q.fromAuthor === target || q.toAuthor === target),
+      };
+
+      const cards = [];
+      // Run each detector — each may push 0+ cards
+      this._detectTodoSpree(ctx, cards);
+      this._detectNewProjects(ctx, cards);
+      this._detectDevlogBurst(ctx, cards);
+      this._detectNightOwl(ctx, cards);
+      this._detectQuestStreak(ctx, cards);
+      this._detectQuiet(ctx, cards);
+      this._detectHelpRequests(ctx, cards);
+
+      return cards;
+    },
+
+    // 🔥 TODO bitirme furyası — son 24 saatte 5+ done
+    _detectTodoSpree(ctx, out) {
+      const cutoff = ctx.now - 24 * 3600 * 1000;
+      const recentDone = ctx.todos.filter(t =>
+        t.status === 'done' && (t.updatedTs || 0) >= cutoff
+      );
+      if (recentDone.length >= 5) {
+        const isMe = ctx.target === session.playerName;
+        const verb = isMe ? 'sen coştun!' : ctx.target + ' coştu!';
+        // Time span of the spree
+        const sortedTs = recentDone.map(t => t.updatedTs).sort((a, b) => a - b);
+        const span = sortedTs[sortedTs.length - 1] - sortedTs[0];
+        const spanText = span < 3600 * 1000
+          ? Math.max(1, Math.round(span / 60000)) + ' dakikada'
+          : Math.max(1, Math.round(span / (3600 * 1000))) + ' saatte';
+        out.push({
+          icon: '🔥',
+          mood: 'hype',
+          headline: verb,
+          detail: spanText + ' ' + recentDone.length + ' TODO bitirdi. Acaba kafeini fazla mı kaçtı?',
+          ts: sortedTs[sortedTs.length - 1],
+          priority: 90,
+        });
+      }
+    },
+
+    // 🚀 Yeni proje — son 7 günde açılan projeler
+    _detectNewProjects(ctx, out) {
+      const cutoff = ctx.now - 7 * 24 * 3600 * 1000;
+      const newOnes = (ctx.workshop.projects || []).filter(p =>
+        !p.archived && (p.createdTs || 0) >= cutoff
+      );
+      if (newOnes.length === 0) return;
+      const isMe = ctx.target === session.playerName;
+      if (newOnes.length === 1) {
+        const p = newOnes[0];
+        out.push({
+          icon: '🚀',
+          mood: 'launch',
+          headline: (isMe ? 'Sen' : ctx.target) + ' yeni bir proje açtı: "' + p.title + '"',
+          detail: isMe ? 'Hadi bakalım, devam getirelim.' : 'Kafasından neler geçiyor acaba?',
+          ts: p.createdTs,
+          timeText: this._timeAgo(p.createdTs),
+          priority: 75,
+        });
+      } else {
+        out.push({
+          icon: '🌱',
+          mood: 'launch',
+          headline: (isMe ? 'Sen' : ctx.target) + ' bu hafta ' + newOnes.length + ' yeni proje açtı',
+          detail: 'Dağıtıyor anlaşılan: ' + newOnes.slice(0, 3).map(p => '"' + p.title + '"').join(', ') + (newOnes.length > 3 ? '...' : ''),
+          ts: Math.max(...newOnes.map(p => p.createdTs || 0)),
+          priority: 80,
+        });
+      }
+    },
+
+    // 📝 Devlog patlaması — son 24 saatte 3+ devlog
+    _detectDevlogBurst(ctx, out) {
+      const cutoff = ctx.now - 24 * 3600 * 1000;
+      const recent = ctx.devlogs.filter(d => (d.ts || 0) >= cutoff);
+      if (recent.length >= 3) {
+        const isMe = ctx.target === session.playerName;
+        out.push({
+          icon: '📝',
+          mood: 'hype',
+          headline: (isMe ? 'Sen' : ctx.target) + ' bugün ' + recent.length + ' devlog yazdı',
+          detail: 'Ya kafa attı ya çok keyifli, son devlog: "' + (recent[0].text || '').slice(0, 60) + (recent[0].text && recent[0].text.length > 60 ? '...' : '') + '"',
+          ts: recent[0].ts,
+          priority: 70,
+        });
+      }
+    },
+
+    // 🌙 Gece kuşu — son 5 devlog'un çoğu 23:00–05:00 arası
+    _detectNightOwl(ctx, out) {
+      const last5 = ctx.devlogs.slice(0, 5);
+      if (last5.length < 3) return;
+      const nightCount = last5.filter(d => {
+        const h = new Date(d.ts || 0).getHours();
+        return h >= 23 || h < 5;
+      }).length;
+      if (nightCount >= Math.ceil(last5.length * 0.6)) {
+        const isMe = ctx.target === session.playerName;
+        out.push({
+          icon: '🌙',
+          mood: 'night',
+          headline: (isMe ? 'Sen' : ctx.target) + ' gece kuşu olmuş',
+          detail: 'Son ' + last5.length + ' devlog\'un ' + nightCount + ' tanesi gece yarısından sonra. Uyu artık kardeşim.',
+          ts: ctx.now,
+          priority: 50,
+        });
+      }
+    },
+
+    // 🏆 Quest streak — üst üste tamamlanan questler (receiver olarak)
+    _detectQuestStreak(ctx, out) {
+      // Get target's completed quests (as receiver), sorted by time
+      const receiverQuests = ctx.quests
+        .filter(q => q.toAuthor === ctx.target && (q.status === 'completed' || q.status === 'rejected'))
+        .sort((a, b) => (b.updatedTs || 0) - (a.updatedTs || 0));
+      let streak = 0;
+      for (const q of receiverQuests) {
+        if (q.status === 'completed') streak++;
+        else break;
+      }
+      if (streak >= 3) {
+        const isMe = ctx.target === session.playerName;
+        const totalXp = receiverQuests.slice(0, streak).reduce((s, q) => s + (q.xp || 0), 0);
+        out.push({
+          icon: '🏆',
+          mood: 'streak',
+          headline: (isMe ? 'Sen' : ctx.target) + ' ' + streak + ' quest streak\'inde',
+          detail: 'Durdurulamıyor — son ' + streak + ' quest\'ten toplam +' + totalXp + ' XP. Sıradaki kim?',
+          ts: receiverQuests[0].updatedTs,
+          priority: 85,
+        });
+      }
+    },
+
+    // 🐢 Sessizlik — 5+ gün hiç aktivite yok
+    _detectQuiet(ctx, out) {
+      const lastDevlog = (ctx.devlogs[0] && ctx.devlogs[0].ts) || 0;
+      const lastTodo = ctx.todos.reduce((m, t) => Math.max(m, t.updatedTs || 0), 0);
+      const lastQuest = ctx.quests.reduce((m, q) => Math.max(m, q.updatedTs || 0), 0);
+      const lastActivity = Math.max(lastDevlog, lastTodo, lastQuest);
+      if (lastActivity === 0) return; // never any activity → don't say "quiet"
+      const daysAgo = (ctx.now - lastActivity) / (24 * 3600 * 1000);
+      if (daysAgo >= 5) {
+        const isMe = ctx.target === session.playerName;
+        out.push({
+          icon: '🐢',
+          mood: 'quiet',
+          headline: (isMe ? 'Sen' : ctx.target) + ' ' + Math.floor(daysAgo) + ' gündür sessiz',
+          detail: isMe ? 'Belki bir devlog yazma vakti?' : 'Hayatta mı? Bir mesaj at bakalım.',
+          ts: lastActivity,
+          timeText: 'son aktivite: ' + this._timeAgo(lastActivity),
+          priority: 40,
+        });
+      }
+    },
+
+    // 🆘 Yardım isteği — açık (resolved olmayan) help request varsa
+    _detectHelpRequests(ctx, out) {
+      const open = ctx.devlogs.filter(d => d.helpRequest === 'open');
+      if (open.length === 0) return;
+      const isMe = ctx.target === session.playerName;
+      const newest = open.sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
+      out.push({
+        icon: '🆘',
+        mood: 'warning',
+        headline: (isMe ? 'Senin' : ctx.target + '\'in') + ' yardım isteği açık',
+        detail: '"' + (newest.text || '').slice(0, 80) + (newest.text && newest.text.length > 80 ? '...' : '') + '"' + (open.length > 1 ? ' (+' + (open.length - 1) + ' tane daha)' : ''),
+        ts: newest.ts,
+        timeText: this._timeAgo(newest.ts),
+        priority: 95,
+      });
+    },
+
+    // Format a timestamp as "X dakika/saat/gün önce"
+    _timeAgo(ts) {
+      if (!ts) return '';
+      const diff = Date.now() - ts;
+      const m = Math.round(diff / 60000);
+      if (m < 1) return 'az önce';
+      if (m < 60) return m + ' dk önce';
+      const h = Math.round(m / 60);
+      if (h < 24) return h + ' saat önce';
+      const d = Math.round(h / 24);
+      if (d < 30) return d + ' gün önce';
+      return new Date(ts).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+    },
+  };
+
   const Workshop = {
     activeSubTab: 'mine',
     selectedTheirsMember: null,
@@ -6176,6 +6647,8 @@
         // Try migration after workshops load. Migration also depends on
         // devlogs/todos so we re-check from each listener too.
         this._runMyMigrationIfNeeded();
+        // Update activity feed (it derives from this state)
+        if (typeof Activity !== 'undefined') Activity.refresh();
       }, (err) => console.warn('[Workshop] workshops error:', err));
 
       // Devlogs
@@ -6196,6 +6669,7 @@
         Notifications.refresh();
         // After devlogs load, re-check migration (orphan devlogs need projectId)
         this._runMyMigrationIfNeeded();
+        if (typeof Activity !== 'undefined') Activity.refresh();
 
         // Sound detection: a new comment on my devlog from someone else
         const me = session && session.playerName;
@@ -6273,6 +6747,7 @@
         this.renderTheirsTodo();
         // After todos load, re-check migration
         this._runMyMigrationIfNeeded();
+        if (typeof Activity !== 'undefined') Activity.refresh();
       }, (err) => console.warn('[Workshop] todos error:', err));
 
       this.renderResourceFilter();
