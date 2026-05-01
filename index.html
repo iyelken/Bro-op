@@ -2042,6 +2042,33 @@
     word-wrap: break-word;
     overflow-wrap: anywhere;
     animation: paneIn 0.2s ease-out;
+    transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  /* Draggable cursor on items the user owns */
+  .todo-item[draggable="true"] {
+    cursor: grab;
+  }
+  .todo-item[draggable="true"]:active {
+    cursor: grabbing;
+  }
+  /* Item being dragged: ghost-like and slightly tilted */
+  .todo-item.dragging {
+    opacity: 0.5;
+    transform: rotate(-1.5deg) scale(0.98);
+    box-shadow: 0 8px 20px rgba(184, 85, 255, 0.3);
+    border-color: var(--accent-workshop);
+  }
+  /* Column highlighted as a drop target */
+  .todo-col {
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .todo-col.drop-target {
+    background: rgba(184, 85, 255, 0.08);
+    border-color: var(--accent-workshop);
+    box-shadow: inset 0 0 0 1px var(--accent-workshop);
+  }
+  .todo-col.drop-target .todo-col-header {
+    color: var(--accent-workshop) !important;
   }
   .todo-item.done .todo-text {
     color: var(--text-muted);
@@ -2904,7 +2931,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.1</span></div>
         </div>
 
         <div class="info-card">
@@ -5574,6 +5601,37 @@
           }
         }
         colEl.appendChild(itemsEl);
+
+        // Drop target setup — only for own todos
+        if (isOwn) {
+          colEl.addEventListener('dragover', (e) => {
+            // Required to allow drop
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            colEl.classList.add('drop-target');
+          });
+          colEl.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            colEl.classList.add('drop-target');
+          });
+          colEl.addEventListener('dragleave', (e) => {
+            // Only remove highlight when leaving the column itself, not entering a child
+            if (e.target === colEl || !colEl.contains(e.relatedTarget)) {
+              colEl.classList.remove('drop-target');
+            }
+          });
+          colEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            colEl.classList.remove('drop-target');
+            const id = e.dataTransfer && e.dataTransfer.getData('text/plain');
+            if (!id) return;
+            // Find current status; if same, no-op
+            const item = items.find(x => x.id === id);
+            if (!item || item.status === col.status) return;
+            this.updateTodoStatus(id, col.status);
+          });
+        }
+
         container.appendChild(colEl);
       }
     },
@@ -5581,6 +5639,25 @@
     _renderTodoItem(it, ownerName, isOwn) {
       const wrap = document.createElement('div');
       wrap.className = 'todo-item' + (it.status === 'done' ? ' done' : '');
+      // Make own items draggable
+      if (isOwn) {
+        wrap.draggable = true;
+        wrap.dataset.todoId = it.id;
+        wrap.addEventListener('dragstart', (e) => {
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', it.id);
+          }
+          // Tiny delay so the dragged element renders before opacity is applied
+          setTimeout(() => wrap.classList.add('dragging'), 0);
+        });
+        wrap.addEventListener('dragend', () => {
+          wrap.classList.remove('dragging');
+          // Clean up any leftover highlight on columns
+          document.querySelectorAll('.todo-col.drop-target').forEach(c => c.classList.remove('drop-target'));
+        });
+      }
+
       const text = document.createElement('div');
       text.className = 'todo-text';
       text.textContent = it.text;
