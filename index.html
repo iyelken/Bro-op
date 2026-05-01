@@ -507,6 +507,11 @@
       inset 0 0 0 2px rgba(255,255,255,0.1),
       0 0 20px rgba(255, 0, 128, 0.3);
     position: relative;
+    animation: avatarGlow 4s ease-in-out infinite;
+  }
+  @keyframes avatarGlow {
+    0%, 100% { box-shadow: inset 0 0 0 2px rgba(255,255,255,0.1), 0 0 20px rgba(255, 0, 128, 0.3); }
+    50% { box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15), 0 0 28px rgba(255, 0, 128, 0.5); }
   }
   .avatar::after {
     content: '';
@@ -1446,6 +1451,40 @@
   }
   .quest-empty::before { content: "> "; color: var(--accent-quest); }
 
+  /* Empty state with icon + title + text + optional CTA */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    animation: paneIn 0.3s ease-out;
+  }
+  .empty-state::before { content: none !important; }
+  .empty-state .empty-icon {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 14px;
+    opacity: 0.6;
+    filter: grayscale(0.3);
+    animation: emptyFloat 3s ease-in-out infinite;
+  }
+  @keyframes emptyFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .empty-state .empty-title {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .empty-state .empty-text {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
   /* ============================================
      QUEST MODAL (new quest form / approval)
      ============================================ */
@@ -2104,6 +2143,109 @@
   .resource-delete:hover { color: var(--danger); background: rgba(255, 56, 96, 0.08); }
 
   /* ============================================
+     ONBOARDING TOUR
+     ============================================ */
+  .onboarding {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: onbFadeIn 0.3s ease-out;
+  }
+  @keyframes onbFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .onboarding-card {
+    background: var(--bg-panel);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    padding: 28px 22px 22px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(255, 0, 128, 0.25), 0 12px 40px rgba(0, 0, 0, 0.6);
+    animation: onbCardIn 0.4s cubic-bezier(.2,.8,.3,1.2);
+    position: relative;
+  }
+  @keyframes onbCardIn {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .onboarding-step-indicator {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+  .onboarding-icon {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 14px;
+    filter: drop-shadow(0 0 12px var(--accent));
+    animation: onbIconPulse 2s ease-in-out infinite;
+  }
+  @keyframes onbIconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  .onboarding-title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .onboarding-text {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .onboarding-text b {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .onboarding-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .onb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border);
+    background: var(--bg-deep);
+    color: var(--text-secondary);
+  }
+  .onb-btn:active { transform: translateY(1px); }
+  .onb-btn.skip {
+    flex: 0 0 80px;
+  }
+  .onb-btn.primary {
+    background: var(--accent);
+    color: var(--bg-base);
+    border-color: var(--accent);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3), 0 0 14px var(--accent-glow);
+  }
+
+  /* ============================================
      XP TOAST (level up / XP gained notification)
      ============================================ */
   .xp-toast {
@@ -2165,6 +2307,20 @@
 
 <!-- XP toast (shows level up / XP gained) -->
 <div class="xp-toast" id="xpToast"></div>
+
+<!-- Onboarding tour overlay -->
+<div class="onboarding hidden" id="onboarding">
+  <div class="onboarding-card">
+    <div class="onboarding-step-indicator" id="onbStepIndicator"></div>
+    <div class="onboarding-icon" id="onbIcon">⚡</div>
+    <div class="onboarding-title" id="onbTitle">HOŞ GELDİN</div>
+    <div class="onboarding-text" id="onbText">İki kişilik özel oyunlaştırılmış arkadaşlık alanına hoş geldin.</div>
+    <div class="onboarding-actions">
+      <button class="onb-btn skip" id="onbSkipBtn">ATLA</button>
+      <button class="onb-btn primary" id="onbNextBtn">BAŞLA</button>
+    </div>
+  </div>
+</div>
 
 <!-- Boot screen -->
 <div class="boot" id="bootScreen">
@@ -2370,7 +2526,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.5.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.6.0</span></div>
         </div>
       </div>
 
@@ -2793,6 +2949,14 @@
     rfCancelBtn: $('#rfCancelBtn'),
     rfSaveBtn: $('#rfSaveBtn'),
     resourceFormError: $('#resourceFormError'),
+    // Onboarding
+    onboarding: $('#onboarding'),
+    onbIcon: $('#onbIcon'),
+    onbTitle: $('#onbTitle'),
+    onbText: $('#onbText'),
+    onbStepIndicator: $('#onbStepIndicator'),
+    onbSkipBtn: $('#onbSkipBtn'),
+    onbNextBtn: $('#onbNextBtn'),
   };
 
   // ============================================
@@ -3026,6 +3190,9 @@
     Profile.start();
     Quests.start();
     Workshop.start();
+
+    // Show onboarding tour on first login (per device)
+    setTimeout(() => Onboarding.maybeShow(), 600);
   }
 
   function logout() {
@@ -3953,8 +4120,18 @@
 
       if (total === 0) {
         const empty = document.createElement('div');
-        empty.className = 'quest-empty';
-        empty.textContent = 'Henüz görev yok. Yeni görev ver!';
+        empty.className = 'quest-empty empty-state';
+        empty.innerHTML = `
+          <div class="empty-icon">⚔</div>
+          <div class="empty-title">Henüz görev yok</div>
+          <div class="empty-text">İlk görevi sen ver!</div>
+        `;
+        const cta = document.createElement('button');
+        cta.className = 'quest-btn primary';
+        cta.style.marginTop = '14px';
+        cta.textContent = '+ YENİ GÖREV VER';
+        cta.addEventListener('click', () => Quests.openNewModal());
+        empty.appendChild(cta);
         list.appendChild(empty);
       }
     },
@@ -4528,8 +4705,12 @@
       container.innerHTML = '';
       if (!logs || logs.length === 0) {
         const empty = document.createElement('div');
-        empty.className = 'devlog-empty';
-        empty.textContent = isMine ? 'henüz devlog yazmadın' : 'henüz devlog yok';
+        empty.className = 'devlog-empty empty-state';
+        empty.innerHTML = `
+          <div class="empty-icon">📝</div>
+          <div class="empty-title">${isMine ? 'henüz devlog yazmadın' : 'henüz devlog yok'}</div>
+          <div class="empty-text">${isMine ? 'yukarıdaki kutuya bir not yaz, başla' : 'henüz proje hakkında bir şey paylaşmadı'}</div>
+        `;
         container.appendChild(empty);
         return;
       }
@@ -4761,10 +4942,26 @@
 
       if (filtered.length === 0) {
         const empty = document.createElement('div');
-        empty.className = 'devlog-empty';
-        empty.textContent = this.resources.length === 0
-          ? 'henüz kaynak yok. ekle!'
-          : 'bu kategoride kaynak yok.';
+        empty.className = 'devlog-empty empty-state';
+        if (this.resources.length === 0) {
+          empty.innerHTML = `
+            <div class="empty-icon">🔗</div>
+            <div class="empty-title">Henüz kaynak yok</div>
+            <div class="empty-text">Faydalı bir tutorial veya tool ekle</div>
+          `;
+          const cta = document.createElement('button');
+          cta.className = 'ws-btn primary';
+          cta.style.marginTop = '14px';
+          cta.textContent = '+ KAYNAK EKLE';
+          cta.addEventListener('click', () => Workshop.openResourceModal());
+          empty.appendChild(cta);
+        } else {
+          empty.innerHTML = `
+            <div class="empty-icon">🔍</div>
+            <div class="empty-title">Bu kategoride kaynak yok</div>
+            <div class="empty-text">Başka bir kategori dene</div>
+          `;
+        }
         els.resourceList.appendChild(empty);
         return;
       }
@@ -5019,6 +5216,83 @@
     },
   };
 
+  // ============================================
+  // ONBOARDING MODULE (v0.6)
+  // ============================================
+  // Shows a 5-step welcome tour on first login (per device).
+  // Persists "seen" flag in localStorage so it never shows twice.
+
+  const Onboarding = {
+    storageKey: 'broop_onboarded_v1',
+    steps: [
+      {
+        icon: '⚡',
+        title: 'HOŞ GELDİN',
+        text: 'Bro-op — iki kişilik özel oyunlaştırılmış arkadaşlık ve atölye alanın. Her şey <b>uçtan uca şifreli</b>, sadece sizinle.',
+      },
+      {
+        icon: '💬',
+        title: 'CHAT',
+        text: 'Anlık mesajlaşma. Arkadaşınla sohbet et, mesajlar şifreli olarak buluta kaydedilir. Telefondan ve PC\'den senkron.',
+      },
+      {
+        icon: '⚔',
+        title: 'GÖREVLER',
+        text: 'Birbirinize görev verin: <b>+10, +25, +50 XP</b> kazandıran. Tamamlayınca seviye atlarsınız. Hedef seçilebilir: tek kişi veya herkes.',
+      },
+      {
+        icon: '⚒',
+        title: 'ATÖLYE',
+        text: 'Oyun geliştiriyorsanız tam size göre. <b>Devlog</b> tut, arkadaşının projesine yorum bırak, paylaştığınız <b>kaynakları</b> kategorize et.',
+      },
+      {
+        icon: '🚀',
+        title: 'HAZIR',
+        text: 'Profil sayfasında <b>seviyeni ve istatistiklerini</b> görebilirsin. Alt menüden sekmeler arasında geç. İyi eğlenceler!',
+      },
+    ],
+    currentStep: 0,
+
+    /**
+     * Show onboarding if user hasn't seen it yet on this device.
+     */
+    maybeShow() {
+      if (localStorage.getItem(this.storageKey)) return; // already seen
+      this.currentStep = 0;
+      this.render();
+      els.onboarding.classList.remove('hidden');
+    },
+
+    render() {
+      const step = this.steps[this.currentStep];
+      els.onbIcon.textContent = step.icon;
+      els.onbTitle.textContent = step.title;
+      els.onbText.innerHTML = step.text;
+      els.onbStepIndicator.textContent = (this.currentStep + 1) + ' / ' + this.steps.length;
+      els.onbNextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'BAŞLA' : 'İLERİ ▶';
+      // Hide skip button on last step
+      els.onbSkipBtn.style.display = this.currentStep === this.steps.length - 1 ? 'none' : '';
+    },
+
+    next() {
+      if (this.currentStep < this.steps.length - 1) {
+        this.currentStep++;
+        this.render();
+      } else {
+        this.dismiss();
+      }
+    },
+
+    skip() {
+      this.dismiss();
+    },
+
+    dismiss() {
+      localStorage.setItem(this.storageKey, '1');
+      els.onboarding.classList.add('hidden');
+    },
+  };
+
   // Composer auto-grow + send button enable/disable
   function syncComposer() {
     const v = els.msgInput.value;
@@ -5155,6 +5429,10 @@
   els.resourceModal.addEventListener('click', (e) => {
     if (e.target === els.resourceModal) Workshop.closeResourceModal();
   });
+
+  // Onboarding wiring
+  els.onbNextBtn.addEventListener('click', () => Onboarding.next());
+  els.onbSkipBtn.addEventListener('click', () => Onboarding.skip());
 
   // ============================================
   // BOOT
