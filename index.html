@@ -782,6 +782,7 @@
   .nav-icon {
     width: 26px; height: 26px;
     display: block;
+    position: relative;
   }
   .nav-icon svg { width: 100%; height: 100%; }
 
@@ -793,6 +794,39 @@
 
   .nav-btn.active .nav-icon {
     filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  /* Notification badge on nav buttons */
+  .nav-badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: var(--danger);
+    color: #fff;
+    border-radius: 8px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    font-weight: bold;
+    line-height: 16px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--bg-panel), 0 0 8px rgba(255, 56, 96, 0.5);
+    animation: badgePop 0.25s cubic-bezier(.2,.8,.3,1.4);
+    pointer-events: none;
+  }
+  @keyframes badgePop {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .nav-badge.dot {
+    /* No number, just a dot — for indicators we don't want to count */
+    min-width: 10px;
+    height: 10px;
+    padding: 0;
+    top: -2px;
+    right: -4px;
   }
 
   /* ============================================
@@ -2336,7 +2370,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.4.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.5.0</span></div>
         </div>
       </div>
 
@@ -2459,6 +2493,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M4 5h16v11H8l-4 4V5z" stroke-linejoin="round"/>
           </svg>
+          <span class="nav-badge hidden" data-badge-tab="chat"></span>
         </span>
         <span class="nav-label">CHAT</span>
       </button>
@@ -2467,6 +2502,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M12 3l3 6 6 1-4.5 4.5L18 21l-6-3-6 3 1.5-6.5L3 10l6-1z" stroke-linejoin="round"/>
           </svg>
+          <span class="nav-badge hidden" data-badge-tab="quest"></span>
         </span>
         <span class="nav-label">QUEST</span>
       </button>
@@ -2495,6 +2531,7 @@
             <path d="M14 7l3-3 3 3-3 3-3-3z" stroke-linejoin="round"/>
             <path d="M16 9l-9 9-3 1 1-3 9-9" stroke-linejoin="round" stroke-linecap="round"/>
           </svg>
+          <span class="nav-badge hidden" data-badge-tab="workshop"></span>
         </span>
         <span class="nav-label">ATÖLYE</span>
       </button>
@@ -2979,6 +3016,7 @@
     els.profileAvatar.textContent = (session.playerName[0] || 'P').toUpperCase();
     els.infoCloudId.textContent = session.cloudId;
 
+    Notifications.init();
     setActiveTab('profile');
     updateSyncStatus();
 
@@ -2995,6 +3033,7 @@
     Profile.stop();
     Quests.stop();
     Workshop.stop();
+    Notifications.reset();
     Session.clear();
     session = null;
     els.mainShell.classList.add('hidden');
@@ -3023,6 +3062,11 @@
     // Chat: when entering tab, scroll to bottom
     if (tab === 'chat' && Chat.rendered) {
       Chat.scrollToBottom(true);
+    }
+
+    // Mark this tab as seen, refresh badges
+    if (Notifications.storageKey) {
+      Notifications.markSeen(tab);
     }
   }
 
@@ -3107,6 +3151,7 @@
         this.messages = msgs;
         this.updateSubtitle();
         this.rebuild(true);
+        Notifications.refresh();
       }, (err) => {
         console.warn('[Chat] snapshot error:', err);
       });
@@ -3749,6 +3794,7 @@
         list.sort((a, b) => (b.updatedTs || b.createdTs || 0) - (a.updatedTs || a.createdTs || 0));
         this.quests = list;
         this.render();
+        Notifications.refresh();
       }, (err) => console.warn('[Quests] snapshot error:', err));
     },
 
@@ -4327,6 +4373,7 @@
         this.devlogs = list;
         this.renderMine();
         this.renderTheirs();
+        Notifications.refresh();
       }, (err) => console.warn('[Workshop] devlogs error:', err));
 
       // Resources
@@ -4849,6 +4896,126 @@
       const { db, fs } = window.__broop;
       const ref = fs.doc(db, 'broop_app', session.cloudId, 'resources', id);
       await fs.deleteDoc(ref);
+    },
+  };
+
+  // ============================================
+  // NOTIFICATIONS MODULE (v0.5)
+  // ============================================
+  // Tracks "last visit" timestamps per tab in localStorage, computes badge counts
+  // by looking at chat/quest/workshop data, updates DOM badges.
+  // Per-device (localStorage), so phone & desktop track separately — that's
+  // the right behavior for notifications.
+
+  const Notifications = {
+    storageKey: null, // set on init based on session
+
+    init() {
+      if (!session) return;
+      // Per-room+player key so different sessions on same device don't share
+      this.storageKey = 'broop_lastSeen_' + session.cloudId + '_' + session.playerName;
+      // If first time on this device, mark "now" so we don't get a wall of badges
+      if (!this.getAll()) {
+        const now = Date.now();
+        this.saveAll({ chat: now, quest: now, workshop: now });
+      }
+    },
+
+    getAll() {
+      if (!this.storageKey) return null;
+      try { return JSON.parse(localStorage.getItem(this.storageKey)); }
+      catch { return null; }
+    },
+
+    saveAll(data) {
+      if (!this.storageKey) return;
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
+    },
+
+    getLastSeen(tab) {
+      const all = this.getAll() || {};
+      return all[tab] || 0;
+    },
+
+    markSeen(tab) {
+      const all = this.getAll() || {};
+      all[tab] = Date.now();
+      this.saveAll(all);
+      this.refresh();
+    },
+
+    /**
+     * Compute count of "new" items in a tab. Returns:
+     *   number — number to show in badge
+     *   0      — nothing new, hide badge
+     */
+    computeCount(tab) {
+      if (!session) return 0;
+      const me = session.playerName;
+      const lastSeen = this.getLastSeen(tab);
+
+      if (tab === 'chat') {
+        // New messages from others, after my last visit
+        return Chat.messages.filter(m =>
+          !m.deleted &&
+          m.author && m.author !== me &&
+          (m.ts || 0) > lastSeen
+        ).length;
+      }
+
+      if (tab === 'quest') {
+        // Things I need to act on:
+        //  - new quests assigned to me (pending status, toAuthor=me, created after lastSeen)
+        //  - submissions I need to approve (status=submitted, fromAuthor=me, updated after lastSeen)
+        let count = 0;
+        for (const q of Quests.quests) {
+          if (q.status === 'pending' && q.toAuthor === me && (q.createdTs || 0) > lastSeen) count++;
+          else if (q.status === 'submitted' && q.fromAuthor === me && (q.updatedTs || 0) > lastSeen) count++;
+        }
+        return count;
+      }
+
+      if (tab === 'workshop') {
+        // Things I should care about:
+        //  - new devlogs from others (after lastSeen)
+        //  - new comments on MY devlogs (after lastSeen)
+        let count = 0;
+        for (const d of Workshop.devlogs) {
+          if (d.author !== me && (d.ts || 0) > lastSeen) {
+            count++;
+          }
+          if (d.author === me && d.comments) {
+            for (const c of d.comments) {
+              if (c.by !== me && (c.ts || 0) > lastSeen) count++;
+            }
+          }
+        }
+        return count;
+      }
+
+      return 0;
+    },
+
+    refresh() {
+      if (!session) return;
+      const tabs = ['chat', 'quest', 'workshop'];
+      for (const tab of tabs) {
+        const badge = document.querySelector('.nav-badge[data-badge-tab="' + tab + '"]');
+        if (!badge) continue;
+        // If user is currently ON this tab, never show badge — they're seeing it
+        const onThisTab = activeTab === tab;
+        const count = onThisTab ? 0 : this.computeCount(tab);
+        if (count > 0) {
+          badge.textContent = count > 99 ? '99+' : String(count);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    },
+
+    reset() {
+      this.storageKey = null;
     },
   };
 
