@@ -654,6 +654,55 @@
     letter-spacing: 0.5px;
   }
 
+  /* Toggle switch (used in settings) */
+  .settings-row {
+    align-items: center;
+  }
+  .toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+  .toggle-track {
+    width: 38px;
+    height: 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-deep);
+    position: relative;
+    transition: all 0.2s;
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: all 0.2s cubic-bezier(.4,.2,.2,1);
+  }
+  .toggle-btn[data-on="true"] .toggle-track {
+    background: rgba(0, 240, 255, 0.18);
+    border-color: var(--accent-chat);
+  }
+  .toggle-btn[data-on="true"] .toggle-thumb {
+    left: 20px;
+    background: var(--accent-chat);
+    box-shadow: 0 0 8px var(--accent-chat);
+  }
+  .toggle-btn[data-on="true"] .toggle-label {
+    color: var(--accent-chat);
+  }
+
   /* ============================================
      COMING SOON PLACEHOLDER (other tabs)
      ============================================ */
@@ -2526,7 +2575,18 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.6.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.7.0</span></div>
+        </div>
+
+        <div class="info-card">
+          <h4>AYARLAR</h4>
+          <div class="info-row settings-row">
+            <span class="k">Ses Efektleri</span>
+            <button class="toggle-btn" id="sfxToggle" data-on="false">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span class="toggle-label">KAPALI</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2957,6 +3017,8 @@
     onbStepIndicator: $('#onbStepIndicator'),
     onbSkipBtn: $('#onbSkipBtn'),
     onbNextBtn: $('#onbNextBtn'),
+    // Settings
+    sfxToggle: $('#sfxToggle'),
   };
 
   // ============================================
@@ -3181,6 +3243,8 @@
     els.infoCloudId.textContent = session.cloudId;
 
     Notifications.init();
+    SoundFX.init();
+    syncSfxToggleUI();
     setActiveTab('profile');
     updateSyncStatus();
 
@@ -3266,6 +3330,7 @@
     pendingByLocalId: {},      // optimistic messages not yet confirmed
     rendered: false,
     actionsForId: null,        // long-press menu open for this message id
+    knownMessageIds: null,     // set of known IDs — null until first snapshot received
 
     // Layout cache for virtual scroll
     items: [],                 // flat list: { kind: 'day'|'msg', ...data, height }
@@ -3319,6 +3384,18 @@
         this.updateSubtitle();
         this.rebuild(true);
         Notifications.refresh();
+
+        // Detect new messages from others (skip first snapshot — those are "old")
+        const me = session && session.playerName;
+        if (this.knownMessageIds !== null) {
+          for (const m of msgs) {
+            if (!this.knownMessageIds.has(m.id) && m.author && m.author !== me && !m.deleted) {
+              SoundFX.play('message');
+              break; // one sound per batch is enough
+            }
+          }
+        }
+        this.knownMessageIds = new Set(msgs.map(m => m.id));
       }, (err) => {
         console.warn('[Chat] snapshot error:', err);
       });
@@ -3338,6 +3415,7 @@
       this.searchActive = false;
       this.searchTerm = '';
       this.rendered = false;
+      this.knownMessageIds = null;
     },
 
     updateSubtitle() {
@@ -3874,11 +3952,13 @@
         completedQuests: (this.me.completedQuests || 0) + 1,
       };
       await this.writeMine(this.me);
-      // Toasts
+      // Toasts + sounds
       if (leveledUp) {
         showXpToast('LEVEL UP! → ' + String(newLevel).padStart(2, '0'), 'levelup', 2400);
+        SoundFX.play('levelup');
       } else {
         showXpToast('+' + amount + ' XP', '', 1500);
+        SoundFX.play('coin');
       }
     },
 
@@ -3939,6 +4019,7 @@
     modalMode: null, // 'new' | 'detail'
     selectedQuestId: null,
     formDifficulty: 'medium',
+    knownQuestStates: null, // Map<id, status> — for detecting new/changed
 
     start() {
       if (!cloudReady() || !session) return;
@@ -3962,6 +4043,30 @@
         this.quests = list;
         this.render();
         Notifications.refresh();
+
+        // Sound detection: a new quest assigned to me, or a submission for me to approve
+        const me = session && session.playerName;
+        if (this.knownQuestStates !== null && me) {
+          for (const q of list) {
+            const prevStatus = this.knownQuestStates.get(q.id);
+            // Brand new quest assigned to me
+            if (prevStatus === undefined && q.status === 'pending' && q.toAuthor === me) {
+              SoundFX.play('quest');
+              break;
+            }
+            // Someone submitted my quest for approval (prev was active/pending, now submitted, I gave it)
+            if (prevStatus !== undefined && prevStatus !== 'submitted' && q.status === 'submitted' && q.fromAuthor === me) {
+              SoundFX.play('quest');
+              break;
+            }
+            // My submitted quest just got approved → coin sound
+            if (prevStatus === 'submitted' && q.status === 'completed' && q.toAuthor === me) {
+              SoundFX.play('coin');
+              break;
+            }
+          }
+        }
+        this.knownQuestStates = new Map(list.map(q => [q.id, q.status]));
       }, (err) => console.warn('[Quests] snapshot error:', err));
     },
 
@@ -3971,6 +4076,7 @@
         this.unsubscribe = null;
       }
       this.quests = [];
+      this.knownQuestStates = null;
       this.closeModal();
     },
 
@@ -4512,6 +4618,9 @@
     devlogs: [],        // { id, author, text, ts, comments }[]
     resources: [],      // { id, url, title, category, addedBy, ts }[]
 
+    // Sound detection: Map<devlogId, commentCount>
+    knownDevlogState: null,
+
     // Form state
     rfCategory: 'tutorial',
     resourceFilter: 'all',
@@ -4551,6 +4660,25 @@
         this.renderMine();
         this.renderTheirs();
         Notifications.refresh();
+
+        // Sound detection: a new comment on my devlog from someone else
+        const me = session && session.playerName;
+        if (this.knownDevlogState !== null && me) {
+          for (const d of list) {
+            if (d.author !== me) continue; // only my devlogs
+            const prevCount = this.knownDevlogState.get(d.id);
+            const currCount = (d.comments || []).length;
+            if (prevCount !== undefined && currCount > prevCount) {
+              // Look at the latest comments — if any from someone other than me
+              const newComments = (d.comments || []).slice(prevCount);
+              if (newComments.some(c => c.by !== me)) {
+                SoundFX.play('comment');
+                break;
+              }
+            }
+          }
+        }
+        this.knownDevlogState = new Map(list.map(d => [d.id, (d.comments || []).length]));
       }, (err) => console.warn('[Workshop] devlogs error:', err));
 
       // Resources
@@ -4579,6 +4707,7 @@
       this.workshops = {};
       this.devlogs = [];
       this.resources = [];
+      this.knownDevlogState = null;
     },
 
     setSubTab(tab) {
@@ -5293,6 +5422,114 @@
     },
   };
 
+  // ============================================
+  // SOUND FX MODULE (v0.6 — 8-bit synthesized)
+  // ============================================
+  // Generates retro chiptune sounds via Web Audio API. No audio files needed.
+  // Per-device preference in localStorage. Disabled by default until user opts in.
+
+  const SoundFX = {
+    storageKey: 'broop_sfx_enabled_v1',
+    ctx: null,
+    enabled: false,
+
+    init() {
+      // Read saved preference (default: false)
+      this.enabled = localStorage.getItem(this.storageKey) === '1';
+    },
+
+    /** Create AudioContext on first sound (must be after user interaction). */
+    _ensureCtx() {
+      if (this.ctx) return this.ctx;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        this.ctx = new AC();
+        return this.ctx;
+      } catch { return null; }
+    },
+
+    setEnabled(on) {
+      this.enabled = !!on;
+      localStorage.setItem(this.storageKey, on ? '1' : '0');
+      if (on) {
+        // Create context now (user just clicked, autoplay policy satisfied)
+        this._ensureCtx();
+        // Play a confirmation sound
+        this.play('blip');
+      }
+    },
+
+    /**
+     * Play a single tone. Used as a building block by the named sounds.
+     * @param {object} opts - { freq, duration, type, volume, attack, release, slideFreq }
+     */
+    _tone(opts) {
+      if (!this.enabled) return;
+      const ctx = this._ensureCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = opts.type || 'square';
+      o.frequency.setValueAtTime(opts.freq, now);
+      if (opts.slideFreq) {
+        o.frequency.exponentialRampToValueAtTime(opts.slideFreq, now + (opts.duration || 0.1));
+      }
+      const vol = (opts.volume == null ? 0.18 : opts.volume);
+      const attack = opts.attack == null ? 0.005 : opts.attack;
+      const release = opts.release == null ? 0.05 : opts.release;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(vol, now + attack);
+      g.gain.linearRampToValueAtTime(vol * 0.85, now + (opts.duration || 0.1) - release);
+      g.gain.linearRampToValueAtTime(0, now + (opts.duration || 0.1));
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(now);
+      o.stop(now + (opts.duration || 0.1) + 0.02);
+    },
+
+    /**
+     * Play a named sound effect.
+     * @param {string} name - 'blip' | 'message' | 'quest' | 'coin' | 'levelup' | 'comment'
+     */
+    play(name) {
+      if (!this.enabled) return;
+      switch (name) {
+        case 'blip':
+          // Single short click — used for confirmations, soft mute toggle
+          this._tone({ freq: 880, duration: 0.06, type: 'square', volume: 0.12 });
+          break;
+        case 'message':
+          // New chat message: soft single blip
+          this._tone({ freq: 1320, duration: 0.07, type: 'sine', volume: 0.14 });
+          break;
+        case 'quest':
+          // New quest: 2-note ascending notification
+          this._tone({ freq: 660, duration: 0.09, type: 'square', volume: 0.16 });
+          setTimeout(() => this._tone({ freq: 880, duration: 0.12, type: 'square', volume: 0.16 }), 90);
+          break;
+        case 'coin':
+          // Quest completed (XP gained): mario-style coin sound
+          this._tone({ freq: 988, duration: 0.06, type: 'square', volume: 0.16 });
+          setTimeout(() => this._tone({ freq: 1318, duration: 0.18, type: 'square', volume: 0.16 }), 60);
+          break;
+        case 'levelup':
+          // Level up: 4-note fanfare
+          const seq = [523, 659, 784, 1047]; // C5 E5 G5 C6
+          seq.forEach((f, i) => {
+            setTimeout(() => this._tone({ freq: f, duration: 0.13, type: 'square', volume: 0.18 }), i * 90);
+          });
+          break;
+        case 'comment':
+          // Devlog comment: subtle double blip
+          this._tone({ freq: 1100, duration: 0.05, type: 'sine', volume: 0.13 });
+          setTimeout(() => this._tone({ freq: 1320, duration: 0.06, type: 'sine', volume: 0.13 }), 70);
+          break;
+      }
+    },
+  };
+
   // Composer auto-grow + send button enable/disable
   function syncComposer() {
     const v = els.msgInput.value;
@@ -5433,6 +5670,21 @@
   // Onboarding wiring
   els.onbNextBtn.addEventListener('click', () => Onboarding.next());
   els.onbSkipBtn.addEventListener('click', () => Onboarding.skip());
+
+  // Sound toggle wiring
+  function syncSfxToggleUI() {
+    if (!els.sfxToggle) return;
+    const on = SoundFX.enabled;
+    els.sfxToggle.dataset.on = on ? 'true' : 'false';
+    const label = els.sfxToggle.querySelector('.toggle-label');
+    if (label) label.textContent = on ? 'AÇIK' : 'KAPALI';
+  }
+  if (els.sfxToggle) {
+    els.sfxToggle.addEventListener('click', () => {
+      SoundFX.setEnabled(!SoundFX.enabled);
+      syncSfxToggleUI();
+    });
+  }
 
   // ============================================
   // BOOT
