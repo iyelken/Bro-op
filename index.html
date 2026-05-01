@@ -146,30 +146,6 @@
     height: 100dvh;
     display: flex;
     flex-direction: column;
-    /* On larger screens, constrain to a phone-like width and center.
-       This keeps the mobile-first design looking great on desktop. */
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-    /* Add a subtle vertical border on desktop only */
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    background: var(--bg-base);
-  }
-  /* On mobile, remove the side borders (full width) */
-  @media (max-width: 480px) {
-    #app {
-      border-left: none;
-      border-right: none;
-    }
-  }
-
-  /* Bottom nav must also be constrained when fixed/positioned */
-  .bottom-nav {
-    max-width: 480px;
-    margin: 0 auto;
-    left: 0;
-    right: 0;
   }
 
   /* ============================================
@@ -2892,7 +2868,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.10.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.10.0</span></div>
         </div>
 
         <div class="info-card">
