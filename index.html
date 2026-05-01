@@ -857,6 +857,109 @@
   .chat-header .pane-title { margin-bottom: 2px; font-size: 14px; }
   .chat-header .pane-subtitle { font-size: 14px; }
 
+  .chat-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .chat-header-text { flex: 1; min-width: 0; }
+
+  .chat-icon-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+  }
+  .chat-icon-btn:hover {
+    color: var(--accent-chat);
+    border-color: var(--accent-chat);
+    background: rgba(0, 240, 255, 0.06);
+  }
+  .chat-icon-btn:active { transform: scale(0.94); }
+  .chat-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .chat-icon-btn:disabled:hover {
+    color: var(--text-secondary);
+    border-color: var(--border);
+    background: transparent;
+  }
+  .chat-icon-btn svg { width: 18px; height: 18px; }
+  .chat-icon-btn.small { width: 32px; height: 32px; }
+  .chat-icon-btn.small svg { width: 16px; height: 16px; }
+
+  .search-bar {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 4px 6px 4px 14px;
+    animation: searchIn 0.18s ease-out;
+  }
+  @keyframes searchIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 6px 0;
+    min-width: 0;
+  }
+  .search-bar input::placeholder {
+    color: var(--text-dim);
+  }
+  .search-counter {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    padding: 0 4px;
+    letter-spacing: 1px;
+  }
+  .search-counter:empty { display: none; }
+
+  /* Virtual scroll structure */
+  .vscroll-spacer { flex-shrink: 0; }
+  .vscroll-viewport {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Search highlight */
+  mark.search-hit {
+    background: rgba(255, 176, 0, 0.4);
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+  }
+  mark.search-hit.active {
+    background: var(--accent-quest);
+    color: var(--bg-base);
+    box-shadow: 0 0 8px rgba(255, 176, 0, 0.6);
+  }
+  .msg.search-active-msg .msg-bubble {
+    outline: 2px solid var(--accent-quest);
+    outline-offset: 2px;
+  }
+
   .messages-container {
     flex: 1;
     overflow-y: auto;
@@ -1180,11 +1283,38 @@
       <!-- Chat -->
       <div class="pane" data-pane="chat">
         <div class="chat-header">
-          <div class="pane-title">CHAT</div>
-          <div class="pane-subtitle">İkinize özel kanal</div>
+          <div class="chat-header-row">
+            <div class="chat-header-text">
+              <div class="pane-title">CHAT</div>
+              <div class="pane-subtitle" id="chatSubtitle">İkinize özel kanal</div>
+            </div>
+            <button class="chat-icon-btn" id="searchToggleBtn" aria-label="Mesajlarda ara">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="M20 20l-3.5-3.5"/>
+              </svg>
+            </button>
+          </div>
+          <div class="search-bar hidden" id="searchBar">
+            <input type="text" id="searchInput" placeholder="Mesajlarda ara..." autocomplete="off" />
+            <span class="search-counter" id="searchCounter"></span>
+            <button class="chat-icon-btn small" id="searchPrevBtn" aria-label="Önceki" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+            </button>
+            <button class="chat-icon-btn small" id="searchNextBtn" aria-label="Sonraki" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <button class="chat-icon-btn small" id="searchCloseBtn" aria-label="Kapat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
         </div>
         <div class="messages-container" id="messagesContainer">
-          <div class="msg-empty" id="msgEmpty">
+          <!-- Virtual scroll: top spacer, viewport (rendered messages), bottom spacer -->
+          <div class="vscroll-spacer" id="vscrollTop"></div>
+          <div class="vscroll-viewport" id="vscrollViewport"></div>
+          <div class="vscroll-spacer" id="vscrollBottom"></div>
+          <div class="msg-empty hidden" id="msgEmpty">
             henüz mesaj yok<br>
             <span class="blink">ilk mesajı sen at</span>
           </div>
@@ -1262,7 +1392,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.2.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.2.2</span></div>
         </div>
       </div>
 
@@ -1556,6 +1686,17 @@
     msgEmpty: $('#msgEmpty'),
     msgInput: $('#msgInput'),
     sendBtn: $('#sendBtn'),
+    chatSubtitle: $('#chatSubtitle'),
+    searchToggleBtn: $('#searchToggleBtn'),
+    searchBar: $('#searchBar'),
+    searchInput: $('#searchInput'),
+    searchCounter: $('#searchCounter'),
+    searchPrevBtn: $('#searchPrevBtn'),
+    searchNextBtn: $('#searchNextBtn'),
+    searchCloseBtn: $('#searchCloseBtn'),
+    vscrollTop: $('#vscrollTop'),
+    vscrollBottom: $('#vscrollBottom'),
+    vscrollViewport: $('#vscrollViewport'),
   };
 
   // ============================================
@@ -1771,18 +1912,36 @@
 
   const Chat = {
     unsubscribe: null,
-    messages: [],            // sorted by createdAt asc
-    pendingByLocalId: {},    // optimistic messages not yet confirmed
+    messages: [],              // confirmed messages, sorted asc
+    pendingByLocalId: {},      // optimistic messages not yet confirmed
     rendered: false,
-    actionsForId: null,      // currently expanded message id
+    actionsForId: null,        // long-press menu open for this message id
+
+    // Layout cache for virtual scroll
+    items: [],                 // flat list: { kind: 'day'|'msg', ...data, height }
+    itemTops: [],              // running offsetTop[i] for each item
+    totalHeight: 0,
+    estDayHeight: 38,
+    estMsgBaseHeight: 56,      // base bubble height for ~1 line
+    estMsgLineHeight: 21,
+    overscan: 6,
+    visibleStart: 0,
+    visibleEnd: 0,
+    scrollDirty: false,
+
+    // Search state
+    searchActive: false,
+    searchTerm: '',
+    searchHits: [],            // array of { itemIndex, msgId }
+    searchHitIndex: -1,        // currently focused hit
 
     start() {
       if (!cloudReady() || !session) return;
       const { db, fs } = window.__broop;
       const ref = fs.collection(db, 'broop_app', session.cloudId, 'messages');
-      const q = fs.query(ref, fs.orderBy('createdAt', 'asc'), fs.limit(500));
+      // No limit — show all messages. Virtual scroll handles big lists.
+      const q = fs.query(ref, fs.orderBy('createdAt', 'asc'));
 
-      // Tear down any prior listener
       if (this.unsubscribe) this.unsubscribe();
 
       this.unsubscribe = fs.onSnapshot(q, (snap) => {
@@ -1790,12 +1949,12 @@
         snap.forEach(d => {
           const data = d.data();
           if (data.deleted) {
-            msgs.push({ id: d.id, deleted: true, createdAt: data.createdAt });
+            msgs.push({ id: d.id, deleted: true,
+              ts: (data.createdAt && data.createdAt.toMillis && data.createdAt.toMillis()) || 0 });
             return;
           }
-          // Decrypt
           const raw = decrypt(data.encrypted || '', session.key);
-          if (!raw) return; // skip unreadable
+          if (!raw) return;
           try {
             const parsed = JSON.parse(raw);
             msgs.push({
@@ -1803,12 +1962,12 @@
               text: parsed.text,
               author: parsed.author,
               ts: parsed.ts || (data.createdAt && data.createdAt.toMillis && data.createdAt.toMillis()) || Date.now(),
-              createdAt: data.createdAt,
             });
           } catch {}
         });
         this.messages = msgs;
-        this.render();
+        this.updateSubtitle();
+        this.rebuild(true);
       }, (err) => {
         console.warn('[Chat] snapshot error:', err);
       });
@@ -1821,7 +1980,19 @@
       }
       this.messages = [];
       this.pendingByLocalId = {};
+      this.items = [];
+      this.itemTops = [];
+      this.searchHits = [];
+      this.searchHitIndex = -1;
+      this.searchActive = false;
+      this.searchTerm = '';
       this.rendered = false;
+    },
+
+    updateSubtitle() {
+      if (!els.chatSubtitle) return;
+      const n = this.messages.filter(m => !m.deleted).length;
+      els.chatSubtitle.textContent = n === 0 ? 'İkinize özel kanal' : (n + ' mesaj');
     },
 
     async send(text) {
@@ -1832,38 +2003,26 @@
 
       const localId = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       const ts = Date.now();
-      const payload = {
-        text,
-        author: session.playerName,
-        ts,
-      };
 
-      // Optimistic UI: show pending bubble immediately
       this.pendingByLocalId[localId] = {
-        id: localId,
-        text, author: session.playerName, ts, pending: true,
+        id: localId, text, author: session.playerName, ts, pending: true,
       };
-      this.render();
+      this.rebuild(true);
 
       try {
-        const encrypted = encrypt(JSON.stringify(payload), session.key);
+        const encrypted = encrypt(JSON.stringify({ text, author: session.playerName, ts }), session.key);
         const { db, fs } = window.__broop;
         const ref = fs.collection(db, 'broop_app', session.cloudId, 'messages');
-        await fs.addDoc(ref, {
-          encrypted,
-          createdAt: fs.serverTimestamp(),
-        });
-        // Success — onSnapshot will pick up the real message;
-        // remove the pending placeholder.
+        await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
         delete this.pendingByLocalId[localId];
-        this.render();
+        this.rebuild(false);
       } catch (e) {
         console.error('[Chat] send failed:', e);
         if (this.pendingByLocalId[localId]) {
           this.pendingByLocalId[localId].pending = false;
           this.pendingByLocalId[localId].failed = true;
         }
-        this.render();
+        this.rebuild(false);
       }
     },
 
@@ -1871,9 +2030,6 @@
       if (!cloudReady() || !session) return;
       try {
         const { db, fs } = window.__broop;
-        // Soft delete — keeps the doc but marks it deleted.
-        // We use updateDoc rather than deleteDoc so the other side
-        // sees a "[mesaj silindi]" marker instead of vanishing.
         const ref = fs.doc(db, 'broop_app', session.cloudId, 'messages', id);
         await fs.updateDoc(ref, { deleted: true, encrypted: '' });
       } catch (e) {
@@ -1884,9 +2040,7 @@
 
     formatTime(ts) {
       const d = new Date(ts);
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mm = String(d.getMinutes()).padStart(2, '0');
-      return hh + ':' + mm;
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     },
 
     formatDay(ts) {
@@ -1903,6 +2057,335 @@
       return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
     },
 
+    estimateHeight(item) {
+      if (item.kind === 'day') return this.estDayHeight;
+      // Rough line count estimate from text length / container width
+      // Container is ~360px wide on mobile, bubble max-width 78%, padding ~24, so ~250 usable
+      // Char width ~7.5px → ~33 chars per line
+      const text = item.deleted ? '[mesaj silindi]' : (item.text || '');
+      const lines = Math.max(1, Math.ceil(text.length / 33) + (text.match(/\n/g) || []).length);
+      return this.estMsgBaseHeight + (lines - 1) * this.estMsgLineHeight;
+    },
+
+    /**
+     * Rebuild the flat item list (day dividers + messages) from current data.
+     * @param {boolean} stickToBottom — if true, scroll to bottom after render
+     */
+    rebuild(stickToBottom) {
+      const me = session ? session.playerName : '';
+      const all = [...this.messages, ...Object.values(this.pendingByLocalId)]
+        .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+      // Build flat item list
+      const items = [];
+      let lastDay = '';
+      let lastAuthor = null;
+      for (const m of all) {
+        const day = this.formatDay(m.ts || Date.now());
+        if (day !== lastDay) {
+          items.push({ kind: 'day', day });
+          lastDay = day;
+          lastAuthor = null;
+        }
+        items.push({
+          kind: 'msg',
+          ...m,
+          isMine: m.author === me,
+          firstOfGroup: m.author !== lastAuthor,
+        });
+        lastAuthor = m.author;
+      }
+
+      // Compute estimated heights and running tops
+      const itemTops = new Array(items.length);
+      let acc = 0;
+      for (let i = 0; i < items.length; i++) {
+        items[i].height = this.estimateHeight(items[i]);
+        itemTops[i] = acc;
+        acc += items[i].height;
+      }
+
+      this.items = items;
+      this.itemTops = itemTops;
+      this.totalHeight = acc;
+
+      // Empty state
+      if (items.length === 0) {
+        els.msgEmpty.classList.remove('hidden');
+        els.vscrollViewport.innerHTML = '';
+        els.vscrollTop.style.height = '0px';
+        els.vscrollBottom.style.height = '0px';
+        this.rendered = true;
+        // Refresh search hits/counter
+        this.refreshSearch();
+        return;
+      }
+      els.msgEmpty.classList.add('hidden');
+
+      // Spacer + viewport heights
+      this.renderVisible(stickToBottom);
+      this.refreshSearch();
+    },
+
+    /**
+     * Render only items in (or near) the visible scroll window.
+     */
+    renderVisible(stickToBottom) {
+      const c = els.messagesContainer;
+
+      if (stickToBottom) {
+        // After rebuild we want the last item visible
+        // We'll render a window at the bottom
+        this.visibleEnd = this.items.length;
+        this.visibleStart = Math.max(0, this.items.length - 30);
+      } else {
+        const top = c.scrollTop;
+        const viewportH = c.clientHeight;
+        const bottom = top + viewportH;
+        // Find first visible item
+        let lo = 0, hi = this.items.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if ((this.itemTops[mid] + this.items[mid].height) < top) lo = mid + 1;
+          else hi = mid;
+        }
+        let start = lo;
+        let end = start;
+        while (end < this.items.length && this.itemTops[end] < bottom) end++;
+        this.visibleStart = Math.max(0, start - this.overscan);
+        this.visibleEnd = Math.min(this.items.length, end + this.overscan);
+      }
+
+      const topSpacer = this.visibleStart === 0 ? 0 : this.itemTops[this.visibleStart];
+      const lastIndex = Math.max(0, this.visibleEnd - 1);
+      const consumedHeight = (this.itemTops[lastIndex] || 0) + (this.items[lastIndex] ? this.items[lastIndex].height : 0);
+      const bottomSpacer = Math.max(0, this.totalHeight - consumedHeight);
+
+      els.vscrollTop.style.height = topSpacer + 'px';
+      els.vscrollBottom.style.height = bottomSpacer + 'px';
+
+      // Render the visible window
+      const v = els.vscrollViewport;
+      v.innerHTML = '';
+
+      const term = this.searchActive && this.searchTerm ? this.searchTerm.toLowerCase() : '';
+
+      for (let i = this.visibleStart; i < this.visibleEnd; i++) {
+        const it = this.items[i];
+        if (it.kind === 'day') {
+          const div = document.createElement('div');
+          div.className = 'day-divider';
+          const span = document.createElement('span');
+          span.textContent = it.day;
+          div.appendChild(span);
+          v.appendChild(div);
+        } else {
+          v.appendChild(this.renderMessage(it, i, term));
+        }
+      }
+
+      if (stickToBottom) {
+        requestAnimationFrame(() => { c.scrollTop = c.scrollHeight; });
+      }
+
+      this.rendered = true;
+    },
+
+    renderMessage(m, itemIndex, term) {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg ' + (m.isMine ? 'mine' : 'theirs');
+      if (m.firstOfGroup) wrap.classList.add('first-of-group');
+      wrap.dataset.id = m.id;
+      wrap.dataset.itemIndex = itemIndex;
+      if (this.actionsForId === m.id) wrap.classList.add('show-actions');
+
+      // Active search hit?
+      const activeHit = this.searchHitIndex >= 0 && this.searchHits[this.searchHitIndex];
+      if (activeHit && activeHit.itemIndex === itemIndex) {
+        wrap.classList.add('search-active-msg');
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      if (m.deleted) {
+        bubble.classList.add('deleted');
+        bubble.textContent = '[mesaj silindi]';
+      } else {
+        const textNode = document.createElement('span');
+        textNode.className = 'msg-text';
+        if (term && m.text) {
+          textNode.innerHTML = this.highlightText(m.text, term, activeHit && activeHit.itemIndex === itemIndex);
+        } else {
+          textNode.textContent = m.text;
+        }
+        bubble.appendChild(textNode);
+
+        if (m.pending) bubble.classList.add('pending');
+        if (m.failed) bubble.classList.add('failed');
+
+        const time = document.createElement('span');
+        time.className = 'msg-time';
+        time.textContent = this.formatTime(m.ts || Date.now());
+        bubble.appendChild(time);
+      }
+      wrap.appendChild(bubble);
+
+      // Long-press / right-click for own confirmed messages
+      if (m.isMine && !m.deleted && !m.pending && !String(m.id).startsWith('local_')) {
+        const actions = document.createElement('div');
+        actions.className = 'msg-actions';
+        const delBtn = document.createElement('button');
+        delBtn.className = 'msg-action-btn danger';
+        delBtn.textContent = 'SİL';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.actionsForId = null;
+          if (confirm('Bu mesajı silmek istediğine emin misin?')) {
+            this.deleteMessage(m.id);
+          } else {
+            this.renderVisible(false);
+          }
+        });
+        actions.appendChild(delBtn);
+        wrap.appendChild(actions);
+
+        let pressTimer = null;
+        const openActions = () => {
+          this.actionsForId = m.id;
+          this.renderVisible(false);
+        };
+        wrap.addEventListener('touchstart', () => {
+          pressTimer = setTimeout(openActions, 500);
+        }, { passive: true });
+        wrap.addEventListener('touchend', () => clearTimeout(pressTimer));
+        wrap.addEventListener('touchmove', () => clearTimeout(pressTimer));
+        wrap.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          openActions();
+        });
+      }
+
+      return wrap;
+    },
+
+    /**
+     * Highlight occurrences of term in text. If isActive, the first hit
+     * gets the .active class so the user can see "this is the current match".
+     */
+    highlightText(text, term, isActive) {
+      const lower = text.toLowerCase();
+      const tlen = term.length;
+      let html = '';
+      let i = 0;
+      let firstHit = true;
+      while (i < text.length) {
+        const idx = lower.indexOf(term, i);
+        if (idx === -1) {
+          html += this.escapeHtml(text.slice(i));
+          break;
+        }
+        html += this.escapeHtml(text.slice(i, idx));
+        const cls = (isActive && firstHit) ? 'search-hit active' : 'search-hit';
+        html += '<mark class="' + cls + '">' + this.escapeHtml(text.slice(idx, idx + tlen)) + '</mark>';
+        i = idx + tlen;
+        firstHit = false;
+      }
+      return html;
+    },
+
+    escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    },
+
+    // ---- Search ----
+    toggleSearch() {
+      this.searchActive = !this.searchActive;
+      els.searchBar.classList.toggle('hidden', !this.searchActive);
+      if (this.searchActive) {
+        setTimeout(() => els.searchInput.focus(), 50);
+      } else {
+        this.searchTerm = '';
+        els.searchInput.value = '';
+        this.searchHits = [];
+        this.searchHitIndex = -1;
+        this.refreshSearch();
+        this.renderVisible(false);
+      }
+    },
+
+    setSearchTerm(term) {
+      this.searchTerm = term.trim();
+      this.refreshSearch();
+      this.renderVisible(false);
+    },
+
+    refreshSearch() {
+      // Recompute hits whenever items change or term changes
+      const term = (this.searchActive && this.searchTerm) ? this.searchTerm.toLowerCase() : '';
+      const hits = [];
+      if (term) {
+        for (let i = 0; i < this.items.length; i++) {
+          const it = this.items[i];
+          if (it.kind === 'msg' && !it.deleted && it.text && it.text.toLowerCase().includes(term)) {
+            hits.push({ itemIndex: i, msgId: it.id });
+          }
+        }
+      }
+      // Try to keep current hit if it still exists
+      let newIndex = -1;
+      if (this.searchHitIndex >= 0 && this.searchHits[this.searchHitIndex]) {
+        const oldId = this.searchHits[this.searchHitIndex].msgId;
+        newIndex = hits.findIndex(h => h.msgId === oldId);
+      }
+      if (newIndex < 0 && hits.length > 0) newIndex = hits.length - 1; // newest match
+      this.searchHits = hits;
+      this.searchHitIndex = newIndex;
+
+      // Update counter & buttons
+      if (els.searchCounter) {
+        if (!term) els.searchCounter.textContent = '';
+        else if (hits.length === 0) els.searchCounter.textContent = '0';
+        else els.searchCounter.textContent = (this.searchHitIndex + 1) + '/' + hits.length;
+      }
+      els.searchPrevBtn.disabled = hits.length < 2;
+      els.searchNextBtn.disabled = hits.length < 2;
+    },
+
+    gotoSearchHit(direction) {
+      if (this.searchHits.length === 0) return;
+      this.searchHitIndex = (this.searchHitIndex + direction + this.searchHits.length) % this.searchHits.length;
+      this.refreshSearch();
+      this.scrollToItem(this.searchHits[this.searchHitIndex].itemIndex);
+    },
+
+    scrollToItem(itemIndex) {
+      const c = els.messagesContainer;
+      const top = this.itemTops[itemIndex] || 0;
+      const target = Math.max(0, top - c.clientHeight / 3);
+      c.scrollTop = target;
+      // After scroll, render window will redraw; force update so highlight shows
+      requestAnimationFrame(() => this.renderVisible(false));
+    },
+
+    // ---- Scroll handling ----
+    onScroll() {
+      // Only re-render if the visible window changed
+      const c = els.messagesContainer;
+      const top = c.scrollTop;
+      const viewportH = c.clientHeight;
+      const bottom = top + viewportH;
+      // Quick check: is the current window still valid?
+      const startTop = this.visibleStart > 0 ? this.itemTops[this.visibleStart] : 0;
+      const endItem = this.items[this.visibleEnd - 1];
+      const endBottom = endItem ? (this.itemTops[this.visibleEnd - 1] + endItem.height) : 0;
+      const margin = 200;
+      if (top >= startTop - margin && bottom <= endBottom + margin) {
+        // Still safely within rendered window
+        return;
+      }
+      this.renderVisible(false);
+    },
+
     isAtBottom() {
       const c = els.messagesContainer;
       return c.scrollHeight - c.scrollTop - c.clientHeight < 80;
@@ -1910,131 +2393,17 @@
 
     scrollToBottom(force) {
       const c = els.messagesContainer;
-      // Scroll to bottom if user is already near the bottom OR forced
       if (force || this.isAtBottom()) {
-        requestAnimationFrame(() => {
-          c.scrollTop = c.scrollHeight;
-        });
+        requestAnimationFrame(() => { c.scrollTop = c.scrollHeight; });
       }
     },
 
+    // Compatibility shim: tab switch & boot still call render()
     render() {
-      const wasAtBottom = this.isAtBottom() || !this.rendered;
-      const c = els.messagesContainer;
-
-      // Combine confirmed + pending
-      const pending = Object.values(this.pendingByLocalId);
-      const all = [...this.messages, ...pending].sort((a, b) => (a.ts || 0) - (b.ts || 0));
-
-      if (all.length === 0) {
-        c.innerHTML = '';
-        const empty = document.createElement('div');
-        empty.className = 'msg-empty';
-        empty.innerHTML = 'henüz mesaj yok<br><span class="blink">ilk mesajı sen at</span>';
-        c.appendChild(empty);
-        this.rendered = true;
-        return;
-      }
-
-      c.innerHTML = '';
-      let lastDay = '';
-      let lastAuthor = null;
-      const me = session.playerName;
-
-      for (let i = 0; i < all.length; i++) {
-        const m = all[i];
-        const day = this.formatDay(m.ts || Date.now());
-
-        // Day divider
-        if (day !== lastDay) {
-          const div = document.createElement('div');
-          div.className = 'day-divider';
-          const span = document.createElement('span');
-          span.textContent = day;
-          div.appendChild(span);
-          c.appendChild(div);
-          lastDay = day;
-          lastAuthor = null; // force first-of-group after divider
-        }
-
-        const wrap = document.createElement('div');
-        const isMine = m.author === me;
-        wrap.className = 'msg ' + (isMine ? 'mine' : 'theirs');
-        wrap.dataset.id = m.id;
-        if (this.actionsForId === m.id) wrap.classList.add('show-actions');
-
-        // First of consecutive group? Bigger top margin
-        const isFirstOfGroup = m.author !== lastAuthor;
-        if (isFirstOfGroup) wrap.classList.add('first-of-group');
-        lastAuthor = m.author;
-
-        // Bubble — contains text + inline time stamp
-        const bubble = document.createElement('div');
-        bubble.className = 'msg-bubble';
-        if (m.deleted) {
-          bubble.classList.add('deleted');
-          bubble.textContent = '[mesaj silindi]';
-        } else {
-          // Text
-          const textNode = document.createElement('span');
-          textNode.className = 'msg-text';
-          textNode.textContent = m.text;
-          bubble.appendChild(textNode);
-
-          if (m.pending) bubble.classList.add('pending');
-          if (m.failed) bubble.classList.add('failed');
-
-          // Inline time stamp
-          const time = document.createElement('span');
-          time.className = 'msg-time';
-          time.textContent = this.formatTime(m.ts || Date.now());
-          bubble.appendChild(time);
-        }
-        wrap.appendChild(bubble);
-
-        // Long-press / right-click menu — for confirmed mine messages
-        if (isMine && !m.deleted && !m.pending && !String(m.id).startsWith('local_')) {
-          const actions = document.createElement('div');
-          actions.className = 'msg-actions';
-          const delBtn = document.createElement('button');
-          delBtn.className = 'msg-action-btn danger';
-          delBtn.textContent = 'SİL';
-          delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.actionsForId = null;
-            if (confirm('Bu mesajı silmek istediğine emin misin?')) {
-              this.deleteMessage(m.id);
-            } else {
-              this.render();
-            }
-          });
-          actions.appendChild(delBtn);
-          wrap.appendChild(actions);
-
-          // Long-press / right-click to open
-          let pressTimer = null;
-          const openActions = () => {
-            this.actionsForId = m.id;
-            this.render();
-          };
-          wrap.addEventListener('touchstart', () => {
-            pressTimer = setTimeout(openActions, 500);
-          }, { passive: true });
-          wrap.addEventListener('touchend', () => clearTimeout(pressTimer));
-          wrap.addEventListener('touchmove', () => clearTimeout(pressTimer));
-          wrap.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            openActions();
-          });
-        }
-
-        c.appendChild(wrap);
-      }
-
-      this.rendered = true;
-      if (wasAtBottom) this.scrollToBottom(true);
+      this.rebuild(false);
     },
   };
+
 
   // Composer auto-grow + send button enable/disable
   function syncComposer() {
@@ -2091,6 +2460,31 @@
     }
   });
   els.sendBtn.addEventListener('click', handleSend);
+
+  // Chat search wiring
+  els.searchToggleBtn.addEventListener('click', () => Chat.toggleSearch());
+  els.searchCloseBtn.addEventListener('click', () => Chat.toggleSearch());
+  els.searchInput.addEventListener('input', () => Chat.setSearchTerm(els.searchInput.value));
+  els.searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      Chat.gotoSearchHit(e.shiftKey ? -1 : 1);
+    } else if (e.key === 'Escape') {
+      Chat.toggleSearch();
+    }
+  });
+  els.searchPrevBtn.addEventListener('click', () => Chat.gotoSearchHit(-1));
+  els.searchNextBtn.addEventListener('click', () => Chat.gotoSearchHit(1));
+
+  // Virtual scroll listener
+  let scrollRaf = null;
+  els.messagesContainer.addEventListener('scroll', () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = null;
+      Chat.onScroll();
+    });
+  }, { passive: true });
 
   // ============================================
   // BOOT
