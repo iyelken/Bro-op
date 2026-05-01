@@ -260,7 +260,6 @@
 
   /* Conditional field visibility (driven by .login-card[data-mode]) */
   .login-card[data-mode="login"] .field[data-show-on]:not([data-show-on*="login"]) { display: none; }
-  .login-card[data-mode="join"] .field[data-show-on]:not([data-show-on*="join"]) { display: none; }
   .login-card[data-mode="signup"] .field[data-show-on]:not([data-show-on*="signup"]) { display: none; }
 
   .field {
@@ -1686,9 +1685,7 @@
 
     <div class="login-card" id="loginCard" data-mode="login">
       <div class="mode-tabs">
-      <div class="mode-tabs">
         <button class="mode-tab active" data-mode="login">GİRİŞ</button>
-        <button class="mode-tab" data-mode="join">KATIL</button>
         <button class="mode-tab" data-mode="signup">YENİ ODA</button>
       </div>
 
@@ -1697,25 +1694,25 @@
       <div class="field">
         <label>Bulut ID</label>
         <input type="text" id="cloudId" placeholder="ortak-oda-adı" autocomplete="off" autocapitalize="none" spellcheck="false" />
-        <div class="field-hint">Odanın ortak adı.</div>
+        <div class="field-hint">İkinizin de aynı ID'yi kullanması gerekir.</div>
       </div>
 
-      <div class="field" data-show-on="join,signup">
-        <label>Oda Davet Şifresi</label>
-        <input type="password" id="roomInvite" placeholder="••••••••" autocomplete="off" />
-        <div class="field-hint" id="inviteHint">Odaya katılmak için herkesin bilmesi gereken şifre.</div>
+      <div class="field">
+        <label>Şifre</label>
+        <input type="password" id="cloudPass" placeholder="••••••••" autocomplete="off" />
+        <div class="field-hint">Verileriniz bu şifreyle uçtan uca şifrelenir.</div>
       </div>
 
       <div class="field">
         <label>Oyuncu Adın</label>
-        <input type="text" id="playerName" placeholder="ahmet" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20" />
-        <div class="field-hint">Senin uygulamadaki adın. Küçük harf önerilir.</div>
+        <input type="text" id="playerName" placeholder="sen" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20" />
+        <div class="field-hint">Bu cihazda sen olarak görüneceksin.</div>
       </div>
 
-      <div class="field">
-        <label>Kişisel Şifren</label>
-        <input type="password" id="userPass" placeholder="••••••••" autocomplete="off" />
-        <div class="field-hint">Sadece sana ait. Diğer üyeler bilmek zorunda değil.</div>
+      <div class="field" data-show-on="signup">
+        <label>Diğer Üyelerin Adları (opsiyonel)</label>
+        <input type="text" id="otherPlayers" placeholder="mehmet, ali, veli" autocomplete="off" autocapitalize="none" spellcheck="false" />
+        <div class="field-hint">Virgülle ayır. Onlar girmeden de görev verebilirsin. Sonra GİRİŞ ile katılırlar.</div>
       </div>
 
       <button class="btn-primary" id="loginBtn">▶ BAĞLAN</button>
@@ -1868,7 +1865,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.4.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.3.1</span></div>
         </div>
       </div>
 
@@ -2094,7 +2091,7 @@
   }
 
   // Salt builders — different scopes use different salts
-  function roomSalt(cloudId) { return CryptoJS.SHA256('broop:room:' + cloudId).toString(); }
+  function roomSalt(cloudId) { return CryptoJS.SHA256('broop:' + cloudId).toString(); }
   function userSalt(cloudId, username) { return CryptoJS.SHA256('broop:user:' + cloudId + ':' + username).toString(); }
 
 
@@ -2127,12 +2124,11 @@
     mainShell: $('#mainShell'),
     loginCard: $('#loginCard'),
     cloudId: $('#cloudId'),
-    roomInvite: $('#roomInvite'),
+    cloudPass: $('#cloudPass'),
     playerName: $('#playerName'),
-    userPass: $('#userPass'),
+    otherPlayers: $('#otherPlayers'),
     loginBtn: $('#loginBtn'),
     loginError: $('#loginError'),
-    inviteHint: $('#inviteHint'),
     modeTabs: $$('.mode-tab'),
     navBtns: $$('.nav-btn'),
     panes: $$('.pane'),
@@ -2195,14 +2191,7 @@
     mode = m;
     els.modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === m));
     els.loginCard.dataset.mode = m;
-    if (m === 'login') els.loginBtn.textContent = '▶ BAĞLAN';
-    else if (m === 'join') els.loginBtn.textContent = '▶ ODAYA KATIL';
-    else els.loginBtn.textContent = '▶ ODAYI KUR';
-    if (els.inviteHint) {
-      els.inviteHint.textContent = m === 'signup'
-        ? 'Yeni odan için bir davet şifresi belirle. Arkadaşlarına vereceksin.'
-        : 'Oda sahibinden öğrendiğin davet şifresi.';
-    }
+    els.loginBtn.textContent = m === 'signup' ? '▶ ODAYI KUR' : '▶ BAĞLAN';
     showError('');
   }
 
@@ -2211,17 +2200,11 @@
   }
 
   // ============================================
-  // CLOUD (FIRESTORE) HELPERS — multi-user version
+  // CLOUD (FIRESTORE) HELPERS — simple shared-key version
   // ============================================
-  // Layout:
-  //   broop_app/{cloudId}                    — room doc { verifier (invite), createdAt }
-  //   broop_app/{cloudId}/auth/{username}    — user auth { userVerifier, wrappedRoomKey }
-  //   broop_app/{cloudId}/messages/{...}     — chat
-  //   broop_app/{cloudId}/quests/{...}       — quests
-  //   broop_app/{cloudId}/players/{username} — XP/level
-  //
-  // session.key  = the room key (random, generated at signup, shared by all members)
-  // userKey      = derived from per-user password — wraps roomKey so each user can recover it
+  // Path: broop_app/{cloudId}
+  // Document shape: { verifier: <encrypted "BROOP_OK">, knownPlayers: [...], updatedAt }
+  // All room data encrypted with a single shared key derived from cloudId + password.
 
   function cloudReady() {
     return window.__broop && window.__broop.firebaseEnabled && window.__broop.db && window.__broop.fs;
@@ -2232,11 +2215,6 @@
     return fs.doc(db, 'broop_app', cloudId);
   }
 
-  function userAuthRef(cloudId, username) {
-    const { db, fs } = window.__broop;
-    return fs.doc(db, 'broop_app', cloudId, 'auth', username);
-  }
-
   async function cloudGetRoom(cloudId) {
     if (!cloudReady()) return null;
     const ref = roomDocRef(cloudId);
@@ -2244,39 +2222,53 @@
     return snap.exists() ? snap.data() : null;
   }
 
-  async function cloudGetUserAuth(cloudId, username) {
-    if (!cloudReady()) return null;
-    const ref = userAuthRef(cloudId, username);
-    const snap = await window.__broop.fs.getDoc(ref);
-    return snap.exists() ? snap.data() : null;
+  async function cloudCreateRoom(cloudId, key, knownPlayers) {
+    if (!cloudReady()) return false;
+    const ref = roomDocRef(cloudId);
+    const payload = { players: knownPlayers || [] };
+    await window.__broop.fs.setDoc(ref, {
+      verifier: makeVerifier(key),
+      knownPlayers: encrypt(JSON.stringify(payload), key),
+      updatedAt: Date.now(),
+    });
+    return true;
   }
 
   /**
-   * Three flows:
-   *   - "signup":  creates a new room. Generates room key. Sets invite verifier.
-   *               Creates this user's auth doc with the room key wrapped in their password.
-   *   - "join":    joins an existing room. Verifies invite password. Creates the user's
-   *               auth doc with the room key wrapped in their personal password.
-   *   - "login":   the user already has an auth doc. Use personal password to unwrap room key.
+   * Pre-register a player as a "ghost" — creates an empty player doc so the
+   * UI knows they exist before they actually log in. They'll fill it in
+   * when they log in for the first time.
    */
+  async function preRegisterPlayer(cloudId, playerName, key) {
+    if (!cloudReady()) return;
+    const { db, fs } = window.__broop;
+    const ref = fs.doc(db, 'broop_app', cloudId, 'players', playerName);
+    const snap = await fs.getDoc(ref);
+    if (snap.exists()) return; // Already exists, leave alone
+    const ghostStats = {
+      xp: 0, level: 1, completedQuests: 0, badges: 0,
+      joinedAt: Date.now(),
+      ghost: true, // marker — they haven't actually logged in yet
+    };
+    await fs.setDoc(ref, {
+      encrypted: encrypt(JSON.stringify(ghostStats), key),
+      updatedAt: Date.now(),
+    });
+  }
+
   async function handleLogin() {
     const cloudId = els.cloudId.value.trim().toLowerCase();
+    const password = els.cloudPass.value;
     const playerName = els.playerName.value.trim().toLowerCase();
-    const userPassword = els.userPass.value;
-    const invitePassword = els.roomInvite.value;
+    const otherPlayersRaw = els.otherPlayers ? els.otherPlayers.value.trim() : '';
 
-    // Common validation
+    // Validate
     if (!cloudId || cloudId.length < 3) { showError('Bulut ID en az 3 karakter olmalı.'); return; }
     if (!/^[a-z0-9_\-]+$/.test(cloudId)) { showError('Bulut ID sadece küçük harf, rakam, - ve _ içerebilir.'); return; }
+    if (!password || password.length < 4) { showError('Şifre en az 4 karakter olmalı.'); return; }
     if (!playerName || playerName.length < 1) { showError('Oyuncu adın boş olamaz.'); return; }
     if (!/^[a-z0-9_\-]+$/.test(playerName)) { showError('Oyuncu adı sadece küçük harf, rakam, - ve _ içerebilir.'); return; }
-    if (!userPassword || userPassword.length < 4) { showError('Kişisel şifren en az 4 karakter olmalı.'); return; }
-    if ((mode === 'signup' || mode === 'join') && (!invitePassword || invitePassword.length < 4)) {
-      showError('Oda davet şifresi en az 4 karakter olmalı.');
-      return;
-    }
 
-    // Lock UI
     els.loginBtn.disabled = true;
     const originalLabel = els.loginBtn.textContent;
     els.loginBtn.textContent = '... BAĞLANIYOR ...';
@@ -2288,107 +2280,47 @@
         return;
       }
 
+      // Derive shared room key from cloudId + password (deterministic)
+      const key = deriveKey(roomSalt(cloudId), password);
       const room = await cloudGetRoom(cloudId);
 
       if (mode === 'signup') {
-        // ---- New room ----
         if (room) {
-          showError('Bu Bulut ID zaten kullanılıyor. "KATIL" ile katılabilirsin.');
+          showError('Bu Bulut ID zaten kullanılıyor. "GİRİŞ" ile gir.');
           return;
         }
-        // Generate a fresh room key
-        const roomKey = genRoomKey();
-        // Invite verifier (anyone joining must know the invite password)
-        const inviteKey = deriveKey(roomSalt(cloudId), invitePassword);
-        const roomVerifier = makeVerifier(inviteKey);
-        // Wrap room key with invite key so future joiners can unwrap with invite alone
-        const inviteWrappedKey = encrypt(roomKey, inviteKey);
-        // Wrap room key with this user's password
-        const userKey = deriveKey(userSalt(cloudId, playerName), userPassword);
-        const wrappedRoomKey = encrypt(roomKey, userKey);
-        const userVerifier = makeVerifier(userKey);
+        // Parse other player names
+        const others = otherPlayersRaw
+          .split(/[,\s]+/)
+          .map(n => n.trim().toLowerCase())
+          .filter(n => n && /^[a-z0-9_\-]+$/.test(n) && n !== playerName);
 
-        const { fs } = window.__broop;
-        // Write room doc + first user auth doc
-        await fs.setDoc(roomDocRef(cloudId), {
-          verifier: roomVerifier,
-          inviteWrappedKey,
-          createdAt: Date.now(),
-        });
-        await fs.setDoc(userAuthRef(cloudId, playerName), {
-          userVerifier,
-          wrappedRoomKey,
-          joinedAt: Date.now(),
-        });
+        await cloudCreateRoom(cloudId, key, [playerName, ...others]);
 
-        finishLogin(cloudId, playerName, roomKey);
-
-      } else if (mode === 'join') {
-        // ---- Join an existing room ----
+        // Pre-register the other players as ghosts so they appear in the member list
+        for (const name of others) {
+          await preRegisterPlayer(cloudId, name, key);
+        }
+      } else {
+        // login
         if (!room) {
           showError('Böyle bir oda bulunamadı. "YENİ ODA" ile oluşturabilirsin.');
           return;
         }
-        const inviteKey = deriveKey(roomSalt(cloudId), invitePassword);
-        if (!checkVerifier(room.verifier, inviteKey)) {
-          showError('Oda davet şifresi yanlış.');
+        if (!checkVerifier(room.verifier, key)) {
+          showError('Şifre yanlış. Tekrar dene.');
           return;
         }
-        // Check if username is already taken in this room
-        const existing = await cloudGetUserAuth(cloudId, playerName);
-        if (existing) {
-          showError('Bu oyuncu adı zaten kullanılıyor. "GİRİŞ" ile gir, ya da farklı bir ad seç.');
-          return;
-        }
-        // Need the room key — but to wrap it for ourselves we need to know it.
-        // Trick: anyone with invite password effectively gets full read access (rules already allow it).
-        // We can derive room key by reading any existing user's wrappedRoomKey is impossible (we don't have their pw).
-        // Solution: store an *invite-wrapped* copy of room key on the room doc.
-        if (!room.inviteWrappedKey) {
-          showError('Bu oda eski sürümde kurulmuş, davetle katılım desteklenmiyor. Oda sahibinden yardım iste.');
-          return;
-        }
-        const roomKey = decrypt(room.inviteWrappedKey, inviteKey);
-        if (!roomKey) {
-          showError('Oda anahtarı çözülemedi. Davet şifresi yanlış olabilir.');
-          return;
-        }
-        // Now wrap room key with our own personal password
-        const userKey = deriveKey(userSalt(cloudId, playerName), userPassword);
-        const wrappedRoomKey = encrypt(roomKey, userKey);
-        const userVerifier = makeVerifier(userKey);
-
-        await window.__broop.fs.setDoc(userAuthRef(cloudId, playerName), {
-          userVerifier,
-          wrappedRoomKey,
-          joinedAt: Date.now(),
-        });
-
-        finishLogin(cloudId, playerName, roomKey);
-
-      } else {
-        // ---- login: existing user ----
-        if (!room) {
-          showError('Böyle bir oda bulunamadı.');
-          return;
-        }
-        const userAuth = await cloudGetUserAuth(cloudId, playerName);
-        if (!userAuth) {
-          showError('Bu odada böyle bir oyuncu yok. "KATIL" sekmesinden katılabilirsin.');
-          return;
-        }
-        const userKey = deriveKey(userSalt(cloudId, playerName), userPassword);
-        if (!checkVerifier(userAuth.userVerifier, userKey)) {
-          showError('Kişisel şifren yanlış.');
-          return;
-        }
-        const roomKey = decrypt(userAuth.wrappedRoomKey, userKey);
-        if (!roomKey) {
-          showError('Oda anahtarı çözülemedi.');
-          return;
-        }
-        finishLogin(cloudId, playerName, roomKey);
       }
+
+      session = {
+        cloudId,
+        playerName,
+        key,
+        createdAt: Date.now(),
+      };
+      Session.set(session);
+      enterApp();
 
     } catch (e) {
       console.error('[Bro-op] Login error:', e);
@@ -2397,17 +2329,6 @@
       els.loginBtn.disabled = false;
       els.loginBtn.textContent = originalLabel;
     }
-  }
-
-  function finishLogin(cloudId, playerName, roomKey) {
-    session = {
-      cloudId,
-      playerName,
-      key: roomKey,         // room key — used to encrypt all room data
-      createdAt: Date.now(),
-    };
-    Session.set(session);
-    enterApp();
   }
 
   // ============================================
@@ -2439,8 +2360,8 @@
     session = null;
     els.mainShell.classList.add('hidden');
     els.loginScreen.classList.remove('hidden');
-    if (els.userPass) els.userPass.value = '';
-    if (els.roomInvite) els.roomInvite.value = '';
+    if (els.cloudPass) els.cloudPass.value = '';
+    if (els.otherPlayers) els.otherPlayers.value = '';
     showError('');
   }
 
@@ -3737,7 +3658,7 @@
   // ============================================
   els.modeTabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
   els.loginBtn.addEventListener('click', handleLogin);
-  [els.cloudId, els.roomInvite, els.playerName, els.userPass].forEach(input => {
+  [els.cloudId, els.cloudPass, els.playerName, els.otherPlayers].forEach(input => {
     if (!input) return;
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleLogin();
