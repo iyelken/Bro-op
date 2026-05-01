@@ -1958,6 +1958,7 @@
     color: var(--text-primary);
     line-height: 1.25;
   }
+  /* Old edit button (kept for compatibility but replaced by kebab menu) */
   .project-edit-btn {
     flex-shrink: 0;
     padding: 6px 10px;
@@ -1974,6 +1975,96 @@
   .project-edit-btn:hover {
     color: var(--accent-workshop);
     border-color: var(--accent-workshop);
+  }
+
+  /* Kebab menu (⋯) for project actions */
+  .project-menu-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .project-kebab-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: all 0.15s;
+  }
+  .project-kebab-btn:hover {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.06);
+  }
+  .project-menu-wrap.open .project-kebab-btn {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.1);
+  }
+
+  /* Dropdown menu — hidden by default, opens below the kebab button */
+  .project-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    min-width: 160px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    padding: 4px;
+    animation: menuFadeIn 0.12s ease-out;
+  }
+  .project-menu-wrap.open .project-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  @keyframes menuFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .project-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.1s, color 0.1s;
+    white-space: nowrap;
+  }
+  .project-menu-item:hover {
+    background: rgba(184, 85, 255, 0.1);
+    color: var(--accent-workshop);
+  }
+  .project-menu-item .menu-icon {
+    font-size: 14px;
+    line-height: 1;
+    width: 16px;
+    text-align: center;
+  }
+  .project-menu-item.danger {
+    color: var(--danger);
+  }
+  .project-menu-item.danger:hover {
+    background: rgba(255, 56, 96, 0.1);
+    color: var(--danger);
   }
   .project-author {
     font-family: var(--font-crt);
@@ -3435,7 +3526,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha2</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha3</span></div>
         </div>
 
         <div class="info-card">
@@ -6030,6 +6121,129 @@
       alert('Tüm projelerin:\n\n' + names + '\n\n(Tüm projeler ekranı yakında geliyor)');
     },
 
+    // ============================================
+    // Project menu (kebab) helpers
+    // ============================================
+    // Toggle the dropdown for a specific project menu wrapper.
+    // Closes any other open menus first.
+    _toggleProjectMenu(menuWrap) {
+      const willOpen = !menuWrap.classList.contains('open');
+      this._closeAllProjectMenus();
+      if (willOpen) {
+        menuWrap.classList.add('open');
+        // Click anywhere outside closes the menu
+        const closeOnClickOutside = (e) => {
+          if (!menuWrap.contains(e.target)) {
+            this._closeAllProjectMenus();
+            document.removeEventListener('click', closeOnClickOutside);
+          }
+        };
+        // Defer so the current click doesn't immediately re-close
+        setTimeout(() => document.addEventListener('click', closeOnClickOutside), 0);
+      }
+    },
+
+    _closeAllProjectMenus() {
+      document.querySelectorAll('.project-menu-wrap.open').forEach(m => m.classList.remove('open'));
+    },
+
+    // Archive a project: marks it as archived and switches active project
+    // to another non-archived one (or null if no others).
+    async archiveProject(projectId) {
+      if (!session || !cloudReady()) return;
+      const me = session.playerName;
+      const ws = this.workshops[me];
+      if (!ws || !ws.projects) return;
+      const project = ws.projects.find(p => p.id === projectId);
+      if (!project) return;
+
+      if (!confirm(`"${project.title}" projesini arşivlemek istediğine emin misin?\n\nDevlog ve TODO'ları silinmez, "Biten projeler"den geri açabilirsin.`)) return;
+
+      try {
+        const newProjects = ws.projects.map(p =>
+          p.id === projectId
+            ? { ...p, archived: true, completedTs: Date.now() }
+            : p
+        );
+        // Find a new active project — first non-archived, or null
+        let newActiveId = ws.activeProjectId;
+        if (newActiveId === projectId) {
+          const stillActive = newProjects.find(p => !p.archived);
+          newActiveId = stillActive ? stillActive.id : null;
+        }
+        const newDoc = { ...ws, projects: newProjects, activeProjectId: newActiveId };
+
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'workshops', me);
+        const enc = encrypt(JSON.stringify(newDoc), session.key);
+        await fs.setDoc(ref, { encrypted: enc, updatedAt: Date.now() });
+        // Snapshot listener will re-render
+      } catch (e) {
+        console.error('[Workshop] archiveProject failed:', e);
+        alert('Arşivleme başarısız: ' + (e.message || e));
+      }
+    },
+
+    // Permanently delete a project AND all its associated data
+    // (devlogs, todos). Uses double-confirm because it's irreversible.
+    async deleteProject(projectId) {
+      if (!session || !cloudReady()) return;
+      const me = session.playerName;
+      const ws = this.workshops[me];
+      if (!ws || !ws.projects) return;
+      const project = ws.projects.find(p => p.id === projectId);
+      if (!project) return;
+
+      // Count what will be deleted
+      const myDevlogs = this.devlogs.filter(d => d.author === me && d.projectId === projectId);
+      const myTodos = ((this.todos[me] && this.todos[me].items) || []).filter(t => t.projectId === projectId);
+
+      const msg =
+        `"${project.title}" projesini KALICI olarak silmek istediğine emin misin?\n\n` +
+        `Bu projeyle birlikte:\n` +
+        `• ${myDevlogs.length} devlog girişi\n` +
+        `• ${myTodos.length} görev\n` +
+        `silinecek. Bu işlem GERİ ALINAMAZ.`;
+
+      if (!confirm(msg)) return;
+      // Second confirmation
+      if (!confirm(`Son uyarı: "${project.title}" ve içindeki tüm veriler KALICI olarak silinecek. Devam?`)) return;
+
+      try {
+        const { db, fs } = window.__broop;
+
+        // 1. Remove the project from workshops doc
+        const newProjects = ws.projects.filter(p => p.id !== projectId);
+        let newActiveId = ws.activeProjectId;
+        if (newActiveId === projectId) {
+          const stillActive = newProjects.find(p => !p.archived);
+          newActiveId = stillActive ? stillActive.id : null;
+        }
+        const newDoc = { ...ws, projects: newProjects, activeProjectId: newActiveId };
+        const wsRef = fs.doc(db, 'broop_app', session.cloudId, 'workshops', me);
+        const enc = encrypt(JSON.stringify(newDoc), session.key);
+        await fs.setDoc(wsRef, { encrypted: enc, updatedAt: Date.now() });
+
+        // 2. Delete all my devlogs in this project
+        for (const d of myDevlogs) {
+          const dRef = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', d.id);
+          try { await fs.deleteDoc(dRef); } catch (e) { console.warn('[Delete] devlog failed:', d.id, e); }
+        }
+
+        // 3. Remove all my todos in this project (write filtered list back)
+        if (myTodos.length > 0) {
+          const allMyTodos = (this.todos[me] && this.todos[me].items) || [];
+          const remaining = allMyTodos.filter(t => t.projectId !== projectId);
+          const tRef = fs.doc(db, 'broop_app', session.cloudId, 'todos', me);
+          const tEnc = encrypt(JSON.stringify({ items: remaining }), session.key);
+          try { await fs.setDoc(tRef, { encrypted: tEnc, updatedAt: Date.now() }); } catch (e) { console.warn('[Delete] todos failed:', e); }
+        }
+      } catch (e) {
+        console.error('[Workshop] deleteProject failed:', e);
+        alert('Silme başarısız: ' + (e.message || e));
+      }
+    },
+
     // ---- My project rendering ----
     renderMine() {
       if (!session) return;
@@ -6070,12 +6284,59 @@
         const title = document.createElement('div');
         title.className = 'project-title';
         title.textContent = activeProject.title;
-        const editBtn = document.createElement('button');
-        editBtn.className = 'project-edit-btn';
-        editBtn.textContent = 'DÜZENLE';
-        editBtn.addEventListener('click', () => this.openProjectModal());
         titleRow.appendChild(title);
-        titleRow.appendChild(editBtn);
+
+        // Kebab menu button (⋯) — opens project actions menu
+        const menuWrap = document.createElement('div');
+        menuWrap.className = 'project-menu-wrap';
+        const kebab = document.createElement('button');
+        kebab.className = 'project-kebab-btn';
+        kebab.title = 'Proje seçenekleri';
+        kebab.type = 'button';
+        kebab.innerHTML = '⋯';
+        kebab.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._toggleProjectMenu(menuWrap);
+        });
+        menuWrap.appendChild(kebab);
+
+        // Dropdown menu
+        const menu = document.createElement('div');
+        menu.className = 'project-menu';
+
+        const editItem = document.createElement('button');
+        editItem.className = 'project-menu-item';
+        editItem.type = 'button';
+        editItem.innerHTML = '<span class="menu-icon">✏️</span><span>Düzenle</span>';
+        editItem.addEventListener('click', () => {
+          this._closeAllProjectMenus();
+          this.openProjectModal();
+        });
+        menu.appendChild(editItem);
+
+        const archiveItem = document.createElement('button');
+        archiveItem.className = 'project-menu-item';
+        archiveItem.type = 'button';
+        archiveItem.innerHTML = '<span class="menu-icon">📁</span><span>Arşivle</span>';
+        archiveItem.addEventListener('click', () => {
+          this._closeAllProjectMenus();
+          this.archiveProject(activeProject.id);
+        });
+        menu.appendChild(archiveItem);
+
+        const deleteItem = document.createElement('button');
+        deleteItem.className = 'project-menu-item danger';
+        deleteItem.type = 'button';
+        deleteItem.innerHTML = '<span class="menu-icon">🗑️</span><span>Sil</span>';
+        deleteItem.addEventListener('click', () => {
+          this._closeAllProjectMenus();
+          this.deleteProject(activeProject.id);
+        });
+        menu.appendChild(deleteItem);
+
+        menuWrap.appendChild(menu);
+        titleRow.appendChild(menuWrap);
+
         card.appendChild(titleRow);
         if (activeProject.description) {
           const desc = document.createElement('div');
