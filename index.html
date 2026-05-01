@@ -998,7 +998,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.1.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.1.1</span></div>
         </div>
       </div>
 
@@ -1106,12 +1106,12 @@
   // locally so the UX is identical.
 
   const firebaseConfig = {
-    // apiKey: "...",
-    // authDomain: "...",
-    // projectId: "...",
-    // storageBucket: "...",
-    // messagingSenderId: "...",
-    // appId: "..."
+    apiKey: "AIzaSyCyAnpELLloyLp2wut6DPoI76xQTtesxAc",
+    authDomain: "kart-takip-a69f7.firebaseapp.com",
+    projectId: "kart-takip-a69f7",
+    storageBucket: "kart-takip-a69f7.firebasestorage.app",
+    messagingSenderId: "864294416967",
+    appId: "1:864294416967:web:4d06f9696bc13f836af762"
   };
 
   const FIREBASE_ENABLED = Object.keys(firebaseConfig).length > 0;
@@ -1121,14 +1121,23 @@
     firebaseEnabled: FIREBASE_ENABLED,
     db: null,
     app: null,
+    fs: null, // firestore functions (doc, setDoc, getDoc, onSnapshot, serverTimestamp)
   };
 
   if (FIREBASE_ENABLED) {
     try {
       const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-      const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      const fsMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       window.__broop.app = initializeApp(firebaseConfig);
-      window.__broop.db = getFirestore(window.__broop.app);
+      window.__broop.db = fsMod.getFirestore(window.__broop.app);
+      window.__broop.fs = {
+        doc: fsMod.doc,
+        setDoc: fsMod.setDoc,
+        getDoc: fsMod.getDoc,
+        updateDoc: fsMod.updateDoc,
+        onSnapshot: fsMod.onSnapshot,
+        serverTimestamp: fsMod.serverTimestamp,
+      };
       console.log('[Bro-op] Firebase ready');
     } catch (e) {
       console.warn('[Bro-op] Firebase init failed, falling back to local mode:', e);
@@ -1303,7 +1312,40 @@
     return null;
   }
 
-  function handleLogin() {
+  // ============================================
+  // CLOUD (FIRESTORE) HELPERS
+  // ============================================
+  // Path: broop_app/{cloudId}
+  // Document shape: { verifier: <encrypted "BROOP_OK">, payload: <encrypted JSON>, updatedAt: <ms> }
+  // Lives alongside existing collections (bihter_app, ekmek-takip, users) — does not touch them.
+
+  function cloudReady() {
+    return window.__broop && window.__broop.firebaseEnabled && window.__broop.db && window.__broop.fs;
+  }
+
+  function roomDocRef(cloudId) {
+    const { db, fs } = window.__broop;
+    return fs.doc(db, 'broop_app', cloudId);
+  }
+
+  async function cloudGetRoom(cloudId) {
+    if (!cloudReady()) return null;
+    const ref = roomDocRef(cloudId);
+    const snap = await window.__broop.fs.getDoc(ref);
+    return snap.exists() ? snap.data() : null;
+  }
+
+  async function cloudCreateRoom(cloudId, key) {
+    if (!cloudReady()) return false;
+    const ref = roomDocRef(cloudId);
+    await window.__broop.fs.setDoc(ref, {
+      verifier: makeVerifier(key),
+      updatedAt: Date.now(),
+    });
+    return true;
+  }
+
+  async function handleLogin() {
     const cloudId = els.cloudId.value.trim().toLowerCase();
     const password = els.cloudPass.value;
     const playerName = els.playerName.value.trim();
@@ -1311,35 +1353,72 @@
     const err = validate(cloudId, password, playerName);
     if (err) { showError(err); return; }
 
-    const key = deriveKey(cloudId, password);
-    const existing = Rooms.get(cloudId);
+    // Lock the button while we work
+    els.loginBtn.disabled = true;
+    const originalLabel = els.loginBtn.textContent;
+    els.loginBtn.textContent = '... BAĞLANIYOR ...';
+    showError('');
 
-    if (mode === 'signup') {
-      if (existing) {
-        showError('Bu Bulut ID zaten kullanılıyor. "GİRİŞ" sekmesinden gir.');
-        return;
+    try {
+      const key = deriveKey(cloudId, password);
+      const useCloud = cloudReady();
+
+      // Look up the room: prefer cloud if available, fall back to local registry
+      let cloudRoom = null;
+      if (useCloud) {
+        try {
+          cloudRoom = await cloudGetRoom(cloudId);
+        } catch (e) {
+          console.warn('[Bro-op] Cloud lookup failed, using local:', e);
+        }
       }
-      Rooms.set(cloudId, makeVerifier(key));
-    } else {
-      if (!existing) {
-        showError('Bu odayı bulamadık. "YENİ ODA" sekmesinden oluşturabilirsin.');
-        return;
+      const localVerifier = Rooms.get(cloudId);
+      const existsAnywhere = !!(cloudRoom || localVerifier);
+
+      if (mode === 'signup') {
+        if (existsAnywhere) {
+          showError('Bu Bulut ID zaten kullanılıyor. "GİRİŞ" sekmesinden gir.');
+          return;
+        }
+        // Create room in cloud + local
+        if (useCloud) {
+          await cloudCreateRoom(cloudId, key);
+        }
+        Rooms.set(cloudId, makeVerifier(key));
+      } else {
+        if (!existsAnywhere) {
+          showError('Bu odayı bulamadık. "YENİ ODA" sekmesinden oluşturabilirsin.');
+          return;
+        }
+        // Validate password against whichever verifier we have
+        const verifier = (cloudRoom && cloudRoom.verifier) || localVerifier;
+        if (!checkVerifier(verifier, key)) {
+          showError('Şifre yanlış. Tekrar dene.');
+          return;
+        }
+        // Sync local copy of the verifier so offline next time works
+        if (cloudRoom && cloudRoom.verifier && !localVerifier) {
+          Rooms.set(cloudId, cloudRoom.verifier);
+        }
       }
-      if (!checkVerifier(existing, key)) {
-        showError('Şifre yanlış. Tekrar dene.');
-        return;
-      }
+
+      // All good — persist session
+      session = {
+        cloudId,
+        playerName,
+        key,
+        createdAt: Date.now(),
+      };
+      Session.set(session);
+      enterApp();
+
+    } catch (e) {
+      console.error('[Bro-op] Login error:', e);
+      showError('Beklenmedik hata: ' + (e.message || e));
+    } finally {
+      els.loginBtn.disabled = false;
+      els.loginBtn.textContent = originalLabel;
     }
-
-    // All good — persist session
-    session = {
-      cloudId,
-      playerName,
-      key,
-      createdAt: Date.now(),
-    };
-    Session.set(session);
-    enterApp();
   }
 
   // ============================================
