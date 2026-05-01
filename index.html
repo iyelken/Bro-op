@@ -3331,7 +3331,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.2</span></div>
         </div>
 
         <div class="info-card">
@@ -6020,6 +6020,14 @@
     // ---- TODO rendering ----
     renderMineTodo() {
       if (!session) return;
+      // If user is currently editing inline (renaming a todo or subtask),
+      // skip re-render to avoid wiping their input. Schedule a deferred
+      // render once they finish.
+      if (els.mineTodoCols && els.mineTodoCols.querySelector('.todo-inline-edit')) {
+        this._renderPending = true;
+        return;
+      }
+      this._renderPending = false;
       this._renderTodoCols(els.mineTodoCols, els.mineTodoCounts, session.playerName, true);
     },
 
@@ -6292,7 +6300,10 @@
           panel.appendChild(subEl);
         }
 
-        // Add subtask form (only for own)
+        // Add subtask form (only for own).
+        // We preserve the input's value and focus state across re-renders so
+        // snapshot updates from the other user don't wipe out what we're
+        // currently typing. Each parent task has a unique input id.
         if (isOwn) {
           const addRow = document.createElement('div');
           addRow.className = 'todo-sub-add';
@@ -6300,13 +6311,49 @@
           input.type = 'text';
           input.placeholder = '+ alt görev ekle...';
           input.maxLength = 100;
+          input.dataset.subAddFor = it.id;
+
+          // Restore previous draft + focus if user was typing in this input
+          // before this re-render. We stash drafts on the Workshop instance.
+          if (!this._subAddDrafts) this._subAddDrafts = {};
+          const draft = this._subAddDrafts[it.id];
+          if (draft && draft.value) {
+            input.value = draft.value;
+          }
+          // After insertion, restore focus + caret position if needed
+          if (this._activeSubAddFor === it.id) {
+            // Defer to next tick so the element is in the DOM
+            setTimeout(() => {
+              input.focus();
+              if (typeof draft?.caret === 'number') {
+                try { input.setSelectionRange(draft.caret, draft.caret); } catch {}
+              }
+            }, 0);
+          }
+
           // Prevent the parent draggable from interfering with text selection
           input.addEventListener('mousedown', (e) => e.stopPropagation());
+          // Track draft on every change
+          input.addEventListener('input', () => {
+            this._subAddDrafts[it.id] = {
+              value: input.value,
+              caret: input.selectionStart,
+            };
+          });
+          input.addEventListener('focus', () => {
+            this._activeSubAddFor = it.id;
+          });
+          input.addEventListener('blur', () => {
+            // Don't immediately clear active marker — re-renders happen between
+            // focus loss and refocus. Clear only when user really left.
+            if (this._activeSubAddFor === it.id) this._activeSubAddFor = null;
+          });
           input.addEventListener('keydown', (e) => {
             e.stopPropagation();
             if (e.key === 'Enter' && input.value.trim()) {
               this.addSubtask(it.id, input.value);
               input.value = '';
+              delete this._subAddDrafts[it.id];
             }
           });
           addRow.appendChild(input);
@@ -6588,6 +6635,11 @@
         input.remove();
         if (commit && newVal && newVal !== currentText) {
           onSave(newVal);
+        }
+        // If a render was deferred while we were editing, run it now
+        if (this._renderPending) {
+          this._renderPending = false;
+          this.renderMineTodo();
         }
       };
 
