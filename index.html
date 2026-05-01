@@ -1918,19 +1918,15 @@
   .project-card {
     background: var(--bg-panel);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-workshop);
     border-radius: 4px;
     padding: 16px;
     margin-bottom: 16px;
     position: relative;
-    overflow: hidden;
+    /* overflow visible so the dropdown menu can extend outside the card */
   }
-  .project-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent-workshop);
-  }
+  /* Old ::before accent bar removed — using border-left now */
+  .project-card::before { content: none; }
   .project-empty {
     text-align: center;
     padding: 24px 16px;
@@ -2019,7 +2015,7 @@
     border: 1px solid var(--border);
     border-radius: 3px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
-    z-index: 50;
+    z-index: 150;
     padding: 4px;
     animation: menuFadeIn 0.12s ease-out;
   }
@@ -3526,7 +3522,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha3</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha4</span></div>
         </div>
 
         <div class="info-card">
