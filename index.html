@@ -430,8 +430,59 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+    /* Extra padding so the last item doesn't get hidden under the bottom nav.
+       The +40px gives comfortable breathing room. */
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 40px);
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* ============================================
+     RETRO SCROLLBAR — fits the CRT theme
+     ============================================ */
+  /* Firefox */
+  .content,
+  .chat-list,
+  textarea,
+  .resource-list,
+  .devlog-list,
+  .ws-cat-row,
+  .target-row,
+  .devlog-tag-row,
+  .devlog-filter-row {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-workshop) transparent;
+  }
+  /* WebKit (Chrome, Safari, Edge) — applies globally to keep retro vibe */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 0;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+    box-shadow: 0 0 6px rgba(184, 85, 255, 0.4);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* When inside a chat or workshop pane, give the thumb the matching accent */
+  .pane[data-pane="chat"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-chat);
+    border-color: var(--accent-chat);
+    box-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+  }
+  .pane[data-pane="quest"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-quest);
+    border-color: var(--accent-quest);
+    box-shadow: 0 0 6px rgba(255, 176, 0, 0.4);
   }
 
   .pane {
@@ -2931,7 +2982,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.11.2</span></div>
         </div>
 
         <div class="info-card">
