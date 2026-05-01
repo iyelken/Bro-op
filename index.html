@@ -3341,7 +3341,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.13.4</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha1</span></div>
         </div>
 
         <div class="info-card">
@@ -5468,10 +5468,21 @@
     resourcesUnsubscribe: null,
     todosUnsubscribe: null,
 
-    workshops: {},      // { [playerName]: { title, description } }
-    devlogs: [],        // { id, author, text, ts, tag, comments }[]
-    resources: [],      // { id, url, title, category, addedBy, ts }[]
-    todos: {},          // { [playerName]: { items: [{ id, text, status, createdTs, updatedTs }] } }
+    // workshops: { [playerName]: WorkshopDoc }
+    // WorkshopDoc (new format) = {
+    //   activeProjectId: string | null,
+    //   projects: [{ id, title, description, coverImage?, createdTs, archived, completedTs? }]
+    // }
+    // Old format (pre-v0.14): { title, description }
+    // — read paths handle both via _normalizeWorkshop().
+    workshops: {},
+    devlogs: [],
+    resources: [],
+    todos: {},
+
+    // Migration tracking: set true the first time we successfully migrate
+    // our own legacy workshop, so we don't repeatedly trigger writes.
+    _myMigrationDone: false,
 
     // Sound detection: Map<devlogId, commentCount>
     knownDevlogState: null,
@@ -5501,6 +5512,9 @@
         this.workshops = next;
         this.renderMine();
         this.renderTheirs();
+        // Try migration after workshops load. Migration also depends on
+        // devlogs/todos so we re-check from each listener too.
+        this._runMyMigrationIfNeeded();
       }, (err) => console.warn('[Workshop] workshops error:', err));
 
       // Devlogs
@@ -5519,6 +5533,8 @@
         this.renderMine();
         this.renderTheirs();
         Notifications.refresh();
+        // After devlogs load, re-check migration (orphan devlogs need projectId)
+        this._runMyMigrationIfNeeded();
 
         // Sound detection: a new comment on my devlog from someone else
         const me = session && session.playerName;
@@ -5594,6 +5610,8 @@
         this.todos = next;
         this.renderMineTodo();
         this.renderTheirsTodo();
+        // After todos load, re-check migration
+        this._runMyMigrationIfNeeded();
       }, (err) => console.warn('[Workshop] todos error:', err));
 
       this.renderResourceFilter();
@@ -5615,6 +5633,173 @@
       this.composerHelp = false;
       this.mineFilterTag = 'all';
       this.theirsFilterTag = 'all';
+      this._myMigrationDone = false;
+    },
+
+    // ============================================
+    // Multi-project data model helpers
+    // ============================================
+
+    // Convert any workshop doc (old or new format) into the new shape.
+    // Old format: { title, description }
+    // New format: { activeProjectId, projects: [{...}] }
+    // Returns { doc: NewFormat, wasMigrated: bool }
+    _normalizeWorkshop(raw) {
+      if (!raw) return { doc: { activeProjectId: null, projects: [] }, wasMigrated: false };
+      // Already new format
+      if (Array.isArray(raw.projects)) {
+        return { doc: raw, wasMigrated: false };
+      }
+      // Old format with title — convert to single project
+      if (raw.title || raw.description) {
+        const id = 'p_legacy_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        const project = {
+          id,
+          title: raw.title || 'İlk Proje',
+          description: raw.description || '',
+          coverImage: '',
+          createdTs: Date.now(),
+          archived: false,
+        };
+        return {
+          doc: { activeProjectId: id, projects: [project] },
+          wasMigrated: true,
+        };
+      }
+      // Empty workshop
+      return { doc: { activeProjectId: null, projects: [] }, wasMigrated: false };
+    },
+
+    // Get the active project for a player, or null if none
+    getActiveProject(playerName) {
+      const ws = this.workshops[playerName];
+      if (!ws || !ws.projects) return null;
+      const activeId = ws.activeProjectId;
+      if (!activeId) {
+        // Fallback to first non-archived project
+        return ws.projects.find(p => !p.archived) || ws.projects[0] || null;
+      }
+      return ws.projects.find(p => p.id === activeId) || null;
+    },
+
+    // Get the player's active project ID, or null
+    getActiveProjectId(playerName) {
+      const p = this.getActiveProject(playerName);
+      return p ? p.id : null;
+    },
+
+    // Get all non-archived projects for a player, sorted by recency
+    getActiveProjects(playerName) {
+      const ws = this.workshops[playerName];
+      if (!ws || !ws.projects) return [];
+      return ws.projects
+        .filter(p => !p.archived)
+        .sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
+    },
+
+    // Get archived projects (for "biten projeler" list)
+    getArchivedProjects(playerName) {
+      const ws = this.workshops[playerName];
+      if (!ws || !ws.projects) return [];
+      return ws.projects
+        .filter(p => p.archived)
+        .sort((a, b) => (b.completedTs || b.createdTs || 0) - (a.completedTs || a.createdTs || 0));
+    },
+
+    // Run migration for the current user if their workshop is in old format,
+    // and also stamp projectId onto all their existing devlogs and todos.
+    // This runs once at start, after data loads.
+    async _runMyMigrationIfNeeded() {
+      if (this._myMigrationDone) return;
+      if (!session) return;
+      const me = session.playerName;
+      const myWs = this.workshops[me];
+      if (!myWs) {
+        // No workshop yet — no migration needed
+        this._myMigrationDone = true;
+        return;
+      }
+      // Already in new format?
+      if (Array.isArray(myWs.projects)) {
+        this._myMigrationDone = true;
+        return;
+      }
+      // Has any data to migrate? (title or any existing devlogs/todos)
+      const hasOldProject = !!(myWs.title || myWs.description);
+      const myDevlogs = this.devlogs.filter(d => d.author === me);
+      const myTodos = (this.todos[me] && this.todos[me].items) || [];
+      const hasOrphanContent = myDevlogs.some(d => !d.projectId) || myTodos.some(t => !t.projectId);
+
+      if (!hasOldProject && !hasOrphanContent) {
+        this._myMigrationDone = true;
+        return;
+      }
+
+      console.log('[Workshop] Running migration for', me);
+      try {
+        const { doc: migratedDoc, wasMigrated } = this._normalizeWorkshop(myWs);
+        // If user has no project at all but does have orphan devlog/todo,
+        // create a default project so we can attach them
+        if (migratedDoc.projects.length === 0 && hasOrphanContent) {
+          const id = 'p_legacy_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+          migratedDoc.projects.push({
+            id,
+            title: 'İlk Proje',
+            description: '',
+            coverImage: '',
+            createdTs: Date.now(),
+            archived: false,
+          });
+          migratedDoc.activeProjectId = id;
+        }
+        const targetProjectId = migratedDoc.activeProjectId || (migratedDoc.projects[0] && migratedDoc.projects[0].id);
+
+        const { db, fs } = window.__broop;
+
+        // 1. Write the migrated workshop doc
+        if (wasMigrated || migratedDoc.projects.length > 0) {
+          const wsRef = fs.doc(db, 'broop_app', session.cloudId, 'workshops', me);
+          const enc = encrypt(JSON.stringify(migratedDoc), session.key);
+          await fs.setDoc(wsRef, { encrypted: enc, updatedAt: Date.now() });
+          // Update local state immediately so renders can use it
+          this.workshops[me] = migratedDoc;
+        }
+
+        // 2. Add projectId to my devlogs that don't have one
+        if (targetProjectId) {
+          for (const d of myDevlogs) {
+            if (d.projectId) continue;
+            const updated = { ...d, projectId: targetProjectId };
+            delete updated.id;
+            const dRef = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', d.id);
+            const enc = encrypt(JSON.stringify(updated), session.key);
+            try {
+              await fs.updateDoc(dRef, { encrypted: enc });
+            } catch (e) {
+              console.warn('[Migration] devlog update failed:', d.id, e);
+            }
+          }
+
+          // 3. Add projectId to my todo items that don't have one
+          if (myTodos.some(t => !t.projectId)) {
+            const newItems = myTodos.map(t => t.projectId ? t : { ...t, projectId: targetProjectId });
+            const tRef = fs.doc(db, 'broop_app', session.cloudId, 'todos', me);
+            const enc = encrypt(JSON.stringify({ items: newItems }), session.key);
+            try {
+              await fs.setDoc(tRef, { encrypted: enc, updatedAt: Date.now() });
+              this.todos[me] = { items: newItems };
+            } catch (e) {
+              console.warn('[Migration] todos update failed:', e);
+            }
+          }
+        }
+
+        this._myMigrationDone = true;
+        console.log('[Workshop] Migration complete for', me);
+      } catch (e) {
+        console.error('[Workshop] Migration failed:', e);
+        // Don't mark done — try again on next data load
+      }
     },
 
     setSubTab(tab) {
@@ -5629,15 +5814,21 @@
     renderMine() {
       if (!session) return;
       const me = session.playerName;
-      const mine = this.workshops[me];
+      // Get active project (handles both old and new format via getActiveProject)
+      const activeProject = this.getActiveProject(me);
+
+      // Filter devlogs to only those belonging to the active project (or no project — legacy)
       let myLogs = this.devlogs.filter(d => d.author === me);
+      if (activeProject) {
+        myLogs = myLogs.filter(d => !d.projectId || d.projectId === activeProject.id);
+      }
       if (this.mineFilterTag !== 'all') {
         myLogs = myLogs.filter(d => (d.tag || null) === this.mineFilterTag);
       }
 
       // Header card
       els.mineProject.innerHTML = '';
-      if (!mine || !mine.title) {
+      if (!activeProject) {
         const empty = document.createElement('div');
         empty.className = 'project-card';
         empty.innerHTML = `
@@ -5655,7 +5846,7 @@
         titleRow.className = 'project-title-row';
         const title = document.createElement('div');
         title.className = 'project-title';
-        title.textContent = mine.title;
+        title.textContent = activeProject.title;
         const editBtn = document.createElement('button');
         editBtn.className = 'project-edit-btn';
         editBtn.textContent = 'DÜZENLE';
@@ -5663,10 +5854,10 @@
         titleRow.appendChild(title);
         titleRow.appendChild(editBtn);
         card.appendChild(titleRow);
-        if (mine.description) {
+        if (activeProject.description) {
           const desc = document.createElement('div');
           desc.className = 'project-desc';
-          desc.textContent = mine.description;
+          desc.textContent = activeProject.description;
           card.appendChild(desc);
         }
         els.mineProject.appendChild(card);
@@ -5710,14 +5901,17 @@
 
       // Render selected member's project
       const target = this.selectedTheirsMember;
-      const ws = this.workshops[target];
+      const targetActive = this.getActiveProject(target);
       let targetLogs = this.devlogs.filter(d => d.author === target);
+      if (targetActive) {
+        targetLogs = targetLogs.filter(d => !d.projectId || d.projectId === targetActive.id);
+      }
       if (this.theirsFilterTag !== 'all') {
         targetLogs = targetLogs.filter(d => (d.tag || null) === this.theirsFilterTag);
       }
 
       els.theirsProject.innerHTML = '';
-      if (!ws || !ws.title) {
+      if (!targetActive) {
         const card = document.createElement('div');
         card.className = 'project-card';
         card.innerHTML = `<div class="project-empty"><div class="project-empty-text">${target} henüz proje eklemedi</div></div>`;
@@ -5727,16 +5921,16 @@
         card.className = 'project-card';
         const t = document.createElement('div');
         t.className = 'project-title';
-        t.textContent = ws.title;
+        t.textContent = targetActive.title;
         const author = document.createElement('div');
         author.className = 'project-author';
         author.textContent = '@' + target;
         card.appendChild(t);
         card.appendChild(author);
-        if (ws.description) {
+        if (targetActive.description) {
           const desc = document.createElement('div');
           desc.className = 'project-desc';
-          desc.textContent = ws.description;
+          desc.textContent = targetActive.description;
           card.appendChild(desc);
         }
         els.theirsProject.appendChild(card);
@@ -6053,7 +6247,13 @@
     _renderTodoCols(container, countsEl, ownerName, isOwn) {
       if (!container) return;
       const data = this.todos[ownerName] || { items: [] };
-      const items = data.items || [];
+      let items = data.items || [];
+
+      // Filter to only items belonging to the active project (or no projectId — legacy)
+      const activeProject = this.getActiveProject(ownerName);
+      if (activeProject) {
+        items = items.filter(it => !it.projectId || it.projectId === activeProject.id);
+      }
 
       // Has this container been rendered before? If yes, suppress animations
       // on re-renders to avoid flickering when the other user makes changes.
@@ -6454,16 +6654,18 @@
       text = (text || '').trim();
       if (!text) return;
       const now = Date.now();
+      // Stamp with the user's currently active project so it shows up
+      // in the right project view. May be null if user has no project yet —
+      // we still allow creation; the item will be visible everywhere until tagged.
+      const projectId = this.getActiveProjectId(session.playerName);
       const item = {
         id: 't_' + now + '_' + Math.random().toString(36).slice(2, 7),
         text,
         status: 'todo',
+        projectId,
         createdTs: now,
         updatedTs: now,
       };
-      // Both optimistic and transaction mutators just append the new item.
-      // The transaction sees the LATEST server items and appends to that,
-      // so concurrent additions are preserved.
       const append = (items) => [...items, item];
       await this._runTodoAction(append, append);
     },
@@ -6688,6 +6890,8 @@
         author: session.playerName,
         text,
         ts,
+        // Stamp with active project so devlog appears in the right project view
+        projectId: this.getActiveProjectId(session.playerName),
         tag: this.composerTag,  // may be null
         comments: [],
         // Help request: 'open' if user toggled it, otherwise null. Can later
@@ -6792,9 +6996,9 @@
     // ---- Project modal ----
     openProjectModal() {
       const me = session.playerName;
-      const mine = this.workshops[me] || { title: '', description: '' };
-      els.pfTitle.value = mine.title || '';
-      els.pfDesc.value = mine.description || '';
+      const active = this.getActiveProject(me);
+      els.pfTitle.value = (active && active.title) || '';
+      els.pfDesc.value = (active && active.description) || '';
       els.projectFormError.textContent = '';
       els.projectModal.classList.remove('hidden');
       setTimeout(() => els.pfTitle.focus(), 80);
@@ -6814,7 +7018,37 @@
       try {
         const { db, fs } = window.__broop;
         const ref = fs.doc(db, 'broop_app', session.cloudId, 'workshops', session.playerName);
-        const encrypted = encrypt(JSON.stringify({ title, description: desc }), session.key);
+        const me = session.playerName;
+        // Build new-format doc, using current state as baseline
+        const current = this.workshops[me];
+        const { doc: baseDoc } = this._normalizeWorkshop(current);
+        let newDoc = { ...baseDoc, projects: [...baseDoc.projects] };
+
+        const activeId = newDoc.activeProjectId;
+        const activeIdx = activeId ? newDoc.projects.findIndex(p => p.id === activeId) : -1;
+
+        if (activeIdx >= 0) {
+          // Edit existing active project
+          newDoc.projects[activeIdx] = {
+            ...newDoc.projects[activeIdx],
+            title,
+            description: desc,
+          };
+        } else {
+          // No active project — create one
+          const id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+          newDoc.projects.push({
+            id,
+            title,
+            description: desc,
+            coverImage: '',
+            createdTs: Date.now(),
+            archived: false,
+          });
+          newDoc.activeProjectId = id;
+        }
+
+        const encrypted = encrypt(JSON.stringify(newDoc), session.key);
         await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
         this.closeProjectModal();
       } catch (e) {
