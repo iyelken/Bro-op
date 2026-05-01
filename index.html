@@ -1884,6 +1884,171 @@
     border-color: var(--accent-workshop);
   }
 
+  /* ============================================
+     PROJECT LIST MODAL (all projects + archive)
+     ============================================ */
+  .project-list-card {
+    max-width: 540px;
+    width: 100%;
+  }
+  .project-list-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-deep);
+  }
+  .pl-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pl-tab:hover { color: var(--text-primary); }
+  .pl-tab.active {
+    color: var(--accent-workshop);
+    border-bottom-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.06);
+  }
+
+  .project-list-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .pl-empty {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 14px;
+  }
+
+  /* Project row in the list */
+  .pl-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .pl-row:hover {
+    border-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.04);
+  }
+  .pl-row.active {
+    border-color: var(--accent-workshop);
+    background: rgba(184, 85, 255, 0.1);
+  }
+  .pl-row.active .pl-row-title {
+    color: var(--accent-workshop);
+  }
+
+  .pl-row-cover {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .pl-row-cover.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+
+  .pl-row-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .pl-row-title {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+  }
+  .pl-row-meta {
+    font-family: var(--font-crt);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .pl-row-active-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    background: rgba(184, 85, 255, 0.2);
+    color: var(--accent-workshop);
+    border: 1px solid var(--accent-workshop);
+    border-radius: 2px;
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .pl-row-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .pl-action-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    padding: 5px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .pl-action-btn:hover {
+    color: var(--accent-workshop);
+    border-color: var(--accent-workshop);
+  }
+  .pl-action-btn.danger:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(255, 56, 96, 0.06);
+  }
+
+  /* Project list "open" button shown in tabs row */
+  .project-tab.list-btn {
+    padding: 7px 10px;
+    color: var(--text-muted);
+  }
+  .project-tab.list-btn:hover {
+    color: var(--accent-workshop);
+  }
+
+  /* ============================================
+     END PROJECT LIST MODAL
+     ============================================ */
+
   /* "+ YENİ PROJE" button */
   .project-tab.add-new {
     background: transparent;
@@ -3667,7 +3832,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0-alpha7</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0</span></div>
         </div>
 
         <div class="info-card">
@@ -3819,6 +3984,26 @@
           <div class="modal-footer">
             <button class="ws-btn ghost" id="pfCancelBtn">İPTAL</button>
             <button class="ws-btn primary" id="pfSaveBtn">KAYDET</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: project list (all projects + archive) -->
+      <div class="modal-backdrop hidden" id="projectListModal">
+        <div class="modal-card project-list-card">
+          <div class="modal-header">
+            <div class="modal-title">PROJELERİM</div>
+            <div class="modal-subtitle">tüm projelerin ve arşiv</div>
+          </div>
+          <div class="project-list-tabs">
+            <button class="pl-tab active" data-pl-tab="active" type="button">AKTİF</button>
+            <button class="pl-tab" data-pl-tab="archive" type="button">BİTEN</button>
+          </div>
+          <div class="modal-body">
+            <div class="project-list-content" id="projectListContent"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="ws-btn ghost" id="plCloseBtn">KAPAT</button>
           </div>
         </div>
       </div>
@@ -4176,6 +4361,10 @@
     pfCancelBtn: $('#pfCancelBtn'),
     pfSaveBtn: $('#pfSaveBtn'),
     projectFormError: $('#projectFormError'),
+    // Project list modal (all + archive)
+    projectListModal: $('#projectListModal'),
+    projectListContent: $('#projectListContent'),
+    plCloseBtn: $('#plCloseBtn'),
     resourceModal: $('#resourceModal'),
     rfTitle: $('#rfTitle'),
     rfUrl: $('#rfUrl'),
@@ -6229,6 +6418,15 @@
         add.title = 'Yeni proje aç';
         add.addEventListener('click', () => this.openNewProjectModal());
         container.appendChild(add);
+
+        // List/archive button — always shown so user can access archive
+        const listBtn = document.createElement('button');
+        listBtn.type = 'button';
+        listBtn.className = 'project-tab list-btn';
+        listBtn.title = 'Tüm projeler ve arşiv';
+        listBtn.textContent = '📂';
+        listBtn.addEventListener('click', () => this.openProjectListModal());
+        container.appendChild(listBtn);
       }
     },
 
@@ -6396,14 +6594,180 @@
       }
     },
 
-    // Stub for project list overflow modal — implemented in stage 5.
-    // For now, show a simple alert.
+    // Project list modal — shows all active projects + archived ones in two tabs
     openProjectListModal() {
-      // TODO: build a proper modal listing all projects
+      this._plActiveTab = 'active';
+      this._renderProjectList();
+      els.projectListModal.classList.remove('hidden');
+    },
+
+    closeProjectListModal() {
+      els.projectListModal.classList.add('hidden');
+    },
+
+    // Switch the project list modal tab
+    setProjectListTab(tab) {
+      this._plActiveTab = tab;
+      // Update tab pills
+      document.querySelectorAll('.pl-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.plTab === tab);
+      });
+      this._renderProjectList();
+    },
+
+    // Render the list of projects (active or archive depending on current tab)
+    _renderProjectList() {
+      if (!session || !els.projectListContent) return;
       const me = session.playerName;
-      const all = this.getActiveProjects(me);
-      const names = all.map((p, i) => (i + 1) + '. ' + p.title).join('\n');
-      alert('Tüm projelerin:\n\n' + names + '\n\n(Tüm projeler ekranı yakında geliyor)');
+      const tab = this._plActiveTab || 'active';
+      const projects = tab === 'active'
+        ? this.getActiveProjects(me)
+        : this.getArchivedProjects(me);
+
+      const container = els.projectListContent;
+      container.innerHTML = '';
+
+      if (projects.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'pl-empty';
+        empty.textContent = tab === 'active'
+          ? '> hiç aktif projen yok'
+          : '> arşivde proje yok';
+        container.appendChild(empty);
+        return;
+      }
+
+      const activeId = (this.workshops[me] && this.workshops[me].activeProjectId) || null;
+
+      for (const p of projects) {
+        const row = document.createElement('div');
+        row.className = 'pl-row' + (p.id === activeId && tab === 'active' ? ' active' : '');
+
+        // Cover thumbnail
+        const cover = document.createElement('div');
+        if (p.coverImage) {
+          cover.className = 'pl-row-cover';
+          cover.style.backgroundImage = 'url(' + p.coverImage.replace(/"/g, '%22') + ')';
+        } else {
+          cover.className = 'pl-row-cover empty';
+          cover.textContent = '📁';
+        }
+        row.appendChild(cover);
+
+        // Info (title + meta)
+        const info = document.createElement('div');
+        info.className = 'pl-row-info';
+        const title = document.createElement('div');
+        title.className = 'pl-row-title';
+        title.textContent = p.title;
+        if (p.id === activeId && tab === 'active') {
+          const badge = document.createElement('span');
+          badge.className = 'pl-row-active-badge';
+          badge.textContent = 'AKTİF';
+          title.appendChild(badge);
+        }
+        info.appendChild(title);
+
+        const meta = document.createElement('div');
+        meta.className = 'pl-row-meta';
+        if (tab === 'archive' && p.completedTs) {
+          meta.textContent = 'arşivlendi: ' + this._formatDate(p.completedTs);
+        } else if (p.createdTs) {
+          meta.textContent = 'açıldı: ' + this._formatDate(p.createdTs);
+        }
+        info.appendChild(meta);
+        row.appendChild(info);
+
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'pl-row-actions';
+        if (tab === 'active') {
+          // Switch to this project (only if not already active)
+          if (p.id !== activeId) {
+            const switchBtn = document.createElement('button');
+            switchBtn.className = 'pl-action-btn';
+            switchBtn.type = 'button';
+            switchBtn.textContent = 'AÇ';
+            switchBtn.addEventListener('click', () => {
+              this.switchProject(p.id);
+              this.closeProjectListModal();
+            });
+            actions.appendChild(switchBtn);
+          }
+        } else {
+          // Archive tab: unarchive + delete
+          const unarchiveBtn = document.createElement('button');
+          unarchiveBtn.className = 'pl-action-btn';
+          unarchiveBtn.type = 'button';
+          unarchiveBtn.textContent = '⤴ GERİ AÇ';
+          unarchiveBtn.addEventListener('click', () => {
+            this.unarchiveProject(p.id);
+          });
+          actions.appendChild(unarchiveBtn);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'pl-action-btn danger';
+          delBtn.type = 'button';
+          delBtn.textContent = '🗑';
+          delBtn.title = 'Kalıcı sil';
+          delBtn.addEventListener('click', () => {
+            this.deleteProject(p.id);
+          });
+          actions.appendChild(delBtn);
+        }
+        row.appendChild(actions);
+
+        // Click on row body (not actions) also switches if active tab
+        if (tab === 'active' && p.id !== activeId) {
+          info.style.cursor = 'pointer';
+          cover.style.cursor = 'pointer';
+          const onRowClick = () => {
+            this.switchProject(p.id);
+            this.closeProjectListModal();
+          };
+          info.addEventListener('click', onRowClick);
+          cover.addEventListener('click', onRowClick);
+        }
+
+        container.appendChild(row);
+      }
+    },
+
+    // Format timestamp as Turkish-locale short date
+    _formatDate(ts) {
+      try {
+        const d = new Date(ts);
+        return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+      } catch { return ''; }
+    },
+
+    // Restore an archived project to active state
+    async unarchiveProject(projectId) {
+      if (!session || !cloudReady()) return;
+      const me = session.playerName;
+      const ws = this.workshops[me];
+      if (!ws || !ws.projects) return;
+      const project = ws.projects.find(p => p.id === projectId);
+      if (!project) return;
+
+      try {
+        const newProjects = ws.projects.map(p =>
+          p.id === projectId
+            ? { ...p, archived: false, completedTs: null }
+            : p
+        );
+        // Make this the active project
+        const newDoc = { ...ws, projects: newProjects, activeProjectId: projectId };
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'workshops', me);
+        const enc = encrypt(JSON.stringify(newDoc), session.key);
+        await fs.setDoc(ref, { encrypted: enc, updatedAt: Date.now() });
+        // Re-render the list (will now show in active tab)
+        this._renderProjectList();
+      } catch (e) {
+        console.error('[Workshop] unarchiveProject failed:', e);
+        alert('Geri açma başarısız: ' + (e.message || e));
+      }
     },
 
     // ============================================
@@ -8702,6 +9066,21 @@
   if (els.pfCoverClearBtn) {
     els.pfCoverClearBtn.addEventListener('click', () => Workshop.clearCoverImage());
   }
+
+  // Project list modal
+  if (els.plCloseBtn) {
+    els.plCloseBtn.addEventListener('click', () => Workshop.closeProjectListModal());
+  }
+  // Click outside modal card closes it
+  if (els.projectListModal) {
+    els.projectListModal.addEventListener('click', (e) => {
+      if (e.target === els.projectListModal) Workshop.closeProjectListModal();
+    });
+  }
+  // Tab switching
+  document.querySelectorAll('.pl-tab').forEach(t => {
+    t.addEventListener('click', () => Workshop.setProjectListTab(t.dataset.plTab));
+  });
   els.projectModal.addEventListener('click', (e) => {
     if (e.target === els.projectModal) Workshop.closeProjectModal();
   });
