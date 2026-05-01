@@ -242,12 +242,12 @@
   }
   .mode-tab {
     flex: 1;
-    padding: 10px;
+    padding: 10px 4px;
     background: transparent;
     border: none;
     color: var(--text-secondary);
     font-family: var(--font-pixel);
-    font-size: 9px;
+    font-size: 8px;
     letter-spacing: 1px;
     cursor: pointer;
     transition: all 0.2s;
@@ -257,6 +257,11 @@
     color: var(--bg-base);
     text-shadow: none;
   }
+
+  /* Conditional field visibility (driven by .login-card[data-mode]) */
+  .login-card[data-mode="login"] .field[data-show-on]:not([data-show-on*="login"]) { display: none; }
+  .login-card[data-mode="join"] .field[data-show-on]:not([data-show-on*="join"]) { display: none; }
+  .login-card[data-mode="signup"] .field[data-show-on]:not([data-show-on*="signup"]) { display: none; }
 
   .field {
     margin-bottom: 16px;
@@ -1012,6 +1017,22 @@
     position: relative;
   }
   .msg.first-of-group { margin-top: 8px; }
+  /* When showing author label, stack vertically */
+  .msg.theirs.first-of-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Author label above first message in a group from someone else */
+  .msg-author {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    padding: 0 4px;
+    text-transform: lowercase;
+  }
+  .msg.mine .msg-author { display: none; }
   .msg.mine { align-self: flex-end; justify-content: flex-end; }
   .msg.theirs { align-self: flex-start; justify-content: flex-start; }
   @keyframes msgIn {
@@ -1505,6 +1526,36 @@
     display: flex;
     gap: 6px;
   }
+
+  .target-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .target-pill {
+    padding: 8px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 18px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .target-pill.active {
+    background: rgba(255, 176, 0, 0.16);
+    border-color: var(--accent-quest);
+    color: var(--accent-quest);
+    box-shadow: 0 0 8px rgba(255, 176, 0, 0.2);
+  }
+  .target-pill[data-target="@everyone"].active {
+    background: rgba(184, 85, 255, 0.16);
+    border-color: var(--accent-workshop);
+    color: var(--accent-workshop);
+    box-shadow: 0 0 8px rgba(184, 85, 255, 0.2);
+  }
   .difficulty-btn {
     flex: 1;
     padding: 10px 8px;
@@ -1633,9 +1684,11 @@
       <div class="logo-tagline">player 2 connected</div>
     </div>
 
-    <div class="login-card">
+    <div class="login-card" id="loginCard" data-mode="login">
+      <div class="mode-tabs">
       <div class="mode-tabs">
         <button class="mode-tab active" data-mode="login">GİRİŞ</button>
+        <button class="mode-tab" data-mode="join">KATIL</button>
         <button class="mode-tab" data-mode="signup">YENİ ODA</button>
       </div>
 
@@ -1644,19 +1697,25 @@
       <div class="field">
         <label>Bulut ID</label>
         <input type="text" id="cloudId" placeholder="ortak-oda-adı" autocomplete="off" autocapitalize="none" spellcheck="false" />
-        <div class="field-hint">İkinizin de aynı ID'yi kullanması gerekir.</div>
+        <div class="field-hint">Odanın ortak adı.</div>
       </div>
 
-      <div class="field">
-        <label>Şifre</label>
-        <input type="password" id="cloudPass" placeholder="••••••••" autocomplete="off" />
-        <div class="field-hint">Verileriniz bu şifreyle uçtan uca şifrelenir.</div>
+      <div class="field" data-show-on="join,signup">
+        <label>Oda Davet Şifresi</label>
+        <input type="password" id="roomInvite" placeholder="••••••••" autocomplete="off" />
+        <div class="field-hint" id="inviteHint">Odaya katılmak için herkesin bilmesi gereken şifre.</div>
       </div>
 
       <div class="field">
         <label>Oyuncu Adın</label>
-        <input type="text" id="playerName" placeholder="Sen kimsin?" autocomplete="off" maxlength="20" />
-        <div class="field-hint">Bu cihazda sen olarak görüneceksin.</div>
+        <input type="text" id="playerName" placeholder="ahmet" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20" />
+        <div class="field-hint">Senin uygulamadaki adın. Küçük harf önerilir.</div>
+      </div>
+
+      <div class="field">
+        <label>Kişisel Şifren</label>
+        <input type="password" id="userPass" placeholder="••••••••" autocomplete="off" />
+        <div class="field-hint">Sadece sana ait. Diğer üyeler bilmek zorunda değil.</div>
       </div>
 
       <button class="btn-primary" id="loginBtn">▶ BAĞLAN</button>
@@ -1809,7 +1868,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.3.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.4.0</span></div>
         </div>
       </div>
 
@@ -1997,11 +2056,12 @@
   // ============================================
   // ENCRYPTION HELPERS (CryptoJS AES-256)
   // ============================================
-  // Used to (1) derive a deterministic room key from Bulut ID + password,
-  // (2) encrypt/decrypt payloads written to Firestore.
-  // In v0.1 we don't write data yet — these are scaffolded for v0.2+.
-  function deriveKey(cloudId, password) {
-    const salt = CryptoJS.SHA256('broop:' + cloudId).toString();
+  // Crypto helpers
+  // - deriveKey(salt, password): turns a password into a stable key using PBKDF2
+  // - encrypt/decrypt: AES-256 (CBC) with the given key
+  // - makeVerifier/checkVerifier: prove we know a key without revealing it
+  // - genRoomKey: generate a random key for the room (the master encryption key)
+  function deriveKey(salt, password) {
     return CryptoJS.PBKDF2(password, salt, {
       keySize: 256 / 32,
       iterations: 10000,
@@ -2021,15 +2081,22 @@
     }
   }
 
-  // Make a "verifier" — we encrypt a known token with the derived key,
-  // store it on the room. On future logins, if we can't decrypt the verifier,
-  // password is wrong.
   function makeVerifier(key) {
     return encrypt('BROOP_OK', key);
   }
   function checkVerifier(verifier, key) {
     return decrypt(verifier, key) === 'BROOP_OK';
   }
+
+  // Generate a random 256-bit room key (hex)
+  function genRoomKey() {
+    return CryptoJS.lib.WordArray.random(32).toString();
+  }
+
+  // Salt builders — different scopes use different salts
+  function roomSalt(cloudId) { return CryptoJS.SHA256('broop:room:' + cloudId).toString(); }
+  function userSalt(cloudId, username) { return CryptoJS.SHA256('broop:user:' + cloudId + ':' + username).toString(); }
+
 
   // ============================================
   // SESSION (localStorage — persistent login)
@@ -2048,27 +2115,6 @@
   };
 
   // ============================================
-  // ROOM REGISTRY (local for v0.1; will move to Firestore in v0.2)
-  // ============================================
-  // Stores { [cloudId]: verifier } so subsequent logins can validate password.
-  const Rooms = {
-    KEY: 'broop_rooms_v1',
-    all() {
-      try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; }
-      catch { return {}; }
-    },
-    save(rooms) {
-      localStorage.setItem(this.KEY, JSON.stringify(rooms));
-    },
-    get(cloudId) { return this.all()[cloudId]; },
-    set(cloudId, verifier) {
-      const r = this.all();
-      r[cloudId] = verifier;
-      this.save(r);
-    }
-  };
-
-  // ============================================
   // DOM REFS
   // ============================================
   const $ = (sel) => document.querySelector(sel);
@@ -2079,11 +2125,14 @@
     app: $('#app'),
     loginScreen: $('#loginScreen'),
     mainShell: $('#mainShell'),
+    loginCard: $('#loginCard'),
     cloudId: $('#cloudId'),
-    cloudPass: $('#cloudPass'),
+    roomInvite: $('#roomInvite'),
     playerName: $('#playerName'),
+    userPass: $('#userPass'),
     loginBtn: $('#loginBtn'),
     loginError: $('#loginError'),
+    inviteHint: $('#inviteHint'),
     modeTabs: $$('.mode-tab'),
     navBtns: $$('.nav-btn'),
     panes: $$('.pane'),
@@ -2135,7 +2184,7 @@
   // ============================================
   // STATE
   // ============================================
-  let mode = 'login'; // 'login' or 'signup'
+  let mode = 'login'; // 'login' | 'join' | 'signup'
   let activeTab = 'profile';
   let session = null;
 
@@ -2145,7 +2194,15 @@
   function setMode(m) {
     mode = m;
     els.modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === m));
-    els.loginBtn.textContent = m === 'login' ? '▶ BAĞLAN' : '▶ ODAYI KUR';
+    els.loginCard.dataset.mode = m;
+    if (m === 'login') els.loginBtn.textContent = '▶ BAĞLAN';
+    else if (m === 'join') els.loginBtn.textContent = '▶ ODAYA KATIL';
+    else els.loginBtn.textContent = '▶ ODAYI KUR';
+    if (els.inviteHint) {
+      els.inviteHint.textContent = m === 'signup'
+        ? 'Yeni odan için bir davet şifresi belirle. Arkadaşlarına vereceksin.'
+        : 'Oda sahibinden öğrendiğin davet şifresi.';
+    }
     showError('');
   }
 
@@ -2153,20 +2210,18 @@
     els.loginError.textContent = msg || '';
   }
 
-  function validate(cloudId, password, playerName) {
-    if (!cloudId || cloudId.length < 3) return 'Bulut ID en az 3 karakter olmalı.';
-    if (!/^[a-zA-Z0-9_\-]+$/.test(cloudId)) return 'Bulut ID sadece harf/rakam/-/_ içerebilir.';
-    if (!password || password.length < 4) return 'Şifre en az 4 karakter olmalı.';
-    if (!playerName || playerName.length < 1) return 'Oyuncu adı boş olamaz.';
-    return null;
-  }
-
   // ============================================
-  // CLOUD (FIRESTORE) HELPERS
+  // CLOUD (FIRESTORE) HELPERS — multi-user version
   // ============================================
-  // Path: broop_app/{cloudId}
-  // Document shape: { verifier: <encrypted "BROOP_OK">, payload: <encrypted JSON>, updatedAt: <ms> }
-  // Lives alongside existing collections (bihter_app, ekmek-takip, users) — does not touch them.
+  // Layout:
+  //   broop_app/{cloudId}                    — room doc { verifier (invite), createdAt }
+  //   broop_app/{cloudId}/auth/{username}    — user auth { userVerifier, wrappedRoomKey }
+  //   broop_app/{cloudId}/messages/{...}     — chat
+  //   broop_app/{cloudId}/quests/{...}       — quests
+  //   broop_app/{cloudId}/players/{username} — XP/level
+  //
+  // session.key  = the room key (random, generated at signup, shared by all members)
+  // userKey      = derived from per-user password — wraps roomKey so each user can recover it
 
   function cloudReady() {
     return window.__broop && window.__broop.firebaseEnabled && window.__broop.db && window.__broop.fs;
@@ -2177,6 +2232,11 @@
     return fs.doc(db, 'broop_app', cloudId);
   }
 
+  function userAuthRef(cloudId, username) {
+    const { db, fs } = window.__broop;
+    return fs.doc(db, 'broop_app', cloudId, 'auth', username);
+  }
+
   async function cloudGetRoom(cloudId) {
     if (!cloudReady()) return null;
     const ref = roomDocRef(cloudId);
@@ -2184,82 +2244,151 @@
     return snap.exists() ? snap.data() : null;
   }
 
-  async function cloudCreateRoom(cloudId, key) {
-    if (!cloudReady()) return false;
-    const ref = roomDocRef(cloudId);
-    await window.__broop.fs.setDoc(ref, {
-      verifier: makeVerifier(key),
-      updatedAt: Date.now(),
-    });
-    return true;
+  async function cloudGetUserAuth(cloudId, username) {
+    if (!cloudReady()) return null;
+    const ref = userAuthRef(cloudId, username);
+    const snap = await window.__broop.fs.getDoc(ref);
+    return snap.exists() ? snap.data() : null;
   }
 
+  /**
+   * Three flows:
+   *   - "signup":  creates a new room. Generates room key. Sets invite verifier.
+   *               Creates this user's auth doc with the room key wrapped in their password.
+   *   - "join":    joins an existing room. Verifies invite password. Creates the user's
+   *               auth doc with the room key wrapped in their personal password.
+   *   - "login":   the user already has an auth doc. Use personal password to unwrap room key.
+   */
   async function handleLogin() {
     const cloudId = els.cloudId.value.trim().toLowerCase();
-    const password = els.cloudPass.value;
-    const playerName = els.playerName.value.trim();
+    const playerName = els.playerName.value.trim().toLowerCase();
+    const userPassword = els.userPass.value;
+    const invitePassword = els.roomInvite.value;
 
-    const err = validate(cloudId, password, playerName);
-    if (err) { showError(err); return; }
+    // Common validation
+    if (!cloudId || cloudId.length < 3) { showError('Bulut ID en az 3 karakter olmalı.'); return; }
+    if (!/^[a-z0-9_\-]+$/.test(cloudId)) { showError('Bulut ID sadece küçük harf, rakam, - ve _ içerebilir.'); return; }
+    if (!playerName || playerName.length < 1) { showError('Oyuncu adın boş olamaz.'); return; }
+    if (!/^[a-z0-9_\-]+$/.test(playerName)) { showError('Oyuncu adı sadece küçük harf, rakam, - ve _ içerebilir.'); return; }
+    if (!userPassword || userPassword.length < 4) { showError('Kişisel şifren en az 4 karakter olmalı.'); return; }
+    if ((mode === 'signup' || mode === 'join') && (!invitePassword || invitePassword.length < 4)) {
+      showError('Oda davet şifresi en az 4 karakter olmalı.');
+      return;
+    }
 
-    // Lock the button while we work
+    // Lock UI
     els.loginBtn.disabled = true;
     const originalLabel = els.loginBtn.textContent;
     els.loginBtn.textContent = '... BAĞLANIYOR ...';
     showError('');
 
     try {
-      const key = deriveKey(cloudId, password);
-      const useCloud = cloudReady();
-
-      // Look up the room: prefer cloud if available, fall back to local registry
-      let cloudRoom = null;
-      if (useCloud) {
-        try {
-          cloudRoom = await cloudGetRoom(cloudId);
-        } catch (e) {
-          console.warn('[Bro-op] Cloud lookup failed, using local:', e);
-        }
+      if (!cloudReady()) {
+        showError('Bulut bağlantısı yok. İnternet bağlantını kontrol et ve sayfayı yenile.');
+        return;
       }
-      const localVerifier = Rooms.get(cloudId);
-      const existsAnywhere = !!(cloudRoom || localVerifier);
+
+      const room = await cloudGetRoom(cloudId);
 
       if (mode === 'signup') {
-        if (existsAnywhere) {
-          showError('Bu Bulut ID zaten kullanılıyor. "GİRİŞ" sekmesinden gir.');
+        // ---- New room ----
+        if (room) {
+          showError('Bu Bulut ID zaten kullanılıyor. "KATIL" ile katılabilirsin.');
           return;
         }
-        // Create room in cloud + local
-        if (useCloud) {
-          await cloudCreateRoom(cloudId, key);
-        }
-        Rooms.set(cloudId, makeVerifier(key));
-      } else {
-        if (!existsAnywhere) {
-          showError('Bu odayı bulamadık. "YENİ ODA" sekmesinden oluşturabilirsin.');
-          return;
-        }
-        // Validate password against whichever verifier we have
-        const verifier = (cloudRoom && cloudRoom.verifier) || localVerifier;
-        if (!checkVerifier(verifier, key)) {
-          showError('Şifre yanlış. Tekrar dene.');
-          return;
-        }
-        // Sync local copy of the verifier so offline next time works
-        if (cloudRoom && cloudRoom.verifier && !localVerifier) {
-          Rooms.set(cloudId, cloudRoom.verifier);
-        }
-      }
+        // Generate a fresh room key
+        const roomKey = genRoomKey();
+        // Invite verifier (anyone joining must know the invite password)
+        const inviteKey = deriveKey(roomSalt(cloudId), invitePassword);
+        const roomVerifier = makeVerifier(inviteKey);
+        // Wrap room key with invite key so future joiners can unwrap with invite alone
+        const inviteWrappedKey = encrypt(roomKey, inviteKey);
+        // Wrap room key with this user's password
+        const userKey = deriveKey(userSalt(cloudId, playerName), userPassword);
+        const wrappedRoomKey = encrypt(roomKey, userKey);
+        const userVerifier = makeVerifier(userKey);
 
-      // All good — persist session
-      session = {
-        cloudId,
-        playerName,
-        key,
-        createdAt: Date.now(),
-      };
-      Session.set(session);
-      enterApp();
+        const { fs } = window.__broop;
+        // Write room doc + first user auth doc
+        await fs.setDoc(roomDocRef(cloudId), {
+          verifier: roomVerifier,
+          inviteWrappedKey,
+          createdAt: Date.now(),
+        });
+        await fs.setDoc(userAuthRef(cloudId, playerName), {
+          userVerifier,
+          wrappedRoomKey,
+          joinedAt: Date.now(),
+        });
+
+        finishLogin(cloudId, playerName, roomKey);
+
+      } else if (mode === 'join') {
+        // ---- Join an existing room ----
+        if (!room) {
+          showError('Böyle bir oda bulunamadı. "YENİ ODA" ile oluşturabilirsin.');
+          return;
+        }
+        const inviteKey = deriveKey(roomSalt(cloudId), invitePassword);
+        if (!checkVerifier(room.verifier, inviteKey)) {
+          showError('Oda davet şifresi yanlış.');
+          return;
+        }
+        // Check if username is already taken in this room
+        const existing = await cloudGetUserAuth(cloudId, playerName);
+        if (existing) {
+          showError('Bu oyuncu adı zaten kullanılıyor. "GİRİŞ" ile gir, ya da farklı bir ad seç.');
+          return;
+        }
+        // Need the room key — but to wrap it for ourselves we need to know it.
+        // Trick: anyone with invite password effectively gets full read access (rules already allow it).
+        // We can derive room key by reading any existing user's wrappedRoomKey is impossible (we don't have their pw).
+        // Solution: store an *invite-wrapped* copy of room key on the room doc.
+        if (!room.inviteWrappedKey) {
+          showError('Bu oda eski sürümde kurulmuş, davetle katılım desteklenmiyor. Oda sahibinden yardım iste.');
+          return;
+        }
+        const roomKey = decrypt(room.inviteWrappedKey, inviteKey);
+        if (!roomKey) {
+          showError('Oda anahtarı çözülemedi. Davet şifresi yanlış olabilir.');
+          return;
+        }
+        // Now wrap room key with our own personal password
+        const userKey = deriveKey(userSalt(cloudId, playerName), userPassword);
+        const wrappedRoomKey = encrypt(roomKey, userKey);
+        const userVerifier = makeVerifier(userKey);
+
+        await window.__broop.fs.setDoc(userAuthRef(cloudId, playerName), {
+          userVerifier,
+          wrappedRoomKey,
+          joinedAt: Date.now(),
+        });
+
+        finishLogin(cloudId, playerName, roomKey);
+
+      } else {
+        // ---- login: existing user ----
+        if (!room) {
+          showError('Böyle bir oda bulunamadı.');
+          return;
+        }
+        const userAuth = await cloudGetUserAuth(cloudId, playerName);
+        if (!userAuth) {
+          showError('Bu odada böyle bir oyuncu yok. "KATIL" sekmesinden katılabilirsin.');
+          return;
+        }
+        const userKey = deriveKey(userSalt(cloudId, playerName), userPassword);
+        if (!checkVerifier(userAuth.userVerifier, userKey)) {
+          showError('Kişisel şifren yanlış.');
+          return;
+        }
+        const roomKey = decrypt(userAuth.wrappedRoomKey, userKey);
+        if (!roomKey) {
+          showError('Oda anahtarı çözülemedi.');
+          return;
+        }
+        finishLogin(cloudId, playerName, roomKey);
+      }
 
     } catch (e) {
       console.error('[Bro-op] Login error:', e);
@@ -2268,6 +2397,17 @@
       els.loginBtn.disabled = false;
       els.loginBtn.textContent = originalLabel;
     }
+  }
+
+  function finishLogin(cloudId, playerName, roomKey) {
+    session = {
+      cloudId,
+      playerName,
+      key: roomKey,         // room key — used to encrypt all room data
+      createdAt: Date.now(),
+    };
+    Session.set(session);
+    enterApp();
   }
 
   // ============================================
@@ -2299,7 +2439,8 @@
     session = null;
     els.mainShell.classList.add('hidden');
     els.loginScreen.classList.remove('hidden');
-    els.cloudPass.value = '';
+    if (els.userPass) els.userPass.value = '';
+    if (els.roomInvite) els.roomInvite.value = '';
     showError('');
   }
 
@@ -2642,6 +2783,15 @@
         wrap.classList.add('search-active-msg');
       }
 
+      // Author label — show only for "theirs" + first of group (and not deleted)
+      if (!m.isMine && m.firstOfGroup && !m.deleted && m.author) {
+        const author = document.createElement('div');
+        author.className = 'msg-author';
+        author.textContent = m.author;
+        author.style.color = this.colorForAuthor(m.author);
+        wrap.appendChild(author);
+      }
+
       const bubble = document.createElement('div');
       bubble.className = 'msg-bubble';
       if (m.deleted) {
@@ -2732,6 +2882,27 @@
 
     escapeHtml(s) {
       return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    },
+
+    /**
+     * Generate a stable color for a given author name. Different authors get
+     * different distinct colors so chat scanning is fast in 3+ person rooms.
+     */
+    colorForAuthor(name) {
+      const palette = [
+        '#ffb000', // amber (Quest)
+        '#00ff7f', // green (Match)
+        '#b855ff', // purple (Workshop)
+        '#ff8a3d', // orange
+        '#5ad6ff', // sky
+        '#ff5ab8', // pink
+        '#ffe066', // yellow
+      ];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+      }
+      return palette[Math.abs(hash) % palette.length];
     },
 
     // ---- Search ----
@@ -2851,14 +3022,20 @@
 
   const Profile = {
     unsubscribe: null,
-    me: null,            // { xp, level, completedQuests, badges, joinedAt }
-    them: null,          // partner's stats (if their doc exists)
-    partnerName: null,
+    me: null,             // my own stats
+    members: {},          // { [username]: { xp, level, completedQuests, badges, joinedAt } }
 
     xpForNextLevel(level) {
-      // Level n -> n+1 requires (level+1) * 100 XP total threshold from start of level
-      // Simple linear: level 1 needs 100, level 2 needs 200, etc.
+      // Level n -> n+1 requires n * 100 XP
       return level * 100;
+    },
+
+    /** All other members (not me). Returns array of {name, ...stats}. */
+    others() {
+      if (!session) return [];
+      return Object.entries(this.members)
+        .filter(([n]) => n !== session.playerName)
+        .map(([n, s]) => ({ name: n, ...s }));
     },
 
     async start() {
@@ -2876,21 +3053,20 @@
       const playersCol = fs.collection(db, 'broop_app', session.cloudId, 'players');
       if (this.unsubscribe) this.unsubscribe();
       this.unsubscribe = fs.onSnapshot(playersCol, (snap) => {
+        const next = {};
         snap.forEach(d => {
           const data = d.data();
           const raw = decrypt(data.encrypted || '', session.key);
           if (!raw) return;
           try {
-            const parsed = JSON.parse(raw);
-            if (d.id === session.playerName) {
-              this.me = parsed;
-            } else {
-              this.them = parsed;
-              this.partnerName = d.id;
-            }
+            next[d.id] = JSON.parse(raw);
           } catch {}
         });
+        this.members = next;
+        this.me = next[session.playerName] || this.me;
         this.renderProfile();
+        // Quests UI may show member list — update it
+        if (typeof Quests !== 'undefined' && Quests.refreshMembersUI) Quests.refreshMembersUI();
       }, (err) => console.warn('[Profile] snapshot error:', err));
     },
 
@@ -2900,8 +3076,7 @@
         this.unsubscribe = null;
       }
       this.me = null;
-      this.them = null;
-      this.partnerName = null;
+      this.members = {};
     },
 
     async writeMine(data) {
@@ -3030,31 +3205,53 @@
       this.closeModal();
     },
 
-    async createQuest(title, description, difficulty) {
+    /**
+     * Create one or more quests.
+     * @param {string[]} toAuthors — usernames to assign to. If contains '@everyone',
+     *   it expands to all current room members except the giver.
+     */
+    async createQuest(title, description, difficulty, toAuthors) {
       if (!cloudReady() || !session) return;
       const xp = { easy: 10, medium: 25, hard: 50 }[difficulty] || 25;
-      const partner = Profile.partnerName;
-      if (!partner) {
-        alert('Henüz arkadaşın bu odaya katılmamış. Aynı oda + şifreyle giriş yapması gerek.');
+
+      // Expand @everyone to all members except me
+      let targets = [];
+      if (toAuthors.includes('@everyone')) {
+        targets = Object.keys(Profile.members).filter(n => n !== session.playerName);
+      } else {
+        targets = toAuthors.filter(n => n && n !== session.playerName);
+      }
+      if (targets.length === 0) {
+        alert('Hedef yok. Odaya başka biri katılmadan görev veremezsin.');
         return;
       }
-      const now = Date.now();
-      const payload = {
-        title: title.trim(),
-        description: (description || '').trim(),
-        difficulty,
-        xp,
-        fromAuthor: session.playerName,
-        toAuthor: partner,
-        status: QUEST_STATUSES.PENDING,
-        createdTs: now,
-        updatedTs: now,
-        history: [{ ts: now, action: 'created', by: session.playerName }],
-      };
+
       const { db, fs } = window.__broop;
       const ref = fs.collection(db, 'broop_app', session.cloudId, 'quests');
-      const encrypted = encrypt(JSON.stringify(payload), session.key);
-      await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+      const now = Date.now();
+      // One doc per target — keeps tracking per-user simple
+      // Group ID lets us visually link quests sent together
+      const groupId = 'g_' + now + '_' + Math.random().toString(36).slice(2, 8);
+      const isEveryone = toAuthors.includes('@everyone');
+
+      for (const target of targets) {
+        const payload = {
+          title: title.trim(),
+          description: (description || '').trim(),
+          difficulty,
+          xp,
+          fromAuthor: session.playerName,
+          toAuthor: target,
+          groupId,
+          isEveryone,
+          status: QUEST_STATUSES.PENDING,
+          createdTs: now,
+          updatedTs: now,
+          history: [{ ts: now, action: 'created', by: session.playerName }],
+        };
+        const encrypted = encrypt(JSON.stringify(payload), session.key);
+        await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+      }
     },
 
     async updateQuestStatus(questId, newStatus, action) {
@@ -3339,20 +3536,31 @@
 
     // ---- Modal: new quest form ----
     openNewModal() {
-      const partner = Profile.partnerName;
       this.modalMode = 'new';
       this.formDifficulty = 'medium';
+      this.formTargets = ['@everyone']; // default
 
+      const others = Profile.others();
       els.questModalTitle.textContent = 'YENİ GÖREV';
-      els.questModalSubtitle.textContent = partner
-        ? (partner + '\'a ne yapmasını istersin?')
-        : 'arkadaşın henüz odaya bağlanmadı';
+      els.questModalSubtitle.textContent = others.length === 0
+        ? 'odada başka biri yok henüz'
+        : 'kime bir görev veriyorsun?';
 
       els.questModalBody.innerHTML = '';
       const errEl = document.createElement('div');
       errEl.className = 'modal-error';
       errEl.id = 'questFormError';
       els.questModalBody.appendChild(errEl);
+
+      // Target picker
+      const targetField = document.createElement('div');
+      targetField.className = 'field';
+      targetField.innerHTML = '<label>Kime?</label>';
+      const targetRow = document.createElement('div');
+      targetRow.className = 'target-row';
+      targetField.appendChild(targetRow);
+      this._renderTargetButtons(targetRow);
+      els.questModalBody.appendChild(targetField);
 
       // Title
       const titleField = document.createElement('div');
@@ -3414,6 +3622,61 @@
       }, 80);
     },
 
+    _renderTargetButtons(container) {
+      container.innerHTML = '';
+      const others = Profile.others();
+
+      // "Herkes" pill
+      const allBtn = document.createElement('button');
+      allBtn.type = 'button';
+      allBtn.className = 'target-pill' + (this.formTargets.includes('@everyone') ? ' active' : '');
+      allBtn.dataset.target = '@everyone';
+      allBtn.textContent = 'HERKES';
+      allBtn.addEventListener('click', () => {
+        this.formTargets = ['@everyone'];
+        this._renderTargetButtons(container);
+      });
+      container.appendChild(allBtn);
+
+      // Individual member pills
+      for (const m of others) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        const isSelected = this.formTargets.includes(m.name);
+        b.className = 'target-pill' + (isSelected ? ' active' : '');
+        b.dataset.target = m.name;
+        b.textContent = m.name;
+        b.addEventListener('click', () => {
+          // Toggle individual; this turns off "@everyone"
+          let next = this.formTargets.filter(t => t !== '@everyone');
+          if (next.includes(m.name)) {
+            next = next.filter(t => t !== m.name);
+          } else {
+            next.push(m.name);
+          }
+          if (next.length === 0) next = ['@everyone'];
+          this.formTargets = next;
+          this._renderTargetButtons(container);
+        });
+        container.appendChild(b);
+      }
+
+      if (others.length === 0) {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-family: var(--font-crt); color: var(--text-muted); font-size: 14px; padding: 6px;';
+        note.textContent = 'Henüz odaya başka kimse katılmamış.';
+        container.appendChild(note);
+      }
+    },
+
+    refreshMembersUI() {
+      // If quest modal is open and showing the form, refresh target pills
+      if (!els.questModal.classList.contains('hidden') && this.modalMode === 'new') {
+        const container = els.questModalBody.querySelector('.target-row');
+        if (container) this._renderTargetButtons(container);
+      }
+    },
+
     async submitNewForm() {
       const titleEl = document.getElementById('qfTitle');
       const descEl = document.getElementById('qfDesc');
@@ -3424,12 +3687,12 @@
         errEl.textContent = 'Başlık boş olamaz.';
         return;
       }
-      if (!Profile.partnerName) {
-        errEl.textContent = 'Arkadaşın henüz odaya bağlanmadı. Önce o da girmeli.';
+      if (Profile.others().length === 0) {
+        errEl.textContent = 'Henüz odaya başka biri katılmadı. Davet şifreni paylaş.';
         return;
       }
       try {
-        await this.createQuest(title, desc, this.formDifficulty);
+        await this.createQuest(title, desc, this.formDifficulty, this.formTargets);
         this.closeModal();
       } catch (e) {
         errEl.textContent = 'Hata: ' + (e.message || e);
@@ -3474,7 +3737,8 @@
   // ============================================
   els.modeTabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
   els.loginBtn.addEventListener('click', handleLogin);
-  [els.cloudId, els.cloudPass, els.playerName].forEach(input => {
+  [els.cloudId, els.roomInvite, els.playerName, els.userPass].forEach(input => {
+    if (!input) return;
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleLogin();
     });
@@ -3555,7 +3819,7 @@
 
       // Restore session if present
       const saved = Session.get();
-      if (saved && saved.cloudId && Rooms.get(saved.cloudId)) {
+      if (saved && saved.cloudId && saved.playerName && saved.key) {
         session = saved;
         enterApp();
       } else if (saved) {
