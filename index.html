@@ -1417,35 +1417,109 @@
     background: var(--bg-panel);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 14px 14px 12px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     position: relative;
     overflow: hidden;
-    transition: transform 0.1s, border-color 0.2s;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
   }
-  .quest-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent-quest);
-    opacity: 0.6;
+  /* Old left-bar accent removed — banner across the top now indicates status */
+  .quest-card::before { content: none; }
+
+  /* Body wrapper: padding inside */
+  .quest-body {
+    padding: 14px 14px 12px;
   }
 
-  /* Status-tinted cards */
-  .quest-card[data-status="pending-mine"]::before { background: var(--text-muted); }
-  .quest-card[data-status="pending-theirs"]::before { background: var(--accent-chat); }
-  .quest-card[data-status="active-mine"]::before { background: var(--accent-quest); }
-  .quest-card[data-status="active-theirs"]::before { background: var(--accent-workshop); opacity: 0.5; }
-  .quest-card[data-status="awaiting-approval"]::before { background: var(--accent-match); }
-  .quest-card[data-status="ready-to-approve"]::before {
-    background: var(--accent-match);
-    box-shadow: 0 0 12px var(--accent-match);
+  /* ============================================
+     STATUS BANNER (top of every quest card)
+     ============================================ */
+  .quest-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid var(--border);
   }
-  .quest-card[data-status="completed"]::before { background: var(--text-dim); opacity: 0.4; }
-  .quest-card[data-status="rejected"]::before { background: var(--danger); opacity: 0.4; }
+  .quest-banner-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+  .quest-banner-text {
+    flex: 1;
+  }
 
-  .quest-card.completed { opacity: 0.65; }
+  /* Banner color variants */
+  /* 🔴 NEEDS RESPONSE — receiver must accept/reject (urgent action) */
+  .quest-banner.banner-needs-response {
+    background: linear-gradient(90deg, rgba(255, 56, 96, 0.22), rgba(255, 56, 96, 0.08));
+    color: #ff6b8a;
+    border-bottom-color: rgba(255, 56, 96, 0.4);
+  }
+  /* ⏳ WAITING RESPONSE — giver waits for receiver */
+  .quest-banner.banner-waiting-response {
+    background: rgba(154, 163, 199, 0.1);
+    color: var(--text-secondary);
+    border-bottom-color: rgba(154, 163, 199, 0.25);
+  }
+  /* 🟢 IN-PROGRESS-MINE — receiver is working on it (you started) */
+  .quest-banner.banner-in-progress-mine {
+    background: linear-gradient(90deg, rgba(0, 255, 127, 0.2), rgba(0, 255, 127, 0.06));
+    color: #00ff7f;
+    border-bottom-color: rgba(0, 255, 127, 0.4);
+  }
+  /* 🔵 IN-PROGRESS-THEIRS — friend is working on it (you assigned) */
+  .quest-banner.banner-in-progress-theirs {
+    background: linear-gradient(90deg, rgba(0, 240, 255, 0.18), rgba(0, 240, 255, 0.05));
+    color: #00f0ff;
+    border-bottom-color: rgba(0, 240, 255, 0.35);
+  }
+  /* 🟡 NEEDS APPROVAL — giver must approve, awarding XP (urgent action) */
+  .quest-banner.banner-needs-approval {
+    background: linear-gradient(90deg, rgba(255, 176, 0, 0.28), rgba(255, 176, 0, 0.1));
+    color: #ffb000;
+    border-bottom-color: rgba(255, 176, 0, 0.5);
+  }
+  /* ⏳ AWAITING APPROVAL — receiver submitted, waiting on giver */
+  .quest-banner.banner-awaiting-approval {
+    background: linear-gradient(90deg, rgba(184, 85, 255, 0.18), rgba(184, 85, 255, 0.05));
+    color: var(--accent-workshop);
+    border-bottom-color: rgba(184, 85, 255, 0.35);
+  }
+  /* ✅ COMPLETED */
+  .quest-banner.banner-completed {
+    background: rgba(0, 255, 127, 0.06);
+    color: rgba(0, 255, 127, 0.7);
+    border-bottom-color: rgba(0, 255, 127, 0.2);
+  }
+  /* ❌ REJECTED */
+  .quest-banner.banner-rejected {
+    background: rgba(255, 56, 96, 0.06);
+    color: rgba(255, 56, 96, 0.7);
+    border-bottom-color: rgba(255, 56, 96, 0.2);
+  }
+
+  /* Urgent cards: pulse glow + slight emphasis */
+  .quest-card.urgent {
+    border-color: transparent;
+    box-shadow: 0 0 0 1px currentColor, 0 6px 16px rgba(0, 0, 0, 0.4);
+    animation: questUrgentPulse 2.5s ease-in-out infinite;
+  }
+  .quest-card.urgent[data-status="needs-response"] {
+    box-shadow: 0 0 0 1px rgba(255, 56, 96, 0.5), 0 6px 16px rgba(255, 56, 96, 0.15);
+  }
+  .quest-card.urgent[data-status="needs-approval"] {
+    box-shadow: 0 0 0 1px rgba(255, 176, 0, 0.5), 0 6px 16px rgba(255, 176, 0, 0.15);
+  }
+  @keyframes questUrgentPulse {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1px); }
+  }
+
+  /* Completed cards: dim */
+  .quest-card.completed { opacity: 0.6; }
 
   .quest-head {
     display: flex;
@@ -3832,7 +3906,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.14.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.15.0</span></div>
         </div>
 
         <div class="info-card">
@@ -5617,18 +5691,38 @@
       const isReceiver = q.toAuthor === me;
       const isGiver = q.fromAuthor === me;
 
-      // Determine status key for visual styling
-      let statusKey = 'pending-mine';
-      if (q.status === QUEST_STATUSES.COMPLETED) statusKey = 'completed';
-      else if (q.status === QUEST_STATUSES.REJECTED) statusKey = 'rejected';
-      else if (q.status === QUEST_STATUSES.PENDING) statusKey = isReceiver ? 'pending-mine' : 'pending-theirs';
-      else if (q.status === QUEST_STATUSES.ACTIVE) statusKey = isReceiver ? 'active-mine' : 'active-theirs';
-      else if (q.status === QUEST_STATUSES.SUBMITTED) statusKey = isGiver ? 'ready-to-approve' : 'awaiting-approval';
+      // Get status banner info (key, icon, text, urgent)
+      const banner = this.statusBanner(q, isReceiver, isGiver);
+      const statusKey = banner ? banner.key : 'unknown';
 
       const card = document.createElement('div');
       card.className = 'quest-card';
-      if (q.status === QUEST_STATUSES.COMPLETED || q.status === QUEST_STATUSES.REJECTED) card.classList.add('completed');
+      if (q.status === QUEST_STATUSES.COMPLETED || q.status === QUEST_STATUSES.REJECTED) {
+        card.classList.add('completed');
+      }
+      if (banner && banner.urgent) {
+        card.classList.add('urgent');
+      }
       card.dataset.status = statusKey;
+
+      // === Status banner at top of card ===
+      if (banner) {
+        const bannerEl = document.createElement('div');
+        bannerEl.className = 'quest-banner banner-' + statusKey;
+        const icon = document.createElement('span');
+        icon.className = 'quest-banner-icon';
+        icon.textContent = banner.icon;
+        const text = document.createElement('span');
+        text.className = 'quest-banner-text';
+        text.textContent = banner.text;
+        bannerEl.appendChild(icon);
+        bannerEl.appendChild(text);
+        card.appendChild(bannerEl);
+      }
+
+      // Body wrapper (everything below banner)
+      const body = document.createElement('div');
+      body.className = 'quest-body';
 
       // Head: title + xp badge
       const head = document.createElement('div');
@@ -5641,17 +5735,17 @@
       badge.textContent = '+' + q.xp + ' XP';
       head.appendChild(title);
       head.appendChild(badge);
-      card.appendChild(head);
+      body.appendChild(head);
 
       // Description
       if (q.description) {
         const desc = document.createElement('div');
         desc.className = 'quest-desc';
         desc.textContent = q.description;
-        card.appendChild(desc);
+        body.appendChild(desc);
       }
 
-      // Meta: from → to + status hint
+      // Meta: from → to (no status hint — the banner above shows status clearly)
       const meta = document.createElement('div');
       meta.className = 'quest-meta';
       const from = document.createElement('span');
@@ -5666,15 +5760,7 @@
       meta.appendChild(from);
       meta.appendChild(arrow);
       meta.appendChild(to);
-
-      const statusHint = this.statusHint(q, isReceiver, isGiver);
-      if (statusHint) {
-        const s = document.createElement('span');
-        s.style.cssText = 'color: var(--text-secondary); margin-left: auto;';
-        s.textContent = statusHint;
-        meta.appendChild(s);
-      }
-      card.appendChild(meta);
+      body.appendChild(meta);
 
       // Actions
       const actions = this.actionsFor(q, isReceiver, isGiver);
@@ -5688,9 +5774,10 @@
           btn.addEventListener('click', () => a.onClick(q));
           wrap.appendChild(btn);
         }
-        card.appendChild(wrap);
+        body.appendChild(wrap);
       }
 
+      card.appendChild(body);
       return card;
     },
 
@@ -5708,6 +5795,38 @@
           return '✗ reddedildi';
         default:
           return '';
+      }
+    },
+
+    // Returns banner info for the top of a quest card. Includes:
+    //   key      — CSS modifier class (e.g. "needs-response")
+    //   icon     — emoji or symbol
+    //   text     — the headline shown in the banner
+    //   urgent   — true for actions requiring user input (sorts to top, pulses)
+    statusBanner(q, isReceiver, isGiver) {
+      const otherName = isReceiver ? q.fromAuthor : q.toAuthor;
+      switch (q.status) {
+        case QUEST_STATUSES.PENDING:
+          if (isReceiver) {
+            return { key: 'needs-response', icon: '🔴', text: 'CEVAP VER', urgent: true };
+          }
+          return { key: 'waiting-response', icon: '⏳', text: 'CEVAP BEKLENİYOR', urgent: false };
+        case QUEST_STATUSES.ACTIVE:
+          if (isReceiver) {
+            return { key: 'in-progress-mine', icon: '🟢', text: 'BAŞLADIN', urgent: false };
+          }
+          return { key: 'in-progress-theirs', icon: '🔵', text: otherName.toUpperCase() + ' YAPIYOR', urgent: false };
+        case QUEST_STATUSES.SUBMITTED:
+          if (isGiver) {
+            return { key: 'needs-approval', icon: '🟡', text: 'ONAYLA — +' + q.xp + ' XP VER', urgent: true };
+          }
+          return { key: 'awaiting-approval', icon: '⏳', text: 'ONAY BEKLENİYOR', urgent: false };
+        case QUEST_STATUSES.COMPLETED:
+          return { key: 'completed', icon: '✅', text: 'TAMAMLANDI', urgent: false };
+        case QUEST_STATUSES.REJECTED:
+          return { key: 'rejected', icon: '❌', text: 'REDDEDİLDİ', urgent: false };
+        default:
+          return null;
       }
     },
 
