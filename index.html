@@ -831,8 +831,266 @@
     100% { transform: translateX(100%); }
   }
 
-  /* Hide elements helper */
-  .hidden { display: none !important; }
+  /* ============================================
+     CHAT MODULE
+     ============================================ */
+  /* Chat pane uses a different layout — no scrolling pane,
+     instead messages list scrolls and composer is fixed */
+  .pane[data-pane="chat"].active {
+    display: flex;
+    flex-direction: column;
+    /* Override standard pane padding — we manage our own */
+    padding: 0;
+    /* Fill the content area; subtract top-bar/safe-area */
+    height: calc(100dvh - var(--nav-height) - var(--safe-bottom) - 56px - var(--safe-top));
+    min-height: 0;
+  }
+
+  .chat-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border-soft);
+    flex-shrink: 0;
+  }
+  .chat-header .pane-title { margin-bottom: 4px; }
+  .chat-header .pane-subtitle { font-size: 14px; }
+
+  .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+  }
+
+  .msg-empty {
+    margin: auto;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--font-crt);
+    font-size: 16px;
+    padding: 20px;
+  }
+  .msg-empty::before {
+    content: "> ";
+    color: var(--accent-chat);
+  }
+  .msg-empty .blink::after {
+    content: "_";
+    animation: blink 1s step-end infinite;
+    color: var(--accent-chat);
+  }
+
+  .day-divider {
+    text-align: center;
+    margin: 8px 0;
+    position: relative;
+  }
+  .day-divider::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 1px;
+    background: var(--border-soft);
+  }
+  .day-divider span {
+    position: relative;
+    background: var(--bg-base);
+    padding: 0 12px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+    animation: msgIn 0.2s ease-out;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.mine {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+  .msg.theirs {
+    align-self: flex-start;
+    align-items: flex-start;
+  }
+
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+    padding: 0 4px;
+  }
+  .msg-author {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .msg.mine .msg-author { color: var(--accent-chat); }
+  .msg.theirs .msg-author { color: var(--accent-quest); }
+  .msg-time {
+    font-family: var(--font-crt);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.45;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    user-select: text;
+    -webkit-user-select: text;
+    position: relative;
+    transition: transform 0.1s;
+  }
+
+  .msg.mine .msg-bubble {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(0, 240, 255, 0.08));
+    border: 1px solid rgba(0, 240, 255, 0.35);
+    color: #d8f8ff;
+    border-bottom-right-radius: 1px;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.08);
+  }
+  .msg.theirs .msg-bubble {
+    background: linear-gradient(135deg, rgba(255, 176, 0, 0.14), rgba(255, 176, 0, 0.06));
+    border: 1px solid rgba(255, 176, 0, 0.32);
+    color: #fff0d0;
+    border-bottom-left-radius: 1px;
+    box-shadow: 0 0 12px rgba(255, 176, 0, 0.06);
+  }
+
+  .msg-bubble.pending { opacity: 0.6; }
+  .msg-bubble.failed {
+    border-color: var(--danger);
+    color: #ffb0c0;
+  }
+  .msg-bubble.deleted {
+    font-style: italic;
+    color: var(--text-muted);
+    background: var(--bg-panel);
+    border-style: dashed;
+  }
+
+  /* Long-press menu */
+  .msg-actions {
+    display: none;
+    position: absolute;
+    top: -32px;
+    right: 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 4px;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .msg.show-actions .msg-actions { display: flex; gap: 4px; }
+  .msg-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .msg-action-btn:hover { background: var(--bg-panel-2); color: var(--text-primary); }
+  .msg-action-btn.danger { color: var(--danger); }
+  .msg-action-btn.danger:hover { background: rgba(255, 56, 96, 0.12); color: #ff7090; }
+
+  /* Composer */
+  .composer {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    padding-bottom: calc(10px);
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    position: relative;
+  }
+  .composer::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-chat), transparent);
+    opacity: 0.4;
+  }
+
+  .composer textarea {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    resize: none;
+    outline: none;
+    min-height: 40px;
+    max-height: 120px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.4;
+  }
+  .composer textarea:focus {
+    border-color: var(--accent-chat);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+  }
+  .composer textarea::placeholder {
+    color: var(--text-dim);
+    font-family: var(--font-crt);
+    font-size: 16px;
+  }
+
+  .send-btn {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: var(--accent-chat);
+    color: var(--bg-base);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 #00a8b8, 0 0 12px rgba(0, 240, 255, 0.3);
+    transition: transform 0.1s;
+  }
+  .send-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #00a8b8; }
+  .send-btn:disabled {
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .send-btn svg { width: 20px; height: 20px; }
+
+  /* Hide bottom nav when chat composer is focused on mobile (keyboard up) */
+  /* Keep nav visible but composer sticks above it via parent flex */
+
+
 
   /* Small screens — preserve readability */
   @media (max-width: 360px) {
@@ -923,15 +1181,23 @@
 
       <!-- Chat -->
       <div class="pane" data-pane="chat">
-        <div class="pane-header">
+        <div class="chat-header">
           <div class="pane-title">CHAT</div>
           <div class="pane-subtitle">İkinize özel kanal</div>
         </div>
-        <div class="soon">
-          <div class="soon-icon">💬</div>
-          <div class="soon-title">YAKINDA</div>
-          <div class="soon-text">Mesajlaşma, link önizleme ve paylaşılan içerik kütüphanesi sonraki sürümde geliyor.</div>
-          <div class="soon-ver">v0.2 — CHAT MODULE</div>
+        <div class="messages-container" id="messagesContainer">
+          <div class="msg-empty" id="msgEmpty">
+            henüz mesaj yok<br>
+            <span class="blink">ilk mesajı sen at</span>
+          </div>
+        </div>
+        <div class="composer">
+          <textarea id="msgInput" placeholder="Mesaj yaz..." rows="1" maxlength="2000"></textarea>
+          <button class="send-btn" id="sendBtn" aria-label="Gönder" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12l14-7-7 14-2-5-5-2z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -998,7 +1264,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.1.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.2.0</span></div>
         </div>
       </div>
 
@@ -1135,8 +1401,14 @@
         setDoc: fsMod.setDoc,
         getDoc: fsMod.getDoc,
         updateDoc: fsMod.updateDoc,
+        deleteDoc: fsMod.deleteDoc,
         onSnapshot: fsMod.onSnapshot,
         serverTimestamp: fsMod.serverTimestamp,
+        collection: fsMod.collection,
+        addDoc: fsMod.addDoc,
+        query: fsMod.query,
+        orderBy: fsMod.orderBy,
+        limit: fsMod.limit,
       };
       console.log('[Bro-op] Firebase ready');
     } catch (e) {
@@ -1281,6 +1553,11 @@
     profileLevel: $('#profileLevel'),
     xpFill: $('#xpFill'),
     xpText: $('#xpText'),
+    // Chat
+    messagesContainer: $('#messagesContainer'),
+    msgEmpty: $('#msgEmpty'),
+    msgInput: $('#msgInput'),
+    sendBtn: $('#sendBtn'),
   };
 
   // ============================================
@@ -1435,9 +1712,13 @@
     // v0.1: profile is the default tab (it's the only one with content)
     setActiveTab('profile');
     updateSyncStatus();
+
+    // v0.2: start chat listener
+    Chat.start();
   }
 
   function logout() {
+    Chat.stop();
     Session.clear();
     session = null;
     els.mainShell.classList.add('hidden');
@@ -1460,6 +1741,11 @@
     document.documentElement.style.setProperty('--accent', a.color);
     document.documentElement.style.setProperty('--accent-glow', a.glow);
     els.topTitle.style.color = a.color;
+
+    // Chat: when entering tab, scroll to bottom
+    if (tab === 'chat' && Chat.rendered) {
+      Chat.scrollToBottom(true);
+    }
   }
 
   // ============================================
@@ -1477,6 +1763,307 @@
   }
 
   // ============================================
+  // CHAT MODULE (v0.2)
+  // ============================================
+  // Firestore path: broop_app/{cloudId}/messages/{msgId}
+  // Each message doc:
+  //   { encrypted: <AES payload of {text, author, ts}>,
+  //     createdAt: serverTimestamp(),
+  //     deleted?: true }
+
+  const Chat = {
+    unsubscribe: null,
+    messages: [],            // sorted by createdAt asc
+    pendingByLocalId: {},    // optimistic messages not yet confirmed
+    rendered: false,
+    actionsForId: null,      // currently expanded message id
+
+    start() {
+      if (!cloudReady() || !session) return;
+      const { db, fs } = window.__broop;
+      const ref = fs.collection(db, 'broop_app', session.cloudId, 'messages');
+      const q = fs.query(ref, fs.orderBy('createdAt', 'asc'), fs.limit(500));
+
+      // Tear down any prior listener
+      if (this.unsubscribe) this.unsubscribe();
+
+      this.unsubscribe = fs.onSnapshot(q, (snap) => {
+        const msgs = [];
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.deleted) {
+            msgs.push({ id: d.id, deleted: true, createdAt: data.createdAt });
+            return;
+          }
+          // Decrypt
+          const raw = decrypt(data.encrypted || '', session.key);
+          if (!raw) return; // skip unreadable
+          try {
+            const parsed = JSON.parse(raw);
+            msgs.push({
+              id: d.id,
+              text: parsed.text,
+              author: parsed.author,
+              ts: parsed.ts || (data.createdAt && data.createdAt.toMillis && data.createdAt.toMillis()) || Date.now(),
+              createdAt: data.createdAt,
+            });
+          } catch {}
+        });
+        this.messages = msgs;
+        this.render();
+      }, (err) => {
+        console.warn('[Chat] snapshot error:', err);
+      });
+    },
+
+    stop() {
+      if (this.unsubscribe) {
+        this.unsubscribe();
+        this.unsubscribe = null;
+      }
+      this.messages = [];
+      this.pendingByLocalId = {};
+      this.rendered = false;
+    },
+
+    async send(text) {
+      if (!text || !text.trim()) return;
+      if (!cloudReady() || !session) return;
+      text = text.trim();
+      if (text.length > 2000) text = text.slice(0, 2000);
+
+      const localId = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      const ts = Date.now();
+      const payload = {
+        text,
+        author: session.playerName,
+        ts,
+      };
+
+      // Optimistic UI: show pending bubble immediately
+      this.pendingByLocalId[localId] = {
+        id: localId,
+        text, author: session.playerName, ts, pending: true,
+      };
+      this.render();
+
+      try {
+        const encrypted = encrypt(JSON.stringify(payload), session.key);
+        const { db, fs } = window.__broop;
+        const ref = fs.collection(db, 'broop_app', session.cloudId, 'messages');
+        await fs.addDoc(ref, {
+          encrypted,
+          createdAt: fs.serverTimestamp(),
+        });
+        // Success — onSnapshot will pick up the real message;
+        // remove the pending placeholder.
+        delete this.pendingByLocalId[localId];
+        this.render();
+      } catch (e) {
+        console.error('[Chat] send failed:', e);
+        if (this.pendingByLocalId[localId]) {
+          this.pendingByLocalId[localId].pending = false;
+          this.pendingByLocalId[localId].failed = true;
+        }
+        this.render();
+      }
+    },
+
+    async deleteMessage(id) {
+      if (!cloudReady() || !session) return;
+      try {
+        const { db, fs } = window.__broop;
+        // Soft delete — keeps the doc but marks it deleted.
+        // We use updateDoc rather than deleteDoc so the other side
+        // sees a "[mesaj silindi]" marker instead of vanishing.
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'messages', id);
+        await fs.updateDoc(ref, { deleted: true, encrypted: '' });
+      } catch (e) {
+        console.error('[Chat] delete failed:', e);
+        alert('Silme başarısız: ' + (e.message || e));
+      }
+    },
+
+    formatTime(ts) {
+      const d = new Date(ts);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return hh + ':' + mm;
+    },
+
+    formatDay(ts) {
+      const d = new Date(ts);
+      const today = new Date();
+      const isSameDay = (a, b) =>
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      if (isSameDay(d, today)) return 'BUGÜN';
+      if (isSameDay(d, yesterday)) return 'DÜN';
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+    },
+
+    isAtBottom() {
+      const c = els.messagesContainer;
+      return c.scrollHeight - c.scrollTop - c.clientHeight < 80;
+    },
+
+    scrollToBottom(force) {
+      const c = els.messagesContainer;
+      // Scroll to bottom if user is already near the bottom OR forced
+      if (force || this.isAtBottom()) {
+        requestAnimationFrame(() => {
+          c.scrollTop = c.scrollHeight;
+        });
+      }
+    },
+
+    render() {
+      const wasAtBottom = this.isAtBottom() || !this.rendered;
+      const c = els.messagesContainer;
+
+      // Combine confirmed + pending
+      const pending = Object.values(this.pendingByLocalId);
+      const all = [...this.messages, ...pending].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+      if (all.length === 0) {
+        c.innerHTML = '';
+        const empty = document.createElement('div');
+        empty.className = 'msg-empty';
+        empty.innerHTML = 'henüz mesaj yok<br><span class="blink">ilk mesajı sen at</span>';
+        c.appendChild(empty);
+        this.rendered = true;
+        return;
+      }
+
+      c.innerHTML = '';
+      let lastDay = '';
+      const me = session.playerName;
+
+      for (const m of all) {
+        const day = this.formatDay(m.ts || Date.now());
+        if (day !== lastDay) {
+          const div = document.createElement('div');
+          div.className = 'day-divider';
+          const span = document.createElement('span');
+          span.textContent = day;
+          div.appendChild(span);
+          c.appendChild(div);
+          lastDay = day;
+        }
+
+        const wrap = document.createElement('div');
+        const isMine = m.author === me;
+        wrap.className = 'msg ' + (isMine ? 'mine' : 'theirs');
+        wrap.dataset.id = m.id;
+        if (this.actionsForId === m.id) wrap.classList.add('show-actions');
+
+        // Meta row (author + time)
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        if (!m.deleted) {
+          const author = document.createElement('span');
+          author.className = 'msg-author';
+          author.textContent = (m.author || '?').toUpperCase();
+          const time = document.createElement('span');
+          time.className = 'msg-time';
+          time.textContent = this.formatTime(m.ts || Date.now());
+          if (isMine) {
+            meta.appendChild(time);
+            meta.appendChild(author);
+          } else {
+            meta.appendChild(author);
+            meta.appendChild(time);
+          }
+          wrap.appendChild(meta);
+        }
+
+        // Bubble
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        if (m.deleted) {
+          bubble.classList.add('deleted');
+          bubble.textContent = '[mesaj silindi]';
+        } else {
+          bubble.textContent = m.text;
+          if (m.pending) bubble.classList.add('pending');
+          if (m.failed) bubble.classList.add('failed');
+        }
+        wrap.appendChild(bubble);
+
+        // Long-press menu (only for confirmed mine, non-deleted)
+        if (isMine && !m.deleted && !m.pending && !String(m.id).startsWith('local_')) {
+          const actions = document.createElement('div');
+          actions.className = 'msg-actions';
+          const delBtn = document.createElement('button');
+          delBtn.className = 'msg-action-btn danger';
+          delBtn.textContent = 'SİL';
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.actionsForId = null;
+            if (confirm('Bu mesajı silmek istediğine emin misin?')) {
+              this.deleteMessage(m.id);
+            } else {
+              this.render();
+            }
+          });
+          actions.appendChild(delBtn);
+          wrap.appendChild(actions);
+
+          // Long-press / right-click to open
+          let pressTimer = null;
+          const openActions = () => {
+            this.actionsForId = m.id;
+            this.render();
+          };
+          wrap.addEventListener('touchstart', () => {
+            pressTimer = setTimeout(openActions, 500);
+          }, { passive: true });
+          wrap.addEventListener('touchend', () => clearTimeout(pressTimer));
+          wrap.addEventListener('touchmove', () => clearTimeout(pressTimer));
+          wrap.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            openActions();
+          });
+        }
+
+        c.appendChild(wrap);
+      }
+
+      this.rendered = true;
+      if (wasAtBottom) this.scrollToBottom(true);
+    },
+  };
+
+  // Composer auto-grow + send button enable/disable
+  function syncComposer() {
+    const v = els.msgInput.value;
+    els.sendBtn.disabled = v.trim().length === 0;
+    // Auto-grow textarea
+    els.msgInput.style.height = 'auto';
+    els.msgInput.style.height = Math.min(els.msgInput.scrollHeight, 120) + 'px';
+  }
+
+  function handleSend() {
+    const text = els.msgInput.value;
+    if (!text.trim()) return;
+    Chat.send(text);
+    els.msgInput.value = '';
+    syncComposer();
+    els.msgInput.focus();
+  }
+
+  // Close action menu when clicking outside a message
+  document.addEventListener('click', (e) => {
+    if (Chat.actionsForId && !e.target.closest('.msg')) {
+      Chat.actionsForId = null;
+      Chat.render();
+    }
+  });
+
+  // ============================================
   // EVENT WIRING
   // ============================================
   els.modeTabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
@@ -1490,6 +2077,21 @@
   els.logoutBtn.addEventListener('click', () => {
     if (confirm('Çıkış yapmak istediğine emin misin?')) logout();
   });
+
+  // Chat composer wiring
+  els.msgInput.addEventListener('input', syncComposer);
+  els.msgInput.addEventListener('keydown', (e) => {
+    // Enter sends, Shift+Enter for new line. On mobile, Enter inserts newline (handled via shouldSend).
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // Mobile: don't intercept, allow newline (touch keyboards behave better this way)
+      const isMobile = window.matchMedia('(pointer: coarse)').matches;
+      if (!isMobile) {
+        e.preventDefault();
+        handleSend();
+      }
+    }
+  });
+  els.sendBtn.addEventListener('click', handleSend);
 
   // ============================================
   // BOOT
