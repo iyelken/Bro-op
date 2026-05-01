@@ -834,17 +834,25 @@
   /* ============================================
      CHAT MODULE
      ============================================ */
-  /* Chat pane uses a different layout — no scrolling pane,
-     instead messages list scrolls and composer is fixed */
+  /* Chat pane uses absolute positioning to fill the .content area
+     without disturbing other panes' layout. */
+  .pane[data-pane="chat"] {
+    /* Inherit base .pane display:none, but when active, fill content */
+    padding: 0;
+  }
   .pane[data-pane="chat"].active {
     display: flex;
     flex-direction: column;
-    /* Override standard pane padding — we manage our own */
-    padding: 0;
-    /* Fill the content area; subtract top-bar/safe-area */
-    height: calc(100dvh - var(--nav-height) - var(--safe-bottom) - 56px - var(--safe-top));
-    min-height: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Stop above the fixed bottom-nav so composer is visible */
+    bottom: 0;
+    overflow: hidden;
   }
+  /* Make .content the positioning context for chat */
+  .content { position: relative; }
 
   .chat-header {
     padding: 16px 18px 12px;
@@ -1020,7 +1028,8 @@
   .composer {
     flex-shrink: 0;
     padding: 10px 12px;
-    padding-bottom: calc(10px);
+    /* Clear fixed bottom nav + safe area */
+    padding-bottom: calc(10px + var(--nav-height) + var(--safe-bottom));
     background: var(--bg-panel);
     border-top: 1px solid var(--border);
     display: flex;
