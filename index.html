@@ -598,8 +598,8 @@
   }
   .level-row {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
+    gap: 12px;
     margin-bottom: 8px;
   }
   .level-label {
@@ -608,6 +608,34 @@
     color: var(--text-secondary);
     letter-spacing: 1.5px;
   }
+
+  /* "GEÇMİŞ" button — sits at the far right of the level row.
+     Yellow accent (matches XP color); visually announces clickability so users
+     don't have to discover that the bar itself is also tappable. */
+  .xp-history-btn {
+    margin-left: auto;
+    background: rgba(255, 176, 0, 0.12);
+    color: var(--accent-quest);
+    border: 1px solid rgba(255, 176, 0, 0.4);
+    padding: 6px 12px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .xp-history-btn:hover {
+    background: rgba(255, 176, 0, 0.22);
+    border-color: var(--accent-quest);
+    box-shadow: 0 0 10px rgba(255, 176, 0, 0.25);
+  }
+  .xp-history-btn:active { transform: translateY(1px); }
+  .xp-history-btn .xp-hist-icon { font-size: 11px; }
+  .xp-history-btn .xp-hist-label { letter-spacing: 1.5px; }
   .level-num {
     font-family: var(--font-pixel);
     font-size: 18px;
@@ -5194,6 +5222,10 @@
             <div class="level-row">
               <span class="level-label">LEVEL</span>
               <span class="level-num" id="profileLevel">01</span>
+              <button type="button" class="xp-history-btn" id="xpHistoryOpenBtn" title="XP geçmişini gör">
+                <span class="xp-hist-icon">📊</span>
+                <span class="xp-hist-label">GEÇMİŞ</span>
+              </button>
             </div>
             <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
             <div class="xp-text" id="xpText">0 / 100 XP</div>
@@ -5223,7 +5255,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.21.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.21.1</span></div>
         </div>
 
         <div class="info-card">
@@ -5879,6 +5911,7 @@
     xpHistoryTotal: $('#xpHistoryTotal'),
     xpHistorySummary: $('#xpHistorySummary'),
     xpHistoryList: $('#xpHistoryList'),
+    xpHistoryOpenBtn: $('#xpHistoryOpenBtn'),
     // Profile (existing IDs, now wired)
     statStreak: $('#statStreak'),
     statQuests: $('#statQuests'),
@@ -13453,6 +13486,12 @@
   // Open the modal by clicking the XP bar / text on the Profile page
   // (we wrap both in a clickable cursor and route through openHistory)
   const _openXpHistory = () => XpHistory.open();
+  // Primary visible entry point — explicit button next to the level number
+  if (els.xpHistoryOpenBtn) {
+    els.xpHistoryOpenBtn.addEventListener('click', _openXpHistory);
+  }
+  // Fallback affordances — bar and text remain clickable for users who
+  // discover them, but the button above is the primary discoverable entry.
   if (els.xpFill && els.xpFill.parentElement) {
     els.xpFill.parentElement.classList.add('xp-bar-clickable');
     els.xpFill.parentElement.addEventListener('click', _openXpHistory);
