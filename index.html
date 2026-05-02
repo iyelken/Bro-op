@@ -5255,7 +5255,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.21.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.22.0</span></div>
         </div>
 
         <div class="info-card">
@@ -7751,6 +7751,10 @@
         showXpToast('+' + amount + ' XP', '', 1500);
         SoundFX.play('coin');
       }
+      // Bump streak for quest completions too — they're activity (won't double-
+      // bump for activity-XP since awardActivityXP also bumps; but _bumpStreak
+      // handles the same-day case and exits early).
+      if (!options.passive) this._bumpStreak();
     },
 
     // Convenience helper for passive activity XP — small + silent + no quest increment.
@@ -7758,6 +7762,70 @@
     awardActivityXP(amount, reason) {
       const silent = amount < 10;
       this.grantXP(amount, { passive: true, silent });
+      // Activity also counts toward the daily streak
+      this._bumpStreak();
+    },
+
+    // Day-key helper: returns "YYYY-MM-DD" string for a given timestamp.
+    // Using local time so the streak reflects the user's perceived day.
+    _dayKey(ts) {
+      const d = new Date(ts || Date.now());
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    },
+
+    // Increase the streak based on the day of the last activity:
+    //  - same day  → no change (already counted)
+    //  - yesterday → +1
+    //  - 2+ days   → reset to 1 (broke the chain, fresh start today)
+    // We keep `lastActiveDay` and `streakCount` on the player doc so it syncs
+    // across devices and persists across sessions.
+    async _bumpStreak() {
+      if (!this.me) return;
+      const today = this._dayKey(Date.now());
+      const last = this.me.lastActiveDay || null;
+      let newStreak = this.me.streakCount || 0;
+      let bestStreak = this.me.bestStreak || 0;
+
+      if (last === today) {
+        // Already counted today's activity — no streak change, no write needed
+        return;
+      }
+
+      if (last) {
+        // Compare days: was the last activity exactly yesterday?
+        const lastDate = new Date(last + 'T00:00:00');
+        const todayDate = new Date(today + 'T00:00:00');
+        const diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          // Continuing the chain
+          newStreak = newStreak + 1;
+        } else if (diffDays >= 2) {
+          // Chain broken — start fresh today
+          newStreak = 1;
+        } else {
+          // Future date or weird clock skew — be safe, just count today
+          newStreak = Math.max(1, newStreak);
+        }
+      } else {
+        // First activity ever
+        newStreak = 1;
+      }
+
+      // Track best-ever streak as a small flex
+      if (newStreak > bestStreak) bestStreak = newStreak;
+
+      this.me = {
+        ...this.me,
+        streakCount: newStreak,
+        bestStreak,
+        lastActiveDay: today,
+      };
+      try { await this.writeMine(this.me); } catch (e) {
+        console.warn('[Profile] streak save failed:', e);
+      }
     },
 
     renderProfile() {
@@ -7775,8 +7843,34 @@
         const days = Math.max(1, Math.floor((Date.now() - this.me.joinedAt) / (1000 * 60 * 60 * 24)) + 1);
         els.statDays.textContent = days;
       }
-      // streak: deferred — placeholder for now
-      els.statStreak.textContent = '0';
+      // Streak: show display value based on whether the chain is still alive.
+      // We render-only here — we DON'T mutate state on render to avoid extra
+      // Firestore writes on every Profile re-render. Mutation happens lazily
+      // when the user does something (awardActivityXP / grantXP).
+      const today = this._dayKey(Date.now());
+      const last = this.me.lastActiveDay || null;
+      let displayStreak = this.me.streakCount || 0;
+      if (last) {
+        const lastDate = new Date(last + 'T00:00:00');
+        const todayDate = new Date(today + 'T00:00:00');
+        const diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+        // If 2+ days have passed without activity, the chain is broken
+        // (display 0 even though the stored count is higher — the next
+        // activity will reset it to 1 properly).
+        if (diffDays >= 2) displayStreak = 0;
+      } else {
+        displayStreak = 0;
+      }
+      els.statStreak.textContent = displayStreak;
+      // Tooltip showing context (best streak + last active)
+      if (els.statStreak.parentElement) {
+        const best = this.me.bestStreak || 0;
+        let tip = displayStreak > 0
+          ? displayStreak + ' gün üst üste aktiviteler yapıyorsun'
+          : 'Bugün bir TODO/devlog/yorum yap → streak başlasın!';
+        if (best > 0) tip += '\nEn uzun: ' + best + ' gün';
+        els.statStreak.parentElement.title = tip;
+      }
     },
   };
 
