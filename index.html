@@ -4954,7 +4954,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.19.3</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.20.0</span></div>
         </div>
 
         <div class="info-card">
@@ -7375,7 +7375,13 @@
       await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
     },
 
-    async grantXP(amount) {
+    // Award XP to the current user. By default this assumes a quest completion
+    // (increments completedQuests counter). Pass options.silent=true to skip
+    // the toast (useful for many small awards), and options.passive=true if
+    // the XP is from passive activity (TODO, devlog, prompt etc.) so we don't
+    // bump the completedQuests counter.
+    async grantXP(amount, options) {
+      options = options || {};
       if (!this.me) this.me = { xp: 0, level: 1, completedQuests: 0, badges: 0, joinedAt: Date.now() };
       const newXp = this.me.xp + amount;
       let newLevel = this.me.level;
@@ -7391,17 +7397,27 @@
         ...this.me,
         xp: xpRemaining,
         level: newLevel,
-        completedQuests: (this.me.completedQuests || 0) + 1,
       };
+      // Only count quest completions toward the explicit counter
+      if (!options.passive) {
+        this.me.completedQuests = (this.me.completedQuests || 0) + 1;
+      }
       await this.writeMine(this.me);
       // Toasts + sounds
       if (leveledUp) {
         showXpToast('LEVEL UP! → ' + String(newLevel).padStart(2, '0'), 'levelup', 2400);
         SoundFX.play('levelup');
-      } else {
+      } else if (!options.silent) {
         showXpToast('+' + amount + ' XP', '', 1500);
         SoundFX.play('coin');
       }
+    },
+
+    // Convenience helper for passive activity XP — small + silent + no quest increment.
+    // Show toast for +10 or higher, silent for tiny rewards (3-8 XP).
+    awardActivityXP(amount, reason) {
+      const silent = amount < 10;
+      this.grantXP(amount, { passive: true, silent });
     },
 
     renderProfile() {
@@ -9267,10 +9283,15 @@
             createdTs: now,
             updatedTs: now,
             comments: [],
+            xpAwarded: true, // marker — prevents duplicate awards if logic ever re-runs
           };
           const col = fs.collection(db, 'broop_app', session.cloudId, 'prompts');
           const enc = encrypt(JSON.stringify(payload), session.key);
           await fs.addDoc(col, { encrypted: enc, createdAt: fs.serverTimestamp() });
+          // Award XP for sharing a prompt with the team
+          if (typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+            Profile.awardActivityXP(10, 'prompt-add');
+          }
         }
         this.closeModal();
       } catch (e) {
@@ -9430,6 +9451,10 @@
         const ref = fs.doc(db, 'broop_app', session.cloudId, 'prompts', this._detailId);
         const enc = encrypt(JSON.stringify(updated), session.key);
         await fs.updateDoc(ref, { encrypted: enc });
+        // Award small XP for engaging with prompts via comments
+        if (typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+          Profile.awardActivityXP(3, 'prompt-comment');
+        }
         // Clear input — listener will re-render
         els.prCommentInput.value = '';
         els.prCommentSendBtn.disabled = true;
@@ -9665,6 +9690,9 @@
         this.renderTheirsTodo();
         // After todos load, re-check migration
         this._runMyMigrationIfNeeded();
+        // One-time XP migration: mark all existing done-todos as already awarded
+        // so we don't re-award XP retroactively when this version first runs.
+        this._runXpMigrationIfNeeded();
         if (typeof Activity !== 'undefined') Activity.refresh();
       }, (err) => console.warn('[Workshop] todos error:', err));
 
@@ -9784,6 +9812,47 @@
     },
 
     // Run migration for the current user if their workshop is in old format,
+    // ============================================
+    // XP migration — one-time backfill for existing data
+    // ============================================
+    // When v0.20 first runs on a device that already has done-todos / posted
+    // devlogs / etc, we don't want to retroactively grant XP for old work.
+    // This helper marks all currently-done todos with `xpAwarded: true` once,
+    // tracked via localStorage so it only runs the first time per cloud+player.
+    async _runXpMigrationIfNeeded() {
+      if (!session) return;
+      const flagKey = 'broop_xpMigrated_v20_' + session.cloudId + '_' + session.playerName;
+      if (localStorage.getItem(flagKey)) return; // already done
+
+      const me = session.playerName;
+      const myTodos = (this.todos[me] && this.todos[me].items) || [];
+      // Find done-todos that don't have the xpAwarded flag yet
+      const needFlag = myTodos.filter(t => t.status === 'done' && !t.xpAwarded);
+      if (needFlag.length === 0) {
+        // Nothing to migrate — just set the flag and exit
+        localStorage.setItem(flagKey, '1');
+        return;
+      }
+
+      console.log('[Workshop] XP migration: marking', needFlag.length, 'existing done-todos as awarded');
+      try {
+        const updated = myTodos.map(t =>
+          (t.status === 'done' && !t.xpAwarded) ? { ...t, xpAwarded: true } : t
+        );
+        const { db, fs } = window.__broop;
+        const tRef = fs.doc(db, 'broop_app', session.cloudId, 'todos', me);
+        const enc = encrypt(JSON.stringify({ items: updated }), session.key);
+        await fs.setDoc(tRef, { encrypted: enc, updatedAt: Date.now() });
+        // Update local state too
+        this.todos[me] = { items: updated };
+        localStorage.setItem(flagKey, '1');
+        console.log('[Workshop] XP migration complete');
+      } catch (e) {
+        console.error('[Workshop] XP migration failed:', e);
+        // Don't set the flag — try again next time
+      }
+    },
+
     // and also stamp projectId onto all their existing devlogs and todos.
     // This runs once at start, after data loads.
     async _runMyMigrationIfNeeded() {
@@ -11422,10 +11491,22 @@
     },
 
     async updateTodoStatus(id, newStatus) {
-      const updateStatus = (items) => items.map(it =>
-        it.id === id ? { ...it, status: newStatus, updatedTs: Date.now() } : it
-      );
+      // Track whether this transition is the *first time* a todo becomes "done"
+      // so we award XP only once — even if the user toggles back and forth.
+      let shouldAwardXp = false;
+      const updateStatus = (items) => items.map(it => {
+        if (it.id !== id) return it;
+        // Award XP on the first transition into "done"
+        if (newStatus === 'done' && !it.xpAwarded) {
+          shouldAwardXp = true;
+          return { ...it, status: newStatus, xpAwarded: true, updatedTs: Date.now() };
+        }
+        return { ...it, status: newStatus, updatedTs: Date.now() };
+      });
       await this._runTodoAction(updateStatus, updateStatus);
+      if (shouldAwardXp && typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+        Profile.awardActivityXP(5, 'todo-done');
+      }
     },
 
     async deleteTodo(id) {
@@ -11655,6 +11736,10 @@
       const ref = fs.collection(db, 'broop_app', session.cloudId, 'devlogs');
       const encrypted = encrypt(JSON.stringify(payload), session.key);
       await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
+      // Award activity XP for posting a devlog (silent, passive)
+      if (typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+        Profile.awardActivityXP(8, 'devlog-post');
+      }
       // Reset help toggle after sending so user explicitly opts in each time.
       // Tag is intentionally kept (user often writes related entries).
       this.composerHelp = false;
@@ -11690,6 +11775,10 @@
       const ref = fs.doc(db, 'broop_app', session.cloudId, 'devlogs', devlogId);
       const encrypted = encrypt(JSON.stringify(updated), session.key);
       await fs.updateDoc(ref, { encrypted });
+      // Award small XP for engaging with a devlog
+      if (typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+        Profile.awardActivityXP(3, 'devlog-comment');
+      }
     },
 
     // ---- Reaction actions ----
@@ -11792,8 +11881,9 @@
         const isNew = !!this._creatingNewProject;
         const activeId = newDoc.activeProjectId;
         const activeIdx = activeId ? newDoc.projects.findIndex(p => p.id === activeId) : -1;
+        const wasCreated = (isNew || activeIdx < 0);
 
-        if (isNew || activeIdx < 0) {
+        if (wasCreated) {
           // Creating a new project — push and set as active
           const id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
           newDoc.projects.push({
@@ -11803,6 +11893,7 @@
             coverImage,
             createdTs: Date.now(),
             archived: false,
+            xpAwarded: true, // mark as XP'd so won't double-award later
           });
           newDoc.activeProjectId = id;
         } else {
@@ -11819,6 +11910,11 @@
         await fs.setDoc(ref, { encrypted, updatedAt: Date.now() });
         this._creatingNewProject = false;
         this.closeProjectModal();
+        // Award XP only when a brand-new project is created (not on edits).
+        // Bigger reward — projects are a meaningful milestone.
+        if (wasCreated && typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+          Profile.awardActivityXP(20, 'project-new');
+        }
       } catch (e) {
         els.projectFormError.textContent = 'Hata: ' + (e.message || e);
       }
@@ -12050,6 +12146,10 @@
         const encrypted = encrypt(JSON.stringify(payload), session.key);
         await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
         this.closeResourceModal();
+        // Award XP for sharing a useful resource with the team
+        if (typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+          Profile.awardActivityXP(10, 'resource-add');
+        }
       } catch (e) {
         els.resourceFormError.textContent = 'Hata: ' + (e.message || e);
       }
