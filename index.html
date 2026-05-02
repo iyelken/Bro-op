@@ -5428,7 +5428,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.22.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.22.2</span></div>
         </div>
 
         <div class="info-card">
@@ -7950,6 +7950,21 @@
       return y + '-' + m + '-' + day;
     },
 
+    // Count distinct calendar days between a join timestamp and "now".
+    // Joining today returns 1, the next calendar day returns 2, etc.
+    // Uses local-time midnight boundaries so crossing 00:00 increments the
+    // counter regardless of how many hours have actually elapsed.
+    _calendarDaysSince(joinedAt) {
+      if (!joinedAt) return 1;
+      const joinDate = new Date(joinedAt);
+      // Truncate both to local midnight so we get a clean day-count
+      const joinMidnight = new Date(joinDate.getFullYear(), joinDate.getMonth(), joinDate.getDate()).getTime();
+      const today = new Date();
+      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+      const diff = Math.round((todayMidnight - joinMidnight) / (1000 * 60 * 60 * 24));
+      return Math.max(1, diff + 1);
+    },
+
     // Increase the streak based on the day of the last activity:
     //  - same day  → no change (already counted)
     //  - yesterday → +1
@@ -8012,10 +8027,11 @@
       els.xpText.textContent = xp + ' / ' + need + ' XP';
       els.statQuests.textContent = this.me.completedQuests || 0;
       els.statBadges.textContent = this.me.badges || 0;
-      // Days in the room
+      // Days in the room — count distinct CALENDAR DAYS since joining,
+      // not 24-hour periods. So joining at 22:00 last night and viewing at
+      // 00:01 today should show "2", not "1".
       if (this.me.joinedAt) {
-        const days = Math.max(1, Math.floor((Date.now() - this.me.joinedAt) / (1000 * 60 * 60 * 24)) + 1);
-        els.statDays.textContent = days;
+        els.statDays.textContent = this._calendarDaysSince(this.me.joinedAt);
       }
       // Streak: show display value based on whether the chain is still alive.
       // We render-only here — we DON'T mutate state on render to avoid extra
@@ -8161,11 +8177,9 @@
         displayStreak = 0;
       }
 
-      // Days in room
-      let days = 1;
-      if (other.joinedAt) {
-        days = Math.max(1, Math.floor((Date.now() - other.joinedAt) / (1000 * 60 * 60 * 24)) + 1);
-      }
+      // Days in room — count distinct calendar days (so post-midnight
+      // entries bump the counter even before 24h have passed)
+      const days = this._calendarDaysSince(other.joinedAt);
 
       const grid = document.createElement('div');
       grid.className = 'friend-stats-grid';
