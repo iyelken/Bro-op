@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0a14" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Bro-op" />
 <title>Bro-op</title>
@@ -4979,6 +4980,182 @@
     flex-shrink: 0;
   }
 
+  /* Comment count inline indicator — sits next to FAYDALI button */
+  .resource-comment-count {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* ============================================
+     RESOURCE COMMENTS — inline (devlog-style)
+     ============================================ */
+  /* Outer wrapper holds the clickable card + the comments block beneath it.
+     The wrapper itself is NOT a link, so the comment input/buttons inside
+     it work without triggering the card's outer href. */
+  .resource-card-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .resource-comments {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-soft);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    padding: 12px 14px;
+    margin-top: -1px; /* glue to card bottom */
+  }
+  .resource-comments-header {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .resource-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* Single comment — cyan when from someone else, purple when mine */
+  .resource-comment {
+    background: rgba(0, 240, 255, 0.04);
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 4px;
+    padding: 8px 10px;
+    position: relative;
+  }
+  .resource-comment.mine {
+    background: rgba(184, 85, 255, 0.04);
+    border-color: rgba(184, 85, 255, 0.15);
+  }
+  .resource-comment-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+  }
+  .resource-comment-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.18);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    color: #6ce5f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .resource-comment.mine .resource-comment-avatar {
+    background: rgba(184, 85, 255, 0.2);
+    border-color: rgba(184, 85, 255, 0.4);
+    color: #d8a8ff;
+  }
+  .resource-comment-meta {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+  }
+  .resource-comment-text {
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .resource-comment-delete {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+  }
+  .resource-comment:hover .resource-comment-delete { opacity: 0.6; }
+  .resource-comment-delete:hover {
+    opacity: 1 !important;
+    color: var(--danger);
+  }
+
+  /* Composer at bottom of comments block */
+  .resource-comment-composer {
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    transition: border-color 0.15s;
+  }
+  .resource-comment-composer:focus-within {
+    border-color: var(--accent-match);
+  }
+  .resource-comment-composer textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 12px;
+    resize: none;
+    min-height: 22px;
+    max-height: 80px;
+    line-height: 1.45;
+  }
+  .resource-comment-composer textarea::placeholder {
+    color: var(--text-muted);
+  }
+  .resource-comment-send {
+    background: rgba(0, 255, 127, 0.15);
+    color: var(--accent-match);
+    border: 1px solid rgba(0, 255, 127, 0.45);
+    padding: 5px 10px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .resource-comment-send:hover:not(:disabled) {
+    background: rgba(0, 255, 127, 0.25);
+    border-color: var(--accent-match);
+  }
+  .resource-comment-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .resource-comment-send:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  /* Make the main resource card glue to comments visually
+     (remove bottom rounding, so they look like one unit) */
+  .resource-card-wrap .resource-card {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
   /* ============================================
      ONBOARDING TOUR
      ============================================ */
@@ -5499,7 +5676,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.23.0-alpha1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.23.0-alpha2</span></div>
         </div>
 
         <div class="info-card">
@@ -13124,6 +13301,12 @@
     },
 
     renderResourceCard(r) {
+      // Outer wrapper — holds the clickable card AND the inline comments
+      // section. The wrapper itself is NOT a link, so interactive elements
+      // (comment input, buttons) inside it don't trigger navigation.
+      const wrap = document.createElement('div');
+      wrap.className = 'resource-card-wrap';
+
       const a = document.createElement('a');
       a.className = 'resource-card';
       a.dataset.cat = r.category;
@@ -13252,12 +13435,140 @@
         actions.appendChild(protectedBadge);
       }
 
+      // 💬 Comment count — read-only inline indicator
+      const commentCount = (Array.isArray(r.comments) ? r.comments : []).length;
+      if (commentCount > 0) {
+        const cBadge = document.createElement('span');
+        cBadge.className = 'resource-comment-count';
+        cBadge.textContent = '💬 ' + commentCount;
+        cBadge.title = commentCount + ' yorum';
+        // Only push this to the right if there's no protected badge yet
+        if (helpedBy.length === 0) cBadge.style.marginLeft = 'auto';
+        actions.appendChild(cBadge);
+      }
+
       contentWrap.appendChild(actions);
 
       // If we used a separate wrapper (thumbnail case), append it now
       if (thumbnail) a.appendChild(contentWrap);
 
-      return a;
+      // Append the clickable main card to the outer wrapper
+      wrap.appendChild(a);
+
+      // ============================================
+      // INLINE COMMENTS — devlog-style, always visible under the card
+      // ============================================
+      const commentsBlock = document.createElement('div');
+      commentsBlock.className = 'resource-comments';
+
+      const comments = Array.isArray(r.comments) ? r.comments : [];
+
+      // Header line — comment count
+      const cHead = document.createElement('div');
+      cHead.className = 'resource-comments-header';
+      cHead.textContent = '>> YORUMLAR ( ' + comments.length + ' )';
+      commentsBlock.appendChild(cHead);
+
+      // Comment list (oldest first, like a chat thread)
+      if (comments.length > 0) {
+        const list = document.createElement('div');
+        list.className = 'resource-comments-list';
+        const sorted = [...comments].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        for (const c of sorted) {
+          list.appendChild(this._buildResourceComment(r.id, c));
+        }
+        commentsBlock.appendChild(list);
+      }
+
+      // Composer — always visible at the bottom (devlog style)
+      const composer = document.createElement('div');
+      composer.className = 'resource-comment-composer';
+      const ta = document.createElement('textarea');
+      ta.placeholder = comments.length === 0
+        ? 'İlk yorumu sen yaz...'
+        : 'Yorum yaz...';
+      ta.rows = 1;
+      ta.maxLength = 1000;
+      const sendBtn = document.createElement('button');
+      sendBtn.type = 'button';
+      sendBtn.className = 'resource-comment-send';
+      sendBtn.textContent = 'YAZ';
+      sendBtn.disabled = true;
+      // Enable button only when there's text
+      ta.addEventListener('input', () => {
+        sendBtn.disabled = ta.value.trim().length === 0;
+      });
+      // Ctrl/Cmd+Enter sends
+      ta.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          if (ta.value.trim()) {
+            this.addResourceComment(r.id, ta.value);
+            ta.value = '';
+            sendBtn.disabled = true;
+          }
+        }
+      });
+      sendBtn.addEventListener('click', () => {
+        if (ta.value.trim()) {
+          this.addResourceComment(r.id, ta.value);
+          ta.value = '';
+          sendBtn.disabled = true;
+        }
+      });
+      composer.appendChild(ta);
+      composer.appendChild(sendBtn);
+      commentsBlock.appendChild(composer);
+
+      wrap.appendChild(commentsBlock);
+
+      return wrap;
+    },
+
+    // Build a single comment element for display under a resource card.
+    // Cyan-styled when the comment is from someone else, purple when it's mine.
+    _buildResourceComment(resourceId, c) {
+      const me = session.playerName;
+      const isMine = c.by === me;
+      const item = document.createElement('div');
+      item.className = 'resource-comment' + (isMine ? ' mine' : '');
+
+      const head = document.createElement('div');
+      head.className = 'resource-comment-head';
+      const av = document.createElement('div');
+      av.className = 'resource-comment-avatar';
+      av.textContent = (c.by || '?').charAt(0).toUpperCase();
+      const meta = document.createElement('div');
+      meta.className = 'resource-comment-meta';
+      meta.textContent = (c.by || '?') + ' · ' + this.formatTime(c.ts);
+      head.appendChild(av);
+      head.appendChild(meta);
+
+      const body = document.createElement('div');
+      body.className = 'resource-comment-text';
+      body.textContent = c.text || '';
+
+      item.appendChild(head);
+      item.appendChild(body);
+
+      // Delete button — only for the comment author
+      if (isMine) {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'resource-comment-delete';
+        del.textContent = '✕';
+        del.title = 'Yorumu sil';
+        del.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (confirm('Bu yorumu silmek istediğine emin misin?')) {
+            this.deleteResourceComment(resourceId, c.ts);
+          }
+        });
+        item.appendChild(del);
+      }
+
+      return item;
     },
 
     openResourceModal() {
@@ -13360,6 +13671,59 @@
         await fs.updateDoc(ref, { encrypted: enc });
       } catch (e) {
         console.error('[Workshop] toggleResourceHelpful failed:', e);
+      }
+    },
+
+    // Add a comment to a resource. Inline (devlog-style) — no separate modal.
+    // Comment shape: { by: playerName, text: string, ts: number }
+    async addResourceComment(resourceId, text) {
+      if (!cloudReady() || !session) return;
+      const trimmed = (text || '').trim();
+      if (!trimmed) return;
+      const r = this.resources.find(x => x.id === resourceId);
+      if (!r) return;
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'resources', resourceId);
+        const newComment = {
+          by: session.playerName,
+          text: trimmed,
+          ts: Date.now(),
+        };
+        const updated = {
+          ...r,
+          comments: [...(Array.isArray(r.comments) ? r.comments : []), newComment],
+        };
+        delete updated.id;
+        const enc = encrypt(JSON.stringify(updated), session.key);
+        await fs.updateDoc(ref, { encrypted: enc });
+        // Tiny activity XP — same as devlog comments
+        if (typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+          Profile.awardActivityXP(3, 'resource-comment');
+        }
+      } catch (e) {
+        console.error('[Workshop] addResourceComment failed:', e);
+        alert('Yorum eklenemedi: ' + (e.message || e));
+      }
+    },
+
+    // Delete a comment by its timestamp+author (we don't store comment IDs;
+    // (by, ts) is unique enough for this small-scale use case).
+    async deleteResourceComment(resourceId, commentTs) {
+      if (!cloudReady() || !session) return;
+      const r = this.resources.find(x => x.id === resourceId);
+      if (!r) return;
+      const me = session.playerName;
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'resources', resourceId);
+        const remaining = (r.comments || []).filter(c => !(c.by === me && c.ts === commentTs));
+        const updated = { ...r, comments: remaining };
+        delete updated.id;
+        const enc = encrypt(JSON.stringify(updated), session.key);
+        await fs.updateDoc(ref, { encrypted: enc });
+      } catch (e) {
+        console.error('[Workshop] deleteResourceComment failed:', e);
       }
     },
 
