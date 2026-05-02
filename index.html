@@ -2222,6 +2222,63 @@
   .prompt-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
+  }
+
+  /* Comment count badge — pushed to the far right of the actions row.
+     Yellow accent + red dot when there are unseen comments. */
+  .prompt-comment-badge {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .prompt-comment-badge:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .prompt-comment-badge .cb-icon {
+    font-size: 11px;
+    line-height: 1;
+  }
+  .prompt-comment-badge .cb-count {
+    line-height: 1;
+  }
+
+  /* When there's an unseen comment, show a pulsing red dot
+     (similar style to the chat tab notification badge) */
+  .prompt-comment-badge.unseen {
+    color: var(--accent-quest);
+    border-color: rgba(255, 176, 0, 0.5);
+    background: rgba(255, 176, 0, 0.08);
+  }
+  .prompt-comment-badge.unseen::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 8px;
+    height: 8px;
+    background: #ff3860;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 56, 96, 0.7);
+    animation: commentBadgePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes commentBadgePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
   }
   .prompt-copy-btn {
     background: var(--accent-workshop);
@@ -4897,7 +4954,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.19.2</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.19.3</span></div>
         </div>
 
         <div class="info-card">
@@ -9054,6 +9111,32 @@
       });
       actions.appendChild(copyBtn);
       actions.appendChild(openBtn);
+
+      // Comment count badge — sits on the right side of the actions row.
+      // Visible only when there's at least one comment. Highlights (red dot)
+      // if there are unseen comments from the other person (since user's
+      // last visit to the prompts tab).
+      const commentCount = (p.comments || []).length;
+      if (commentCount > 0) {
+        const badge = document.createElement('div');
+        badge.className = 'prompt-comment-badge';
+        let hasUnseen = false;
+        try {
+          const lastSeen = (typeof Notifications !== 'undefined') ? Notifications.getLastSeen('prompts') : 0;
+          const me = session.playerName;
+          hasUnseen = (p.comments || []).some(c => c.author !== me && (c.ts || 0) > lastSeen);
+        } catch {}
+        if (hasUnseen) badge.classList.add('unseen');
+        badge.innerHTML = '<span class="cb-icon">💬</span><span class="cb-count">' + commentCount + '</span>';
+        badge.title = commentCount + ' yorum' + (hasUnseen ? ' (yeni!)' : '');
+        // Click goes straight to detail view (same as AÇ button)
+        badge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openDetail(p.id);
+        });
+        actions.appendChild(badge);
+      }
+
       card.appendChild(actions);
 
       // Whole card click also opens detail (except on action buttons due to stopPropagation)
