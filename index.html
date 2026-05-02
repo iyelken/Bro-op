@@ -4760,8 +4760,8 @@
   }
   .ws-cat-pill[data-cat="tutorial"].active { background: rgba(0, 240, 255, 0.16); border-color: var(--accent-chat); color: var(--accent-chat); }
   .ws-cat-pill[data-cat="asset"].active { background: rgba(255, 176, 0, 0.16); border-color: var(--accent-quest); color: var(--accent-quest); }
-  .ws-cat-pill[data-cat="tool"].active { background: rgba(0, 255, 127, 0.16); border-color: var(--accent-match); color: var(--accent-match); }
-  .ws-cat-pill[data-cat="article"].active { background: rgba(255, 0, 128, 0.16); border-color: var(--accent-profile); color: var(--accent-profile); }
+  .ws-cat-pill[data-cat="steam"].active { background: rgba(184, 85, 255, 0.16); border-color: var(--accent-workshop); color: var(--accent-workshop); }
+  .ws-cat-pill[data-cat="fun"].active { background: rgba(255, 0, 128, 0.16); border-color: var(--accent-profile); color: var(--accent-profile); }
 
   .resource-list {
     display: flex;
@@ -4791,8 +4791,8 @@
   }
   .resource-card[data-cat="tutorial"]::before { background: var(--accent-chat); }
   .resource-card[data-cat="asset"]::before { background: var(--accent-quest); }
-  .resource-card[data-cat="tool"]::before { background: var(--accent-match); }
-  .resource-card[data-cat="article"]::before { background: var(--accent-profile); }
+  .resource-card[data-cat="steam"]::before { background: var(--accent-workshop); }
+  .resource-card[data-cat="fun"]::before { background: var(--accent-profile); }
 
   /* When card has a thumbnail, switch to side-by-side flex layout
      (image on left, content on right — Steam library style) */
@@ -4876,8 +4876,8 @@
   }
   .resource-cat-tag[data-cat="tutorial"] { background: rgba(0, 240, 255, 0.12); color: var(--accent-chat); }
   .resource-cat-tag[data-cat="asset"] { background: rgba(255, 176, 0, 0.12); color: var(--accent-quest); }
-  .resource-cat-tag[data-cat="tool"] { background: rgba(0, 255, 127, 0.12); color: var(--accent-match); }
-  .resource-cat-tag[data-cat="article"] { background: rgba(255, 0, 128, 0.12); color: var(--accent-profile); }
+  .resource-cat-tag[data-cat="steam"] { background: rgba(184, 85, 255, 0.12); color: var(--accent-workshop); }
+  .resource-cat-tag[data-cat="fun"] { background: rgba(255, 0, 128, 0.12); color: var(--accent-profile); }
 
   .resource-url {
     font-family: var(--font-crt);
@@ -4907,6 +4907,77 @@
     border-radius: 2px;
   }
   .resource-delete:hover { color: var(--danger); background: rgba(255, 56, 96, 0.08); }
+
+  /* ============================================
+     RESOURCE ACTIONS — Helpful button + protected badge
+     ============================================ */
+  /* Action row sits below the meta line, with the "FAYDALI" toggle and
+     the "KORUMALI" badge once anyone has marked it helpful. */
+  .resource-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-soft);
+  }
+
+  /* Faydalı (Helpful) toggle — bordered pill */
+  .resource-helpful-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .resource-helpful-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
+  .resource-helpful-btn .rh-star {
+    font-size: 12px;
+    opacity: 0.5;
+  }
+  .resource-helpful-btn .rh-count {
+    opacity: 0.7;
+    font-weight: 700;
+  }
+  /* Active state — at least the current user marked it helpful */
+  .resource-helpful-btn.active {
+    background: rgba(255, 176, 0, 0.15);
+    color: var(--accent-quest);
+    border-color: rgba(255, 176, 0, 0.45);
+  }
+  .resource-helpful-btn.active:hover {
+    background: rgba(255, 176, 0, 0.22);
+    border-color: var(--accent-quest);
+  }
+  .resource-helpful-btn.active .rh-star {
+    opacity: 1;
+    color: var(--accent-quest);
+    text-shadow: 0 0 6px rgba(255, 176, 0, 0.5);
+  }
+
+  /* "KORUMALI" badge — shown when helpfulCount >= 1 */
+  .resource-protected-badge {
+    background: rgba(255, 176, 0, 0.18);
+    color: var(--accent-quest);
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 3px 7px;
+    border-radius: 3px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
 
   /* ============================================
      ONBOARDING TOUR
@@ -5428,7 +5499,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.22.2</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.23.0-alpha1</span></div>
         </div>
 
         <div class="info-card">
@@ -5476,7 +5547,7 @@
         <div class="ws-tabs">
           <button class="ws-tab active" data-ws-tab="mine">PROJEM</button>
           <button class="ws-tab" data-ws-tab="theirs">DİĞERLERİ</button>
-          <button class="ws-tab" data-ws-tab="resources">KAYNAKLAR</button>
+          <button class="ws-tab" data-ws-tab="resources">DUYURULAR</button>
         </div>
 
         <!-- My project sub-pane -->
@@ -5537,7 +5608,7 @@
         <!-- Resources sub-pane -->
         <div class="ws-pane" data-ws-pane="resources">
           <div class="ws-toolbar">
-            <button class="ws-btn primary" id="newResourceBtn">+ KAYNAK EKLE</button>
+            <button class="ws-btn primary" id="newResourceBtn">+ YENİ PAYLAŞIM</button>
             <div class="ws-cat-row" id="resourceCatFilter"></div>
           </div>
           <div class="resource-list" id="resourceList"></div>
@@ -5608,7 +5679,7 @@
       <div class="modal-backdrop hidden" id="resourceModal">
         <div class="modal-card">
           <div class="modal-header">
-            <div class="modal-title">KAYNAK EKLE</div>
+            <div class="modal-title">YENİ PAYLAŞIM</div>
             <div class="modal-subtitle">tutorial, asset, tool ya da article</div>
           </div>
           <div class="modal-body">
@@ -8886,10 +8957,10 @@
   //   broop_app/{cloudId}/resources/{resId}       -> { encrypted: {url, title, category, addedBy, ts}, createdAt }
 
   const RESOURCE_CATEGORIES = [
-    { key: 'tutorial', label: 'TUTORIAL' },
-    { key: 'asset', label: 'ASSET' },
-    { key: 'tool', label: 'TOOL' },
-    { key: 'article', label: 'ARTICLE' },
+    { key: 'asset', label: 'ASSET', icon: '📦' },
+    { key: 'tutorial', label: 'TUTORIAL', icon: '🎓' },
+    { key: 'steam', label: 'STEAM', icon: '🎮' },
+    { key: 'fun', label: 'EĞLENCELİ', icon: '🎉' },
   ];
 
   // ============================================================
@@ -10728,7 +10799,16 @@
         snap.forEach(d => {
           const raw = decrypt(d.data().encrypted || '', session.key);
           if (!raw) return;
-          try { list.push({ id: d.id, ...JSON.parse(raw) }); } catch {}
+          try {
+            const r = { id: d.id, ...JSON.parse(raw) };
+            // Backward-compat: old categories (tool/article) → asset.
+            // Display-time only — no Firestore write needed; if the user
+            // edits the entry later it'll get the new category for real.
+            if (r.category === 'tool' || r.category === 'article') {
+              r.category = 'asset';
+            }
+            list.push(r);
+          } catch {}
         });
         list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
         this.resources = list;
@@ -13018,19 +13098,19 @@
         if (this.resources.length === 0) {
           empty.innerHTML = `
             <div class="empty-icon">🔗</div>
-            <div class="empty-title">Henüz kaynak yok</div>
+            <div class="empty-title">Henüz paylaşım yok</div>
             <div class="empty-text">Faydalı bir tutorial veya tool ekle</div>
           `;
           const cta = document.createElement('button');
           cta.className = 'ws-btn primary';
           cta.style.marginTop = '14px';
-          cta.textContent = '+ KAYNAK EKLE';
+          cta.textContent = '+ YENİ PAYLAŞIM';
           cta.addEventListener('click', () => Workshop.openResourceModal());
           empty.appendChild(cta);
         } else {
           empty.innerHTML = `
             <div class="empty-icon">🔍</div>
-            <div class="empty-title">Bu kategoride kaynak yok</div>
+            <div class="empty-title">Bu kategoride paylaşım yok</div>
             <div class="empty-text">Başka bir kategori dene</div>
           `;
         }
@@ -13132,6 +13212,48 @@
       }
       contentWrap.appendChild(meta);
 
+      // ============================================
+      // ACTION ROW — Helpful button + comment count + days-left badge
+      // ============================================
+      // Only added once we know the basic card is built; sits below the meta.
+      // Click handlers stop propagation so they don't trigger the card's
+      // outer <a> link to the URL.
+      const actions = document.createElement('div');
+      actions.className = 'resource-actions';
+
+      // ⭐ "FAYDALI" / "Useful" toggle button
+      // Each player can mark a post helpful — tracked as an array of names
+      // so we know who marked it (and thus how many in total).
+      const helpedBy = Array.isArray(r.helpedBy) ? r.helpedBy : [];
+      const meHelped = helpedBy.includes(session.playerName);
+      const helpfulBtn = document.createElement('button');
+      helpfulBtn.type = 'button';
+      helpfulBtn.className = 'resource-helpful-btn' + (meHelped ? ' active' : '');
+      const star = meHelped ? '★' : '☆';
+      const countText = helpedBy.length > 0 ? ' · ' + helpedBy.length : '';
+      helpfulBtn.innerHTML = '<span class="rh-star">' + star + '</span><span class="rh-label">FAYDALI</span><span class="rh-count">' + countText + '</span>';
+      helpfulBtn.title = helpedBy.length > 0
+        ? helpedBy.join(', ') + ' faydalı buldu'
+        : 'Bu paylaşımı faydalı buldun mu?';
+      helpfulBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleResourceHelpful(r.id);
+      });
+      actions.appendChild(helpfulBtn);
+
+      // 📌 KORUMALI badge — shown when at least one person marked helpful.
+      // This is the "shield" against auto-deletion.
+      if (helpedBy.length > 0) {
+        const protectedBadge = document.createElement('span');
+        protectedBadge.className = 'resource-protected-badge';
+        protectedBadge.textContent = '📌 KORUMALI';
+        protectedBadge.title = 'Faydalı işaretli, otomatik silinmez';
+        actions.appendChild(protectedBadge);
+      }
+
+      contentWrap.appendChild(actions);
+
       // If we used a separate wrapper (thumbnail case), append it now
       if (thumbnail) a.appendChild(contentWrap);
 
@@ -13139,7 +13261,7 @@
     },
 
     openResourceModal() {
-      this.rfCategory = 'tutorial';
+      this.rfCategory = 'asset';
       els.rfTitle.value = '';
       els.rfUrl.value = '';
       els.resourceFormError.textContent = '';
@@ -13212,6 +13334,32 @@
         }
       } catch (e) {
         els.resourceFormError.textContent = 'Hata: ' + (e.message || e);
+      }
+    },
+
+    // Toggle the current user's "helpful" mark on a resource.
+    // helpedBy is an array of player names — pushed/removed atomically.
+    // Once at least one person has marked it, the post is permanently
+    // protected from the 7-day auto-delete sweep.
+    async toggleResourceHelpful(id) {
+      if (!cloudReady() || !session) return;
+      const r = this.resources.find(x => x.id === id);
+      if (!r) return;
+      const me = session.playerName;
+      const current = Array.isArray(r.helpedBy) ? r.helpedBy : [];
+      const next = current.includes(me)
+        ? current.filter(n => n !== me)
+        : [...current, me];
+      try {
+        const { db, fs } = window.__broop;
+        const ref = fs.doc(db, 'broop_app', session.cloudId, 'resources', id);
+        // Build clean payload to encrypt — strip the doc id we added at read time.
+        const updated = { ...r, helpedBy: next };
+        delete updated.id;
+        const enc = encrypt(JSON.stringify(updated), session.key);
+        await fs.updateDoc(ref, { encrypted: enc });
+      } catch (e) {
+        console.error('[Workshop] toggleResourceHelpful failed:', e);
       }
     },
 
@@ -13391,7 +13539,7 @@
       {
         icon: '⚒',
         title: 'ATÖLYE',
-        text: 'Oyun geliştiriyorsanız tam size göre. <b>Devlog</b> tut, arkadaşının projesine yorum bırak, paylaştığınız <b>kaynakları</b> kategorize et.',
+        text: 'Oyun geliştiriyorsanız tam size göre. <b>Devlog</b> tut, arkadaşının projesine yorum bırak, paylaştığınız <b>duyuruları</b> kategorize et.',
       },
       {
         icon: '🚀',
