@@ -705,6 +705,176 @@
     letter-spacing: 0.5px;
   }
 
+  /* ============================================
+     OTHER PLAYERS' PROFILE CARDS
+     ============================================ */
+  /* Container for all the friend profile cards (one per other player) */
+  .others-profile-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .others-profile-section:empty {
+    display: none;
+  }
+  .others-section-label {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent-chat);
+    margin-bottom: 4px;
+  }
+
+  /* Friend profile card — same shape as your own card but cyan-accented
+     so it's visually clear "this is them, not me" */
+  .friend-profile-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .friend-profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent, var(--accent-chat), transparent);
+  }
+
+  .friend-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .friend-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.18);
+    border: 2px solid var(--accent-chat);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-pixel);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent-chat);
+    flex-shrink: 0;
+  }
+  .friend-name {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+  .friend-tag {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Level block — same idea as own, but with the GEÇMİŞ button cyan-tinted */
+  .friend-level-block {
+    margin-bottom: 14px;
+  }
+  .friend-level-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .friend-level-num {
+    font-family: var(--font-pixel);
+    font-size: 18px;
+    color: var(--accent-chat);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+  }
+  .friend-history-btn {
+    margin-left: auto;
+    background: rgba(0, 240, 255, 0.10);
+    color: var(--accent-chat);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    padding: 6px 12px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .friend-history-btn:hover {
+    background: rgba(0, 240, 255, 0.20);
+    border-color: var(--accent-chat);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+  }
+  .friend-history-btn:active { transform: translateY(1px); }
+
+  .friend-xp-bar {
+    background: rgba(255, 255, 255, 0.05);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .friend-xp-fill {
+    background: linear-gradient(90deg, var(--accent-chat), #6ce5f0);
+    height: 100%;
+    transition: width 0.4s ease-out;
+  }
+  .friend-xp-text {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Stats grid — 4 cells like own profile */
+  .friend-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .friend-stat-cell {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-soft);
+    border-radius: 3px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .friend-stat-value {
+    font-family: var(--font-pixel);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .friend-stat-label {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  /* Mobile layout adjustments */
+  @media (max-width: 600px) {
+    .friend-profile-card { padding: 18px 16px; }
+    .friend-stats-grid { gap: 6px; }
+    .friend-stat-cell { padding: 8px 4px; }
+    .friend-stat-value { font-size: 16px; }
+    .friend-stat-label { font-size: 7px; }
+  }
+
   /* Cloud info card */
   .info-card {
     background: var(--bg-panel-2);
@@ -5251,11 +5421,14 @@
           </div>
         </div>
 
+        <!-- Other players' profile cards -->
+        <div class="others-profile-section" id="othersProfileSection"></div>
+
         <div class="info-card">
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.22.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.22.1</span></div>
         </div>
 
         <div class="info-card">
@@ -5916,6 +6089,7 @@
     statStreak: $('#statStreak'),
     statQuests: $('#statQuests'),
     statBadges: $('#statBadges'),
+    othersProfileSection: $('#othersProfileSection'),
     statDays: $('#statDays'),
     // XP toast
     xpToast: $('#xpToast'),
@@ -7871,6 +8045,163 @@
         if (best > 0) tip += '\nEn uzun: ' + best + ' gün';
         els.statStreak.parentElement.title = tip;
       }
+      // Also render the other players' profile cards (they piggyback on
+      // the same data flow as your own profile)
+      this.renderOthers();
+    },
+
+    // Render a profile card for each other player in the room.
+    // Shows level + XP bar + streak/quests/badges/days, plus a button
+    // to open the XP history modal pre-filtered to that player.
+    renderOthers() {
+      if (!els.othersProfileSection) return;
+      els.othersProfileSection.innerHTML = '';
+      const others = this.others();
+      if (others.length === 0) return; // empty section is hidden via CSS
+
+      // Header label (shown only when there's at least one friend)
+      const label = document.createElement('div');
+      label.className = 'others-section-label';
+      label.textContent = '>> ARKADAŞIN' + (others.length > 1 ? 'LARIN' : '');
+      els.othersProfileSection.appendChild(label);
+
+      // Sort by level desc → highest-level friend first
+      others.sort((a, b) => (b.level || 0) - (a.level || 0));
+
+      for (const other of others) {
+        els.othersProfileSection.appendChild(this._buildFriendCard(other));
+      }
+    },
+
+    // Build a single friend's profile card. `other` is the shape returned
+    // by Profile.others(): { name, xp, level, streakCount, lastActiveDay, ... }
+    _buildFriendCard(other) {
+      const card = document.createElement('div');
+      card.className = 'friend-profile-card';
+
+      // ===== Avatar + name row =====
+      const row = document.createElement('div');
+      row.className = 'friend-avatar-row';
+      const avatar = document.createElement('div');
+      avatar.className = 'friend-avatar';
+      avatar.textContent = (other.name || '?').charAt(0).toUpperCase();
+      const nameWrap = document.createElement('div');
+      const nm = document.createElement('div');
+      nm.className = 'friend-name';
+      nm.textContent = other.name || '?';
+      const tg = document.createElement('div');
+      tg.className = 'friend-tag';
+      tg.textContent = '@' + (session ? session.cloudId : 'oda');
+      nameWrap.appendChild(nm);
+      nameWrap.appendChild(tg);
+      row.appendChild(avatar);
+      row.appendChild(nameWrap);
+      card.appendChild(row);
+
+      // ===== Level + XP bar =====
+      const lvlBlock = document.createElement('div');
+      lvlBlock.className = 'friend-level-block';
+      const lvlRow = document.createElement('div');
+      lvlRow.className = 'friend-level-row';
+      const lvlLabel = document.createElement('span');
+      lvlLabel.className = 'level-label';
+      lvlLabel.textContent = 'LEVEL';
+      const lvlNum = document.createElement('span');
+      lvlNum.className = 'friend-level-num';
+      const lvl = other.level || 1;
+      lvlNum.textContent = String(lvl).padStart(2, '0');
+      // History button — opens XP history modal pre-filtered to this player
+      const histBtn = document.createElement('button');
+      histBtn.type = 'button';
+      histBtn.className = 'friend-history-btn';
+      histBtn.title = other.name + ' için XP geçmişini gör';
+      histBtn.innerHTML = '<span>📊</span><span>GEÇMİŞ</span>';
+      histBtn.addEventListener('click', () => {
+        if (typeof XpHistory !== 'undefined') {
+          XpHistory.open();
+          // Switch to this friend's tab after opening
+          XpHistory.selectedTarget = other.name;
+          XpHistory.renderTabs();
+          XpHistory.renderContent();
+        }
+      });
+      lvlRow.appendChild(lvlLabel);
+      lvlRow.appendChild(lvlNum);
+      lvlRow.appendChild(histBtn);
+      lvlBlock.appendChild(lvlRow);
+
+      // XP bar
+      const xpBar = document.createElement('div');
+      xpBar.className = 'friend-xp-bar';
+      const xpFill = document.createElement('div');
+      xpFill.className = 'friend-xp-fill';
+      const xp = other.xp || 0;
+      const need = this.xpForNextLevel(lvl);
+      xpFill.style.width = Math.min(100, (xp / need) * 100) + '%';
+      xpBar.appendChild(xpFill);
+      lvlBlock.appendChild(xpBar);
+
+      const xpText = document.createElement('div');
+      xpText.className = 'friend-xp-text';
+      xpText.textContent = xp + ' / ' + need + ' XP';
+      lvlBlock.appendChild(xpText);
+      card.appendChild(lvlBlock);
+
+      // ===== Stats grid =====
+      // Display streak (with chain-broken detection like own profile)
+      const today = this._dayKey(Date.now());
+      const last = other.lastActiveDay || null;
+      let displayStreak = other.streakCount || 0;
+      if (last) {
+        const lastDate = new Date(last + 'T00:00:00');
+        const todayDate = new Date(today + 'T00:00:00');
+        const diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 2) displayStreak = 0;
+      } else {
+        displayStreak = 0;
+      }
+
+      // Days in room
+      let days = 1;
+      if (other.joinedAt) {
+        days = Math.max(1, Math.floor((Date.now() - other.joinedAt) / (1000 * 60 * 60 * 24)) + 1);
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'friend-stats-grid';
+      const stats = [
+        { value: displayStreak, label: 'streak (gün)', color: 'var(--accent-quest)', glow: 'rgba(255, 176, 0, 0.5)' },
+        { value: other.completedQuests || 0, label: 'quest', color: 'var(--accent-match)', glow: 'rgba(0, 255, 127, 0.5)' },
+        { value: other.badges || 0, label: 'rozet', color: 'var(--accent-chat)', glow: 'rgba(0, 240, 255, 0.5)' },
+        { value: days, label: 'odadaki gün', color: 'var(--accent-workshop)', glow: 'rgba(184, 85, 255, 0.5)' },
+      ];
+      for (const s of stats) {
+        const cell = document.createElement('div');
+        cell.className = 'friend-stat-cell';
+        const v = document.createElement('div');
+        v.className = 'friend-stat-value';
+        v.textContent = s.value;
+        v.style.color = s.color;
+        v.style.textShadow = '0 0 8px ' + s.glow;
+        const lab = document.createElement('div');
+        lab.className = 'friend-stat-label';
+        lab.textContent = s.label;
+        cell.appendChild(v);
+        cell.appendChild(lab);
+        // Streak tooltip
+        if (s.label === 'streak (gün)') {
+          const best = other.bestStreak || 0;
+          let tip = displayStreak > 0
+            ? other.name + ' ' + displayStreak + ' gündür aktif'
+            : other.name + ' bugün henüz aktif değil';
+          if (best > 0) tip += '\nEn uzun: ' + best + ' gün';
+          cell.title = tip;
+        }
+        grid.appendChild(cell);
+      }
+      card.appendChild(grid);
+
+      return card;
     },
   };
 
