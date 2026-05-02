@@ -4254,6 +4254,7 @@
     display: block;
     transition: border-color 0.15s, transform 0.1s;
     position: relative;
+    overflow: hidden;
   }
   .resource-card:active { transform: translateY(1px); }
   .resource-card:hover { border-color: var(--accent-workshop); }
@@ -4262,11 +4263,56 @@
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 3px;
+    z-index: 1;
   }
   .resource-card[data-cat="tutorial"]::before { background: var(--accent-chat); }
   .resource-card[data-cat="asset"]::before { background: var(--accent-quest); }
   .resource-card[data-cat="tool"]::before { background: var(--accent-match); }
   .resource-card[data-cat="article"]::before { background: var(--accent-profile); }
+
+  /* When card has a thumbnail, swap padding for full-bleed image at top */
+  .resource-card:has(.resource-thumb) {
+    padding: 0;
+  }
+  .resource-card:has(.resource-thumb) .resource-head,
+  .resource-card:has(.resource-thumb) .resource-url,
+  .resource-card:has(.resource-thumb) .resource-meta {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .resource-card:has(.resource-thumb) .resource-head {
+    padding-top: 12px;
+  }
+  .resource-card:has(.resource-thumb) .resource-meta {
+    padding-bottom: 12px;
+  }
+
+  /* Thumbnail banner — sits at the top of the card */
+  .resource-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 180px;
+    background: var(--bg-deep);
+    overflow: hidden;
+    margin-left: 3px; /* leave the colored left bar visible */
+  }
+  .resource-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* If image load failed, hide the broken thumb so card looks normal */
+  .resource-thumb.failed {
+    display: none;
+  }
+
+  /* Source icon prefix in resource-url line */
+  .resource-source-icon {
+    display: inline-block;
+    margin-right: 4px;
+  }
 
   .resource-head {
     display: flex;
@@ -4840,7 +4886,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.18.1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.19.0</span></div>
         </div>
 
         <div class="info-card">
@@ -7982,6 +8028,138 @@
     { key: 'tool', label: 'TOOL' },
     { key: 'article', label: 'ARTICLE' },
   ];
+
+  // ============================================================
+  // RESOURCE THUMBNAIL DETECTION
+  // ============================================================
+  // Given a URL, try to derive a preview image from known site patterns.
+  // No network calls — purely URL-based, runs instantly. Returns:
+  //   { image: <thumbnail-url>, source: <site-name>, sourceIcon: <emoji> }
+  // or null if the URL doesn't match a known site.
+  function detectResourceThumbnail(url) {
+    if (!url) return null;
+    let parsed;
+    try { parsed = new URL(url); } catch { return null; }
+    const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+    const path = parsed.pathname;
+
+    // --- Steam game store pages ---
+    // Examples:
+    //   store.steampowered.com/app/1145360
+    //   store.steampowered.com/app/1145360/Hades_II/
+    if (host === 'store.steampowered.com') {
+      const m = path.match(/\/app\/(\d+)/);
+      if (m) {
+        const appId = m[1];
+        return {
+          image: 'https://shared.steamstatic.com/store_item_assets/steam/apps/' + appId + '/header.jpg',
+          source: 'Steam',
+          sourceIcon: '🎮',
+        };
+      }
+    }
+
+    // --- YouTube videos (multiple URL formats) ---
+    // youtube.com/watch?v=xxx, youtu.be/xxx, youtube.com/shorts/xxx, youtube.com/embed/xxx
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      let videoId = null;
+      // /watch?v=xxx
+      if (path === '/watch') videoId = parsed.searchParams.get('v');
+      // /shorts/xxx
+      else if (path.startsWith('/shorts/')) videoId = path.split('/')[2];
+      // /embed/xxx
+      else if (path.startsWith('/embed/')) videoId = path.split('/')[2];
+      if (videoId) {
+        return {
+          image: 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg',
+          source: 'YouTube',
+          sourceIcon: '▶️',
+        };
+      }
+    }
+    if (host === 'youtu.be') {
+      const videoId = path.replace(/^\//, '').split('/')[0];
+      if (videoId) {
+        return {
+          image: 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg',
+          source: 'YouTube',
+          sourceIcon: '▶️',
+        };
+      }
+    }
+
+    // --- GitHub repositories ---
+    // github.com/user/repo (and any sub-path)
+    if (host === 'github.com') {
+      const parts = path.split('/').filter(Boolean);
+      if (parts.length >= 2) {
+        const user = parts[0];
+        const repo = parts[1];
+        return {
+          image: 'https://opengraph.githubassets.com/1/' + user + '/' + repo,
+          source: 'GitHub',
+          sourceIcon: '🐙',
+        };
+      }
+    }
+
+    // --- itch.io games ---
+    // username.itch.io/game-name
+    if (host.endsWith('.itch.io') && path.length > 1) {
+      // itch.io thumbnails aren't deterministic but we can show their site icon
+      return {
+        image: null,
+        source: 'itch.io',
+        sourceIcon: '🎨',
+      };
+    }
+
+    // --- Reddit ---
+    if (host === 'reddit.com' || host === 'old.reddit.com') {
+      return {
+        image: null,
+        source: 'Reddit',
+        sourceIcon: '👽',
+      };
+    }
+
+    // --- Direct image URLs (jpg, png, gif, webp, svg) ---
+    if (/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(path)) {
+      return {
+        image: url,
+        source: host,
+        sourceIcon: '🖼️',
+      };
+    }
+
+    // --- Twitter/X — no thumbnail, just the source rosette ---
+    if (host === 'twitter.com' || host === 'x.com') {
+      return { image: null, source: 'X / Twitter', sourceIcon: '🐦' };
+    }
+
+    // --- Stack Overflow ---
+    if (host === 'stackoverflow.com') {
+      return { image: null, source: 'Stack Overflow', sourceIcon: '📚' };
+    }
+
+    // --- Unity asset store ---
+    if (host === 'assetstore.unity.com') {
+      return { image: null, source: 'Unity Asset Store', sourceIcon: '🎮' };
+    }
+
+    // --- Unreal marketplace ---
+    if (host.includes('unrealengine.com')) {
+      return { image: null, source: 'Unreal', sourceIcon: '🎮' };
+    }
+
+    // --- Figma ---
+    if (host === 'figma.com' || host === 'www.figma.com') {
+      return { image: null, source: 'Figma', sourceIcon: '🎨' };
+    }
+
+    // --- Generic fallback: just the hostname as a label ---
+    return null;
+  }
 
   // Devlog category tags — used to label what kind of progress was made.
   // Each tag has its own color for fast visual scanning.
@@ -11621,6 +11799,36 @@
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
 
+      // Backfill thumbnail/source for resources saved before v0.19
+      // (this also lets old data benefit from later pattern additions)
+      let thumbnail = r.thumbnail;
+      let source = r.source;
+      let sourceIcon = r.sourceIcon;
+      if (!thumbnail && !source) {
+        const detected = detectResourceThumbnail(r.url);
+        if (detected) {
+          thumbnail = detected.image || null;
+          source = detected.source;
+          sourceIcon = detected.sourceIcon;
+        }
+      }
+
+      // Thumbnail image at the top (full width banner) — only if we have one
+      if (thumbnail) {
+        const thumbWrap = document.createElement('div');
+        thumbWrap.className = 'resource-thumb';
+        const img = document.createElement('img');
+        img.src = thumbnail;
+        img.alt = r.title;
+        img.loading = 'lazy';
+        // If the image fails to load (e.g. Steam game removed), hide gracefully
+        img.addEventListener('error', () => {
+          thumbWrap.classList.add('failed');
+        });
+        thumbWrap.appendChild(img);
+        a.appendChild(thumbWrap);
+      }
+
       const head = document.createElement('div');
       head.className = 'resource-head';
       const title = document.createElement('div');
@@ -11636,9 +11844,14 @@
 
       const url = document.createElement('div');
       url.className = 'resource-url';
-      try {
-        url.textContent = new URL(r.url).hostname.replace(/^www\./, '');
-      } catch { url.textContent = r.url; }
+      // Show source name if known, otherwise hostname
+      if (source) {
+        url.innerHTML = '<span class="resource-source-icon">' + (sourceIcon || '🔗') + '</span> ' + source;
+      } else {
+        try {
+          url.textContent = new URL(r.url).hostname.replace(/^www\./, '');
+        } catch { url.textContent = r.url; }
+      }
       a.appendChild(url);
 
       const meta = document.createElement('div');
@@ -11716,12 +11929,19 @@
       try {
         const { db, fs } = window.__broop;
         const ref = fs.collection(db, 'broop_app', session.cloudId, 'resources');
+        // Try to detect a thumbnail/source from the URL — instant, no network
+        const thumb = detectResourceThumbnail(validUrl);
         const payload = {
           title, url: validUrl,
           category: this.rfCategory,
           addedBy: session.playerName,
           ts: Date.now(),
         };
+        if (thumb) {
+          if (thumb.image) payload.thumbnail = thumb.image;
+          if (thumb.source) payload.source = thumb.source;
+          if (thumb.sourceIcon) payload.sourceIcon = thumb.sourceIcon;
+        }
         const encrypted = encrypt(JSON.stringify(payload), session.key);
         await fs.addDoc(ref, { encrypted, createdAt: fs.serverTimestamp() });
         this.closeResourceModal();
