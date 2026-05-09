@@ -5701,7 +5701,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.23.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.23.1</span></div>
         </div>
 
         <div class="info-card">
@@ -12961,6 +12961,10 @@
       // answer depends on what's there. Capture it inside the mutator.
       let triggerCelebration = false;
       let parentText = '';
+      // Track whether this transition is the *first time* this todo enters
+      // "done" via subtask auto-complete, so we award activity XP exactly
+      // once (just like manual drag-to-done does in updateTodoStatus).
+      let shouldAwardXp = false;
 
       const flip = (items) => items.map(it => {
         if (it.id !== parentId) return it;
@@ -12972,6 +12976,12 @@
         const allDone = subs.length > 0 && subs.every(s => s.done);
         if (allDone && it.status !== 'done') {
           updatedItem.status = 'done';
+          // Mark as XP-awarded so it shows up in history AND won't double-award
+          // if the user later drags it out and back in.
+          if (!it.xpAwarded) {
+            updatedItem.xpAwarded = true;
+            shouldAwardXp = true;
+          }
           triggerCelebration = true;
           parentText = it.text;
         }
@@ -12988,6 +12998,7 @@
         const allDone = subs.length > 0 && subs.every(s => s.done);
         if (allDone && it.status !== 'done') {
           updatedItem.status = 'done';
+          if (!it.xpAwarded) updatedItem.xpAwarded = true;
         }
         return updatedItem;
       });
@@ -13002,6 +13013,10 @@
           this.renderMineTodo();
         }
         if (triggerCelebration) this._celebrateTodoDone(parentText);
+        // Award the XP after the transaction succeeds (mirrors updateTodoStatus)
+        if (shouldAwardXp && typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+          Profile.awardActivityXP(5, 'todo-done');
+        }
       } catch (e) {
         console.error('[Workshop] toggleSubtask failed:', e);
         this.todos[me] = { items: previous };
