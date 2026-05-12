@@ -1,15 +1,19 @@
 // Bro-op Service Worker
 // Cache-first strategy for app shell, network-first for everything else
+//
+// VERSIONING: bump CACHE_NAME on every release so the new SW installs
+// and waits, giving us a chance to notify the user via the in-app banner.
 
-const CACHE_NAME = 'broop-v0-8';
+const CACHE_NAME = 'broop-v0-23-2';
 const APP_SHELL = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {
-  // Pre-cache the app shell
+  // Pre-cache the app shell. Do NOT call skipWaiting() here — we want the
+  // new SW to wait until the user explicitly confirms via the in-app
+  // "yeni versiyon hazır" banner, which posts a SKIP_WAITING message.
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -20,6 +24,14 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+// Listen for messages from the page — currently used by the update banner
+// to tell the waiting SW to activate immediately when the user clicks "YENİLE".
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
