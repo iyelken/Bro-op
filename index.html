@@ -4296,6 +4296,53 @@
     color: var(--text-muted);
     text-decoration: line-through;
   }
+
+  /* Drag handle for subtasks — small grip on the left, faded by default,
+     becomes more visible on row hover. */
+  .todo-sub-drag {
+    cursor: grab;
+    color: var(--text-muted);
+    font-size: 10px;
+    letter-spacing: -2px;
+    padding: 0 2px;
+    user-select: none;
+    opacity: 0.3;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+    /* Make the handle a reasonable tap target on mobile */
+    min-width: 14px;
+    min-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .todo-sub:hover .todo-sub-drag {
+    opacity: 0.8;
+    color: var(--accent-workshop);
+  }
+  .todo-sub-drag:active {
+    cursor: grabbing;
+  }
+
+  /* Active dragging state for subtasks */
+  .todo-sub.dragging {
+    opacity: 0.4;
+  }
+
+  /* Drop indicator inside a subtask panel — same idea as todo-drop-ind
+     but thinner since subtasks are visually smaller. */
+  .todo-sub-drop-ind {
+    height: 2px;
+    margin: 2px 0;
+    background: var(--accent-workshop);
+    border-radius: 1px;
+    box-shadow: 0 0 6px rgba(184, 85, 255, 0.7);
+    animation: dropIndPulse 0.9s ease-in-out infinite;
+  }
+  /* Only show indicator while a subtask drag is active in this panel */
+  .todo-subs:not(.subs-dragging) .todo-sub-drop-ind { display: none; }
+
   .todo-sub-check {
     width: 16px;
     height: 16px;
@@ -5818,7 +5865,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.24.0-alpha1</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.24.0</span></div>
         </div>
 
         <div class="info-card">
@@ -12819,10 +12866,50 @@
         const panel = document.createElement('div');
         panel.className = 'todo-subs';
 
-        // Existing subtasks
-        for (const s of subs) {
+        // Existing subtasks — sorted by their persistent `order` field
+        // so user-controlled drag-drop ordering survives re-renders.
+        const sortedSubs = [...subs].sort((a, b) => {
+          const ao = (typeof a.order === 'number') ? a.order : 0;
+          const bo = (typeof b.order === 'number') ? b.order : 0;
+          return ao - bo;
+        });
+        for (const s of sortedSubs) {
           const subEl = document.createElement('div');
           subEl.className = 'todo-sub' + (s.done ? ' done' : '');
+          subEl.dataset.subId = s.id;
+
+          // Drag handle (only on own todos) — small grip icon on the left.
+          // Making the whole row draggable would conflict with the parent
+          // todo's drag, so we put the handle on a dedicated element and
+          // start the drag from there.
+          if (isOwn) {
+            const handle = document.createElement('div');
+            handle.className = 'todo-sub-drag';
+            handle.title = 'Sürükleyerek sırayı değiştir';
+            handle.draggable = true;
+            handle.innerHTML = '⋮⋮'; // two-dot grip
+            handle.addEventListener('dragstart', (e) => {
+              e.stopPropagation();
+              // Mark this entire item as the active drag source.
+              // Use a custom prefix in the data so we know it's a subtask
+              // and not a regular todo (those carry just the id).
+              if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', 'sub:' + it.id + ':' + s.id);
+              }
+              setTimeout(() => subEl.classList.add('dragging'), 0);
+              // Tag the parent panel so we can scope drag-over events to it
+              panel.classList.add('subs-dragging');
+            });
+            handle.addEventListener('dragend', (e) => {
+              e.stopPropagation();
+              subEl.classList.remove('dragging');
+              panel.classList.remove('subs-dragging');
+              const ind = panel.querySelector('.todo-sub-drop-ind');
+              if (ind) ind.remove();
+            });
+            subEl.appendChild(handle);
+          }
 
           const check = document.createElement('button');
           check.className = 'todo-sub-check' + (s.done ? ' checked' : '');
@@ -12869,6 +12956,43 @@
             subEl.appendChild(subDel);
           }
           panel.appendChild(subEl);
+        }
+
+        // Drag-drop reordering inside the subtask panel.
+        // We only react to subtask-tagged drags (those prefixed "sub:itId:")
+        // to avoid interfering with parent-todo drags into columns.
+        if (isOwn && sortedSubs.length > 0) {
+          panel.addEventListener('dragover', (e) => {
+            // Check it's a subtask drag belonging to THIS parent todo
+            const data = (e.dataTransfer && e.dataTransfer.types.includes('text/plain'))
+              ? null /* can't read on dragover for security; we proceed if subs-dragging is set */
+              : null;
+            if (!panel.classList.contains('subs-dragging')) return;
+            e.preventDefault();
+            e.stopPropagation(); // don't bubble to parent column drag handler
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            this._showSubDropIndicator(panel, e.clientY);
+          });
+          panel.addEventListener('drop', (e) => {
+            const raw = e.dataTransfer && e.dataTransfer.getData('text/plain');
+            if (!raw || !raw.startsWith('sub:')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const parts = raw.split(':');
+            const parentId = parts[1];
+            const subId = parts[2];
+            // Only allow reorder inside same parent — moving subtasks
+            // between parents would be confusing
+            if (parentId !== it.id) {
+              const ind = panel.querySelector('.todo-sub-drop-ind');
+              if (ind) ind.remove();
+              return;
+            }
+            const insertIndex = this._computeSubDropIndex(panel, e.clientY, subId);
+            const ind = panel.querySelector('.todo-sub-drop-ind');
+            if (ind) ind.remove();
+            this.reorderSubtask(parentId, subId, insertIndex);
+          });
         }
 
         // Add subtask form (only for own).
@@ -13148,6 +13272,77 @@
       }
     },
 
+    // ============================================
+    // SUBTASK DRAG-DROP REORDERING
+    // ============================================
+    // Compute the would-be insertion index inside a subtask panel, similar
+    // to _computeDropIndex but for the .todo-sub child elements.
+    _computeSubDropIndex(panel, clientY, draggedSubId) {
+      const kids = Array.from(panel.children).filter(c =>
+        c.classList && c.classList.contains('todo-sub') && !c.classList.contains('dragging')
+      );
+      if (kids.length === 0) return 0;
+      for (let i = 0; i < kids.length; i++) {
+        const rect = kids[i].getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (clientY < mid) return i;
+      }
+      return kids.length;
+    },
+
+    _showSubDropIndicator(panel, clientY) {
+      let ind = panel.querySelector('.todo-sub-drop-ind');
+      if (!ind) {
+        ind = document.createElement('div');
+        ind.className = 'todo-sub-drop-ind';
+        panel.appendChild(ind);
+      }
+      const kids = Array.from(panel.children).filter(c =>
+        c.classList && c.classList.contains('todo-sub') && !c.classList.contains('dragging')
+      );
+      let inserted = false;
+      for (let i = 0; i < kids.length; i++) {
+        const rect = kids[i].getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (clientY < mid) {
+          panel.insertBefore(ind, kids[i]);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        // Insert before the "+ alt görev ekle" row if present, else at end
+        const addRow = panel.querySelector('.todo-sub-add');
+        if (addRow) panel.insertBefore(ind, addRow);
+        else panel.appendChild(ind);
+      }
+    },
+
+    // Reorder a subtask within its parent todo. We rewrite the `order`
+    // values of all siblings (10, 20, 30...) so the new order is canonical.
+    async reorderSubtask(parentId, subId, insertIndex) {
+      const mutate = (items) => items.map(it => {
+        if (it.id !== parentId) return it;
+        const subs = it.subtasks || [];
+        const moving = subs.find(s => s.id === subId);
+        if (!moving) return it;
+        // Build the new ordering: remove the moved item, splice it at index
+        const sorted = subs
+          .filter(s => s.id !== subId)
+          .sort((a, b) => {
+            const ao = (typeof a.order === 'number') ? a.order : 0;
+            const bo = (typeof b.order === 'number') ? b.order : 0;
+            return ao - bo;
+          });
+        const safeIndex = Math.max(0, Math.min(insertIndex, sorted.length));
+        sorted.splice(safeIndex, 0, moving);
+        // Re-stamp order values
+        const newSubs = sorted.map((s, i) => ({ ...s, order: (i + 1) * 10 }));
+        return { ...it, subtasks: newSubs, updatedTs: Date.now() };
+      });
+      await this._runTodoAction(mutate, mutate);
+    },
+
     async updateTodoStatus(id, newStatus) {
       // Track whether this transition is the *first time* a todo becomes "done"
       // so we award XP only once — even if the user toggles back and forth.
@@ -13195,10 +13390,21 @@
       text = (text || '').trim();
       if (!text) return;
       const now = Date.now();
+      // Compute next order so new subs land at the bottom of the list.
+      // We read from optimistic local state since this is fire-and-forget.
+      const me = session.playerName;
+      const myItems = (this.todos[me] && this.todos[me].items) || [];
+      const parent = myItems.find(x => x.id === parentId);
+      const existingSubs = (parent && parent.subtasks) || [];
+      const maxOrder = existingSubs.reduce((m, s) => {
+        const o = (typeof s.order === 'number') ? s.order : 0;
+        return o > m ? o : m;
+      }, 0);
       const sub = {
         id: 's_' + now + '_' + Math.random().toString(36).slice(2, 7),
         text,
         done: false,
+        order: maxOrder + 10,
         createdTs: now,
       };
       const append = (items) => items.map(it =>
