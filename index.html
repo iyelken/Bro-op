@@ -4446,6 +4446,30 @@
   .todo-col.drop-target .todo-col-header {
     color: var(--accent-workshop) !important;
   }
+
+  /* Drop indicator — dashed glowing line between todo items showing where
+     the dragged item will land. Keeps gap small so layout doesn't jump. */
+  .todo-drop-ind {
+    height: 3px;
+    margin: 4px 0;
+    background: var(--accent-workshop);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(184, 85, 255, 0.7);
+    animation: dropIndPulse 0.9s ease-in-out infinite;
+  }
+  @keyframes dropIndPulse {
+    0%, 100% { opacity: 0.7; }
+    50%      { opacity: 1; }
+  }
+
+  /* Hide indicator when not in a drop-target column */
+  .todo-col:not(.drop-target) .todo-drop-ind { display: none; }
+
+  /* Active dragging item */
+  .todo-item.dragging {
+    opacity: 0.4;
+    transform: scale(0.97);
+  }
   .todo-item.done .todo-text {
     color: var(--text-muted);
     text-decoration: line-through;
@@ -5794,7 +5818,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.23.2</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.24.0-alpha1</span></div>
         </div>
 
         <div class="info-card">
@@ -12593,6 +12617,13 @@
       ];
       for (const col of cols) {
         const colItems = items.filter(it => it.status === col.status);
+        // Sort by explicit `order` field (assigned by drag&drop or by creation time).
+        // Items without order fall back to createdTs/updatedTs to keep them stable.
+        colItems.sort((a, b) => {
+          const ao = (typeof a.order === 'number') ? a.order : (a.createdTs || a.updatedTs || 0);
+          const bo = (typeof b.order === 'number') ? b.order : (b.createdTs || b.updatedTs || 0);
+          return ao - bo;
+        });
         const colEl = document.createElement('div');
         colEl.className = 'todo-col';
         colEl.dataset.status = col.status;
@@ -12630,6 +12661,9 @@
             e.preventDefault();
             if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
             colEl.classList.add('drop-target');
+            // Compute the would-be insertion index based on mouse Y position,
+            // and draw a visual indicator (the dashed line in CSS).
+            this._showDropIndicator(itemsEl, e.clientY);
           });
           colEl.addEventListener('dragenter', (e) => {
             e.preventDefault();
@@ -12639,17 +12673,20 @@
             // Only remove highlight when leaving the column itself, not entering a child
             if (e.target === colEl || !colEl.contains(e.relatedTarget)) {
               colEl.classList.remove('drop-target');
+              this._clearDropIndicator(itemsEl);
             }
           });
           colEl.addEventListener('drop', (e) => {
             e.preventDefault();
             colEl.classList.remove('drop-target');
+            this._clearDropIndicator(itemsEl);
             const id = e.dataTransfer && e.dataTransfer.getData('text/plain');
             if (!id) return;
-            // Find current status; if same, no-op
-            const item = items.find(x => x.id === id);
-            if (!item || item.status === col.status) return;
-            this.updateTodoStatus(id, col.status);
+            // Compute the target index inside this column based on cursor Y
+            const insertIndex = this._computeDropIndex(itemsEl, e.clientY, id);
+            // Always go through the unified reorder path — it handles
+            // both same-column reorder and cross-column moves cleanly.
+            this.reorderTodo(id, col.status, insertIndex);
           });
         }
 
@@ -12974,16 +13011,141 @@
       // in the right project view. May be null if user has no project yet —
       // we still allow creation; the item will be visible everywhere until tagged.
       const projectId = this.getActiveProjectId(session.playerName);
+      // Compute the next `order` value so new items land at the bottom
+      // of the "todo" column (after the user's existing tasks).
+      const me = session.playerName;
+      const existing = (this.todos[me] && this.todos[me].items) || [];
+      const todoCol = existing.filter(it => it.status === 'todo' && (!projectId || it.projectId === projectId));
+      const maxOrder = todoCol.reduce((max, it) => {
+        const o = (typeof it.order === 'number') ? it.order : 0;
+        return o > max ? o : max;
+      }, 0);
       const item = {
         id: 't_' + now + '_' + Math.random().toString(36).slice(2, 7),
         text,
         status: 'todo',
         projectId,
+        order: maxOrder + 10,
         createdTs: now,
         updatedTs: now,
       };
       const append = (items) => [...items, item];
       await this._runTodoAction(append, append);
+    },
+
+    // ============================================
+    // TODO DRAG-DROP REORDERING
+    // ============================================
+    // Compute the would-be insertion index inside a list element, based on
+    // the cursor Y position. Returns 0 .. children.length. If the cursor is
+    // above the middle of child N, insert at index N (push it down);
+    // if below the middle, insert at N+1.
+    _computeDropIndex(itemsEl, clientY, draggedId) {
+      const kids = Array.from(itemsEl.children).filter(c =>
+        c.classList && c.classList.contains('todo-item') && !c.classList.contains('dragging')
+      );
+      if (kids.length === 0) return 0;
+      for (let i = 0; i < kids.length; i++) {
+        const rect = kids[i].getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (clientY < mid) return i;
+      }
+      return kids.length;
+    },
+
+    // Render the dashed-line "drop here" indicator inside a column.
+    // We use a single element that we move around, rather than per-gap
+    // elements, so layout doesn't thrash.
+    _showDropIndicator(itemsEl, clientY) {
+      // Find or create the indicator
+      let ind = itemsEl.querySelector('.todo-drop-ind');
+      if (!ind) {
+        ind = document.createElement('div');
+        ind.className = 'todo-drop-ind';
+        itemsEl.appendChild(ind);
+      }
+      // Where should it go?
+      const kids = Array.from(itemsEl.children).filter(c =>
+        c.classList && c.classList.contains('todo-item') && !c.classList.contains('dragging')
+      );
+      let inserted = false;
+      for (let i = 0; i < kids.length; i++) {
+        const rect = kids[i].getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (clientY < mid) {
+          itemsEl.insertBefore(ind, kids[i]);
+          inserted = true;
+          break;
+        }
+      }
+      // Below all children — put at the bottom
+      if (!inserted) itemsEl.appendChild(ind);
+    },
+
+    _clearDropIndicator(itemsEl) {
+      const ind = itemsEl && itemsEl.querySelector('.todo-drop-ind');
+      if (ind) ind.remove();
+    },
+
+    // Unified reorder: moves a todo into the given status column at the
+    // given index. Handles both same-column reorder and cross-column moves.
+    // We assign fresh `order` values to all items in the destination column
+    // so the new ordering is unambiguous and survives serialization.
+    async reorderTodo(id, newStatus, insertIndex) {
+      const me = session.playerName;
+      // Whether this also crosses into "done" for the first time (so we
+      // need to mirror the XP-award logic from updateTodoStatus).
+      let shouldAwardXp = false;
+
+      const mutate = (items) => {
+        const item = items.find(x => x.id === id);
+        if (!item) return items;
+        const sameColumn = item.status === newStatus;
+        // Build the destination column ordering, omitting the dragged item
+        // (we'll re-insert it at the target index).
+        const destItems = items
+          .filter(it => it.status === newStatus && it.id !== id)
+          .sort((a, b) => {
+            const ao = (typeof a.order === 'number') ? a.order : (a.createdTs || a.updatedTs || 0);
+            const bo = (typeof b.order === 'number') ? b.order : (b.createdTs || b.updatedTs || 0);
+            return ao - bo;
+          });
+        const safeIndex = Math.max(0, Math.min(insertIndex, destItems.length));
+        destItems.splice(safeIndex, 0, item);
+
+        // Assign sequential order values (10, 20, 30...) so future inserts
+        // can squeeze in without re-shuffling the whole column.
+        const orderById = new Map();
+        destItems.forEach((it, i) => orderById.set(it.id, (i + 1) * 10));
+
+        return items.map(it => {
+          if (it.id === id) {
+            // The moved item — update status, order, updatedTs
+            const updated = {
+              ...it,
+              status: newStatus,
+              order: orderById.get(it.id),
+              updatedTs: Date.now(),
+            };
+            // Award XP only when transitioning into "done" for the first time
+            if (newStatus === 'done' && !it.xpAwarded) {
+              updated.xpAwarded = true;
+              shouldAwardXp = true;
+            }
+            return updated;
+          }
+          if (orderById.has(it.id)) {
+            // Other items in the destination column — just update order
+            return { ...it, order: orderById.get(it.id) };
+          }
+          return it;
+        });
+      };
+
+      await this._runTodoAction(mutate, mutate);
+      if (shouldAwardXp && typeof Profile !== 'undefined' && Profile.awardActivityXP) {
+        Profile.awardActivityXP(5, 'todo-done');
+      }
     },
 
     async updateTodoStatus(id, newStatus) {
