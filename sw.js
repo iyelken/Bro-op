@@ -5,7 +5,7 @@
 // and waits, giving us a chance to notify the user via the in-app banner.
 // IMPORTANT: this must change every time index.html is updated, otherwise
 // the browser won't fetch the new SW and the update banner won't fire.
-const CACHE_NAME = 'broop-v0-24-0';
+const CACHE_NAME = 'broop-v0-24-1';
 const APP_SHELL = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {

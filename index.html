@@ -5865,7 +5865,7 @@
           <h4>ODA BİLGİSİ</h4>
           <div class="info-row"><span class="k">Bulut ID</span><span class="v" id="infoCloudId">—</span></div>
           <div class="info-row"><span class="k">Şifreleme</span><span class="v">AES-256</span></div>
-          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.24.0</span></div>
+          <div class="info-row"><span class="k">Versiyon</span><span class="v">v0.24.1</span></div>
         </div>
 
         <div class="info-card">
@@ -11077,6 +11077,54 @@
     // Map: { [memberName]: projectId } — null/undefined means "show their active".
     viewingTheirsProjectId: {},
 
+    // Per-device expand state for todos. We keep this in localStorage (not
+    // Firestore) so that one user toggling a card open doesn't change what
+    // the other user sees — that would be confusing during real-time use.
+    // Key: todoId, Value: true (open) / undefined (closed). Loaded lazily.
+    _expandedTodos: null,
+
+    _getExpandStorageKey() {
+      if (!session) return null;
+      return 'broop_expanded_' + session.cloudId + '_' + session.playerName;
+    },
+
+    _loadExpandState() {
+      if (this._expandedTodos !== null) return this._expandedTodos;
+      const key = this._getExpandStorageKey();
+      if (!key) return {};
+      try {
+        const raw = localStorage.getItem(key);
+        this._expandedTodos = raw ? JSON.parse(raw) : {};
+      } catch {
+        this._expandedTodos = {};
+      }
+      return this._expandedTodos;
+    },
+
+    _saveExpandState() {
+      const key = this._getExpandStorageKey();
+      if (!key || !this._expandedTodos) return;
+      try {
+        localStorage.setItem(key, JSON.stringify(this._expandedTodos));
+      } catch {}
+    },
+
+    // Set the local expand state for a todo (any owner) and re-render.
+    setTodoExpanded(todoId, expanded) {
+      const map = this._loadExpandState();
+      if (expanded) map[todoId] = true;
+      else delete map[todoId];
+      this._saveExpandState();
+      // Re-render both panels — own and theirs — so the change reflects
+      this.renderMineTodo();
+      this.renderTheirsTodo();
+    },
+
+    isTodoExpanded(todoId) {
+      const map = this._loadExpandState();
+      return !!map[todoId];
+    },
+
     workshopsUnsubscribe: null,
     devlogsUnsubscribe: null,
     resourcesUnsubscribe: null,
@@ -11284,6 +11332,9 @@
       this.theirsFilterTag = 'all';
       this._myMigrationDone = false;
       this.viewingTheirsProjectId = {};
+      // Clear the in-memory expand cache so a different player logging in
+      // on this device gets a fresh state from their own localStorage key.
+      this._expandedTodos = null;
     },
 
     // ============================================
@@ -12748,7 +12799,10 @@
       const subs = it.subtasks || [];
       const hasSubs = subs.length > 0;
       const doneSubs = subs.filter(s => s.done).length;
-      const isExpanded = !!it.expanded;
+      // Read the expand state from local (per-device) storage. The old
+      // `it.expanded` field on the doc is ignored — kept for backward
+      // compatibility but no longer drives the UI.
+      const isExpanded = this.isTodoExpanded(it.id);
       let cls = 'todo-item' + (it.status === 'done' ? ' done' : '');
       if (hasSubs) cls += ' has-subs';
       if (isExpanded) cls += ' expanded';
@@ -13367,14 +13421,13 @@
       await this._runTodoAction(remove, remove);
     },
 
-    async toggleTodoExpand(id) {
-      // We need the current expanded state to flip it. Use local state for
-      // the optimistic version; for the transaction, read server state and
-      // flip whatever's there.
-      const flip = (items) => items.map(it =>
-        it.id === id ? { ...it, expanded: !it.expanded } : it
-      );
-      await this._runTodoAction(flip, flip);
+    // Toggle a todo's expand state PER-DEVICE (not synced to Firestore).
+    // This way each player controls their own view independently — opening
+    // a card on one side doesn't toggle it on the other side mid-typing.
+    // Works for both own and friend's todos (you can peek inside theirs).
+    toggleTodoExpand(id) {
+      const now = this.isTodoExpanded(id);
+      this.setTodoExpanded(id, !now);
     },
 
     async editTodoText(id, newText) {
