@@ -3,8 +3,9 @@
 //
 // VERSIONING: bump CACHE_NAME on every release so the new SW installs
 // and waits, giving us a chance to notify the user via the in-app banner.
-
-const CACHE_NAME = 'broop-v0-23-2';
+// IMPORTANT: this must change every time index.html is updated, otherwise
+// the browser won't fetch the new SW and the update banner won't fire.
+const CACHE_NAME = 'broop-v0-24-0-alpha1';
 const APP_SHELL = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {
